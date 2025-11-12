@@ -87,9 +87,11 @@ interface ProductTabProps {
   actions: AppActions
   editingProductId?: string | null
   onRequestEditClear?: () => void
+  copySourceProductId?: string | null
+  onRequestCopyClear?: () => void
 }
 
-export function ProductTab({ data, actions, editingProductId, onRequestEditClear }: ProductTabProps) {
+export function ProductTab({ data, actions, editingProductId, onRequestEditClear, copySourceProductId, onRequestCopyClear }: ProductTabProps) {
   const shippingMethods = useMemo(() => data.shippingMethods ?? [], [data.shippingMethods])
   const editingProduct = editingProductId
     ? data.products.find((product) => product.id === editingProductId)
@@ -336,6 +338,26 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
   const autoLaborHoursRef = useRef<number>(productForm.baseManHours || 0)
 
+  const validateProductForm = useCallback(() => {
+    const missing: string[] = []
+    if (!productForm.name.trim()) {
+      missing.push("商品名")
+    }
+    const periodYears = Number(productForm.expectedProduction.periodYears)
+    if (!periodYears || periodYears <= 0) {
+      missing.push("想定生産期間")
+    }
+    const quantity = Number(productForm.expectedProduction.quantity)
+    if (!quantity || quantity <= 0) {
+      missing.push("想定生産数量")
+    }
+    const salePrice = Number(productForm.salePrice)
+    if (!salePrice || salePrice <= 0) {
+      missing.push("販売価格")
+    }
+    return missing
+  }, [productForm])
+
   useEffect(() => {
     const nextHours = Number(productForm.baseManHours) || 0
     if (autoLaborHoursRef.current === nextHours) return
@@ -366,19 +388,18 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
   const totalEquipmentHours = equipmentAllocDrafts.reduce((sum, draft) => sum + (draft.usageHours || 0), 0)
 
-  /*
-   * Hydrateフォーム: 編集対象の商品を切り替えたときだけ状態をまとめて入れ替えたいので
-   * useEffect内でsetStateしています（フォーム操作中は通常のイベントで更新される）。
-   * このケースでは cascaded render のリスクがないため lint を一時的に無効化します。
-   */
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useEffect(() => {
-    if (!editingProductId) return
-    const product = data.products.find((p) => p.id === editingProductId)
+  const hydrateProductFromExisting = useCallback((sourceProductId: string, options?: { copy?: boolean }) => {
+    const product = data.products.find((p) => p.id === sourceProductId)
     if (!product) return
 
+    const copyMode = options?.copy ?? false
+    const adjustedName = copyMode ? `${product.name} (コピー)` : product.name
+    const adjustedDate = copyMode ? new Date().toISOString().slice(0, 10) : product.registeredAt
+
+    const mapOrFallback = <T,>(entries: T[], fallback: () => T) => (entries.length > 0 ? entries : [fallback()])
+
     setProductForm({
-      name: product.name,
+      name: adjustedName,
       categoryLargeId: product.categoryLargeId ?? "",
       categoryMediumId: product.categoryMediumId ?? "",
       categorySmallId: product.categorySmallId ?? "",
@@ -389,7 +410,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
       baseManHours: product.baseManHours,
       defaultElectricityCost: product.defaultElectricityCost,
       salePrice: product.salePrice ?? 0,
-      registeredAt: product.registeredAt,
+      registeredAt: adjustedDate,
       notes: product.notes ?? "",
       productionLotSize: product.productionLotSize,
       expectedProduction: {
@@ -399,13 +420,10 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
       equipmentIds: product.equipmentIds ?? [],
     })
 
-    const mapOrFallback = <T,>(entries: T[], fallback: () => T) =>
-      entries.length > 0 ? entries : [fallback()]
-
     setMaterialDrafts(
       mapOrFallback(
         data.costEntries.materials
-          .filter((entry) => entry.productId === editingProductId)
+          .filter((entry) => entry.productId === sourceProductId)
           .map((entry) => ({
             id: createTempId(),
             materialId: entry.materialId,
@@ -419,7 +437,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
     setPackagingDrafts(
       mapOrFallback(
         data.costEntries.packaging
-          .filter((entry) => entry.productId === editingProductId)
+          .filter((entry) => entry.productId === sourceProductId)
           .map((entry) => ({
             id: createTempId(),
             packagingItemId: entry.packagingItemId,
@@ -432,7 +450,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
     setLaborDrafts(
       mapOrFallback(
         data.costEntries.labor
-          .filter((entry) => entry.productId === editingProductId)
+          .filter((entry) => entry.productId === sourceProductId)
           .map((entry) => ({
             id: createTempId(),
             laborRoleId: entry.laborRoleId,
@@ -447,7 +465,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
     setOutsourcingDrafts(
       mapOrFallback(
         data.costEntries.outsourcing
-          .filter((entry) => entry.productId === editingProductId)
+          .filter((entry) => entry.productId === sourceProductId)
           .map((entry) => ({
             id: createTempId(),
             note: entry.note ?? "",
@@ -461,7 +479,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
     setDevelopmentDrafts(
       mapOrFallback(
         data.costEntries.development
-          .filter((entry) => entry.productId === editingProductId)
+          .filter((entry) => entry.productId === sourceProductId)
           .map((entry) => ({
             id: createTempId(),
             title: entry.title ?? "",
@@ -476,7 +494,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
     setEquipmentAllocDrafts(
       data.costEntries.equipmentAllocations
-        .filter((entry) => entry.productId === editingProductId)
+        .filter((entry) => entry.productId === sourceProductId)
         .map((entry) => ({
           id: createTempId(),
           equipmentId: entry.equipmentId,
@@ -489,7 +507,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
     setLogisticsDrafts(
       mapOrFallback(
         data.costEntries.logistics
-          .filter((entry) => entry.productId === editingProductId)
+          .filter((entry) => entry.productId === sourceProductId)
           .map((entry) => ({
             id: createTempId(),
             shippingMethodId: entry.shippingMethodId,
@@ -501,7 +519,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
     setElectricityDrafts(
       mapOrFallback(
         data.costEntries.electricity
-          .filter((entry) => entry.productId === editingProductId)
+          .filter((entry) => entry.productId === sourceProductId)
           .map((entry) => ({
             id: createTempId(),
             costPerUnit: entry.costPerUnit,
@@ -510,18 +528,38 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
         createElectricityDraft
       )
     )
+
+    autoLaborHoursRef.current = product.baseManHours
   }, [
-    editingProductId,
-    data,
-    createMaterialDraft,
-    createPackagingDraft,
-    createLaborDraft,
-    createOutsourcingDraft,
     createDevelopmentDraft,
-    createLogisticsDraft,
     createElectricityDraft,
+    createLaborDraft,
+    createLogisticsDraft,
+    createMaterialDraft,
+    createOutsourcingDraft,
+    createPackagingDraft,
+    data.costEntries.development,
+    data.costEntries.electricity,
+    data.costEntries.equipmentAllocations,
+    data.costEntries.labor,
+    data.costEntries.logistics,
+    data.costEntries.materials,
+    data.costEntries.outsourcing,
+    data.costEntries.packaging,
+    data.products,
   ])
-  /* eslint-enable react-hooks/set-state-in-effect */
+
+  useEffect(() => {
+    if (!editingProductId) return
+    hydrateProductFromExisting(editingProductId)
+  }, [editingProductId, hydrateProductFromExisting])
+
+  useEffect(() => {
+    if (!copySourceProductId) return
+    hydrateProductFromExisting(copySourceProductId, { copy: true })
+    onRequestCopyClear?.()
+    onRequestEditClear?.()
+  }, [copySourceProductId, hydrateProductFromExisting, onRequestCopyClear, onRequestEditClear])
 
   const handleCancelEdit = () => {
     resetFormState()
@@ -546,11 +584,17 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
             <CardContent className="space-y-4">
               <form
                 className="space-y-6"
-                onSubmit={(event) => {
-                  event.preventDefault()
-                  if (!productForm.name.trim()) return
-                  const isEditing = Boolean(editingProductId)
-                  const targetProductId = editingProductId ?? createTempId()
+              onSubmit={(event) => {
+                event.preventDefault()
+                const missingFields = validateProductForm()
+                if (missingFields.length > 0) {
+                  toast.error("必須項目が未入力です", {
+                    description: `${missingFields.join("、")}を入力してください。`,
+                  })
+                  return
+                }
+                const isEditing = Boolean(editingProductId)
+                const targetProductId = editingProductId ?? createTempId()
                   const electricityUnitCost =
                     electricityDrafts.find((draft) => Number(draft.costPerUnit) > 0)?.costPerUnit ?? 0
                   const normalizedSizeVariants = productForm.sizeVariants

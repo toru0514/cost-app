@@ -19,6 +19,7 @@ export default function Home() {
   const { data, hydrated, actions } = useAppData()
   const [activeTab, setActiveTab] = useState("cost")
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
+  const [copyProductId, setCopyProductId] = useState<string | null>(null)
   const productCostMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateProductUnitCosts>>()
     data.products.forEach((product) => {
@@ -179,6 +180,8 @@ export default function Home() {
             actions={actions}
             editingProductId={editingProductId}
             onRequestEditClear={() => setEditingProductId(null)}
+            copySourceProductId={copyProductId}
+            onRequestCopyClear={() => setCopyProductId(null)}
           />
         </TabsContent>
 
@@ -248,18 +251,32 @@ export default function Home() {
                             {formatCurrency(profit)}
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">{notesText}</TableCell>
-                          <TableCell className="w-20 text-right">
-                            <Button
-                              type="button"
-                              size="sm"
-                              variant="outline"
-                              onClick={() => {
-                                setEditingProductId(product.id)
-                                setActiveTab("product")
-                              }}
-                            >
-                              編集
-                            </Button>
+                          <TableCell className="w-32 text-right">
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() => {
+                                  setEditingProductId(product.id)
+                                  setActiveTab("product")
+                                }}
+                              >
+                                編集
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="secondary"
+                                onClick={() => {
+                                  setCopyProductId(product.id)
+                                  setEditingProductId(null)
+                                  setActiveTab("product")
+                                }}
+                              >
+                                コピー
+                              </Button>
+                            </div>
                           </TableCell>
                         </TableRow>
                       )

@@ -23,6 +23,7 @@ import type {
   LaborRole,
   Material,
   Product,
+  OptionPreset,
   PackagingItem,
   ProductSizeVariant,
   ShippingMethod,
@@ -984,17 +985,40 @@ export function MasterTab({ data, actions }: MasterTabProps) {
   )
 }
 
+const createTempId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).substring(2, 11)
+
 function MasterListView({ data, actions }: MasterTabProps) {
   const {
+    addLargeCategory,
     updateLargeCategory,
+    removeLargeCategory,
+    addMediumCategory,
     updateMediumCategory,
+    removeMediumCategory,
+    addSmallCategory,
     updateSmallCategory,
+    removeSmallCategory,
+    addMaterial,
     updateMaterial,
+    removeMaterial,
+    addPackagingItem,
     updatePackagingItem,
+    removePackagingItem,
+    addShippingMethod,
     updateShippingMethod,
+    removeShippingMethod,
+    addLaborRole,
     updateLaborRole,
+    removeLaborRole,
+    addEquipment,
     updateEquipment,
+    removeEquipment,
+    addOptionPreset,
     updateOptionPreset,
+    removeOptionPreset,
   } = actions
 
   const [editingLarge, setEditingLarge] = useState({ id: null as string | null, name: "", description: "" })
@@ -1104,6 +1128,22 @@ function MasterListView({ data, actions }: MasterTabProps) {
     resetLarge()
   }
 
+  const handleLargeDelete = () => {
+    if (!editingLarge.id) return
+    const name = editingLarge.name.trim() || "大カテゴリ"
+    removeLargeCategory(editingLarge.id)
+    toast.success("大カテゴリを削除しました", { description: `「${name}」を削除しました。` })
+    resetLarge()
+  }
+
+  const handleLargeCopy = (category: CategoryLarge) => {
+    const newId = createTempId()
+    const name = `${category.name} (コピー)`
+    addLargeCategory({ id: newId, name, description: category.description })
+    toast.success("大カテゴリをコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingLarge({ id: newId, name, description: category.description ?? "" })
+  }
+
   const handleMediumSave = () => {
     if (!editingMedium.id || !editingMedium.largeId) return
     const name = editingMedium.name.trim()
@@ -1116,6 +1156,22 @@ function MasterListView({ data, actions }: MasterTabProps) {
     })
     toast.success("中カテゴリを更新しました", { description: `「${name}」を更新しました。` })
     resetMedium()
+  }
+
+  const handleMediumDelete = () => {
+    if (!editingMedium.id) return
+    const name = editingMedium.name.trim() || "中カテゴリ"
+    removeMediumCategory(editingMedium.id)
+    toast.success("中カテゴリを削除しました", { description: `「${name}」を削除しました。` })
+    resetMedium()
+  }
+
+  const handleMediumCopy = (category: CategoryMedium) => {
+    const newId = createTempId()
+    const name = `${category.name} (コピー)`
+    addMediumCategory({ id: newId, name, description: category.description, largeId: category.largeId })
+    toast.success("中カテゴリをコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingMedium({ id: newId, name, description: category.description ?? "", largeId: category.largeId })
   }
 
   const handleSmallSave = () => {
@@ -1132,6 +1188,22 @@ function MasterListView({ data, actions }: MasterTabProps) {
     resetSmall()
   }
 
+  const handleSmallDelete = () => {
+    if (!editingSmall.id) return
+    const name = editingSmall.name.trim() || "小カテゴリ"
+    removeSmallCategory(editingSmall.id)
+    toast.success("小カテゴリを削除しました", { description: `「${name}」を削除しました。` })
+    resetSmall()
+  }
+
+  const handleSmallCopy = (category: CategorySmall) => {
+    const newId = createTempId()
+    const name = `${category.name} (コピー)`
+    addSmallCategory({ id: newId, name, description: category.description, mediumId: category.mediumId })
+    toast.success("小カテゴリをコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingSmall({ id: newId, name, description: category.description ?? "", mediumId: category.mediumId })
+  }
+
   const handleMaterialSave = () => {
     const { id, ...rest } = editingMaterial
     if (!id) return
@@ -1142,6 +1214,41 @@ function MasterListView({ data, actions }: MasterTabProps) {
       description: `${name} / ${formatCurrency(editingMaterial.unitCost, editingMaterial.currency)}`,
     })
     resetMaterial()
+  }
+
+  const handleMaterialDelete = () => {
+    const { id } = editingMaterial
+    if (!id) return
+    const name = editingMaterial.name.trim() || "材料"
+    removeMaterial(id)
+    toast.success("材料を削除しました", { description: `「${name}」を削除しました。` })
+    resetMaterial()
+  }
+
+  const handleMaterialCopy = (material: Material) => {
+    const newId = createTempId()
+    const name = `${material.name} (コピー)`
+    addMaterial({
+      id: newId,
+      name,
+      unit: material.unit,
+      sizeDescription: material.sizeDescription,
+      currency: material.currency,
+      unitCost: material.unitCost,
+      supplier: material.supplier,
+      note: material.note,
+    })
+    toast.success("材料をコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingMaterial({
+      id: newId,
+      name,
+      unit: material.unit,
+      sizeDescription: material.sizeDescription,
+      currency: material.currency,
+      unitCost: material.unitCost,
+      supplier: material.supplier ?? "",
+      note: material.note ?? "",
+    })
   }
 
   const handlePackagingSave = () => {
@@ -1156,6 +1263,39 @@ function MasterListView({ data, actions }: MasterTabProps) {
     resetPackaging()
   }
 
+  const handlePackagingDelete = () => {
+    const { id } = editingPackaging
+    if (!id) return
+    const name = editingPackaging.name.trim() || "梱包材"
+    removePackagingItem(id)
+    toast.success("梱包材を削除しました", { description: `「${name}」を削除しました。` })
+    resetPackaging()
+  }
+
+  const handlePackagingCopy = (item: PackagingItem) => {
+    const newId = createTempId()
+    const name = `${item.name} (コピー)`
+    addPackagingItem({
+      id: newId,
+      name,
+      unit: item.unit,
+      sizeDescription: item.sizeDescription,
+      currency: item.currency,
+      unitCost: item.unitCost,
+      note: item.note,
+    })
+    toast.success("梱包材をコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingPackaging({
+      id: newId,
+      name,
+      unit: item.unit,
+      sizeDescription: item.sizeDescription,
+      currency: item.currency,
+      unitCost: item.unitCost,
+      note: item.note ?? "",
+    })
+  }
+
   const handleShippingSave = () => {
     const { id, ...rest } = editingShipping
     if (!id) return
@@ -1166,6 +1306,37 @@ function MasterListView({ data, actions }: MasterTabProps) {
       description: `${name} / ${formatCurrency(editingShipping.unitCost, editingShipping.currency)}`,
     })
     resetShipping()
+  }
+
+  const handleShippingDelete = () => {
+    const { id } = editingShipping
+    if (!id) return
+    const name = editingShipping.name.trim() || "配送方法"
+    removeShippingMethod(id)
+    toast.success("配送方法を削除しました", { description: `「${name}」を削除しました。` })
+    resetShipping()
+  }
+
+  const handleShippingCopy = (method: ShippingMethod) => {
+    const newId = createTempId()
+    const name = `${method.name} (コピー)`
+    addShippingMethod({
+      id: newId,
+      name,
+      description: method.description,
+      unitCost: method.unitCost,
+      currency: method.currency,
+      note: method.note,
+    })
+    toast.success("配送方法をコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingShipping({
+      id: newId,
+      name,
+      description: method.description ?? "",
+      unitCost: method.unitCost,
+      currency: method.currency,
+      note: method.note ?? "",
+    })
   }
 
   const handleLaborSave = () => {
@@ -1180,6 +1351,23 @@ function MasterListView({ data, actions }: MasterTabProps) {
     resetLabor()
   }
 
+  const handleLaborDelete = () => {
+    const { id } = editingLabor
+    if (!id) return
+    const name = editingLabor.name.trim() || "人件費"
+    removeLaborRole(id)
+    toast.success("人件費レートを削除しました", { description: `「${name}」を削除しました。` })
+    resetLabor()
+  }
+
+  const handleLaborCopy = (role: LaborRole) => {
+    const newId = createTempId()
+    const name = `${role.name} (コピー)`
+    addLaborRole({ id: newId, name, hourlyRate: role.hourlyRate, currency: role.currency, note: role.note })
+    toast.success("人件費レートをコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingLabor({ id: newId, name, hourlyRate: role.hourlyRate, currency: role.currency, note: role.note ?? "" })
+  }
+
   const handleEquipmentSave = () => {
     const { id, ...rest } = editingEquipment
     if (!id) return
@@ -1190,6 +1378,37 @@ function MasterListView({ data, actions }: MasterTabProps) {
       description: `${name} / ${formatCurrency(editingEquipment.acquisitionCost, editingEquipment.currency)}`,
     })
     resetEquipment()
+  }
+
+  const handleEquipmentDelete = () => {
+    const { id } = editingEquipment
+    if (!id) return
+    const name = editingEquipment.name.trim() || "設備"
+    removeEquipment(id)
+    toast.success("設備を削除しました", { description: `「${name}」を削除しました。` })
+    resetEquipment()
+  }
+
+  const handleEquipmentCopy = (equipment: Equipment) => {
+    const newId = createTempId()
+    const name = `${equipment.name} (コピー)`
+    addEquipment({
+      id: newId,
+      name,
+      acquisitionCost: equipment.acquisitionCost,
+      currency: equipment.currency,
+      amortizationYears: equipment.amortizationYears,
+      note: equipment.note,
+    })
+    toast.success("設備をコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingEquipment({
+      id: newId,
+      name,
+      acquisitionCost: equipment.acquisitionCost,
+      currency: equipment.currency,
+      amortizationYears: equipment.amortizationYears,
+      note: equipment.note ?? "",
+    })
   }
 
   const handleOptionPresetSave = () => {
@@ -1205,11 +1424,40 @@ function MasterListView({ data, actions }: MasterTabProps) {
     resetOptionPreset()
   }
 
-  const renderActionButtons = (onSave: () => void, onCancel: () => void) => (
+  const handleOptionPresetDelete = () => {
+    const { id } = editingOptionPreset
+    if (!id) return
+    const name = editingOptionPreset.name.trim() || "プリセット"
+    removeOptionPreset(id)
+    toast.success("オプションプリセットを削除しました", { description: `「${name}」を削除しました。` })
+    resetOptionPreset()
+  }
+
+  const handleOptionPresetCopy = (preset: OptionPreset) => {
+    const newId = createTempId()
+    const name = `${preset.name} (コピー)`
+    addOptionPreset({ id: newId, name, variants: preset.variants })
+    toast.success("オプションプリセットをコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingOptionPreset({
+      id: newId,
+      name,
+      variants:
+        preset.variants.length > 0
+          ? preset.variants.map((variant) => ({ label: variant.label, quantity: variant.quantity }))
+          : [{ label: "", quantity: 0 }],
+    })
+  }
+
+  const renderActionButtons = (onSave: () => void, onCancel: () => void, onDelete?: () => void) => (
     <div className="flex gap-2">
       <Button type="button" size="sm" onClick={onSave}>
         保存
       </Button>
+      {onDelete && (
+        <Button type="button" size="sm" variant="destructive" onClick={onDelete}>
+          削除
+        </Button>
+      )}
       <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
         キャンセル
       </Button>
@@ -1263,13 +1511,18 @@ function MasterListView({ data, actions }: MasterTabProps) {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isEditing
-                            ? renderActionButtons(handleLargeSave, resetLarge)
-                            : (
-                                <Button type="button" size="sm" variant="outline" onClick={() => setEditingLarge({ id: category.id, name: category.name, description: category.description ?? "" })}>
-                                  編集
-                                </Button>
-                              )}
+                          {isEditing ? (
+                            renderActionButtons(handleLargeSave, resetLarge, handleLargeDelete)
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button type="button" size="sm" variant="outline" onClick={() => setEditingLarge({ id: category.id, name: category.name, description: category.description ?? "" })}>
+                                編集
+                              </Button>
+                              <Button type="button" size="sm" variant="secondary" onClick={() => handleLargeCopy(category)}>
+                                コピー
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )
@@ -1341,25 +1594,30 @@ function MasterListView({ data, actions }: MasterTabProps) {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isEditing
-                            ? renderActionButtons(handleMediumSave, resetMedium)
-                            : (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    setEditingMedium({
-                                      id: category.id,
-                                      name: category.name,
-                                      description: category.description ?? "",
-                                      largeId: category.largeId,
-                                    })
-                                  }
-                                >
-                                  編集
-                                </Button>
-                              )}
+                          {isEditing ? (
+                            renderActionButtons(handleMediumSave, resetMedium, handleMediumDelete)
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  setEditingMedium({
+                                    id: category.id,
+                                    name: category.name,
+                                    description: category.description ?? "",
+                                    largeId: category.largeId,
+                                  })
+                                }
+                              >
+                                編集
+                              </Button>
+                              <Button type="button" size="sm" variant="secondary" onClick={() => handleMediumCopy(category)}>
+                                コピー
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )
@@ -1431,25 +1689,30 @@ function MasterListView({ data, actions }: MasterTabProps) {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isEditing
-                            ? renderActionButtons(handleSmallSave, resetSmall)
-                            : (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    setEditingSmall({
-                                      id: category.id,
-                                      name: category.name,
-                                      description: category.description ?? "",
-                                      mediumId: category.mediumId,
-                                    })
-                                  }
-                                >
-                                  編集
-                                </Button>
-                              )}
+                          {isEditing ? (
+                            renderActionButtons(handleSmallSave, resetSmall, handleSmallDelete)
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  setEditingSmall({
+                                    id: category.id,
+                                    name: category.name,
+                                    description: category.description ?? "",
+                                    mediumId: category.mediumId,
+                                  })
+                                }
+                              >
+                                編集
+                              </Button>
+                              <Button type="button" size="sm" variant="secondary" onClick={() => handleSmallCopy(category)}>
+                                コピー
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )
@@ -1554,29 +1817,34 @@ function MasterListView({ data, actions }: MasterTabProps) {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isEditing
-                            ? renderActionButtons(handleMaterialSave, resetMaterial)
-                            : (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    setEditingMaterial({
-                                      id: material.id,
-                                      name: material.name,
-                                      unit: material.unit,
-                                      sizeDescription: material.sizeDescription,
-                                      currency: material.currency,
-                                      unitCost: material.unitCost,
-                                      supplier: material.supplier ?? "",
-                                      note: material.note ?? "",
-                                    })
-                                  }
-                                >
-                                  編集
-                                </Button>
-                              )}
+                          {isEditing ? (
+                            renderActionButtons(handleMaterialSave, resetMaterial, handleMaterialDelete)
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  setEditingMaterial({
+                                    id: material.id,
+                                    name: material.name,
+                                    unit: material.unit,
+                                    sizeDescription: material.sizeDescription,
+                                    currency: material.currency,
+                                    unitCost: material.unitCost,
+                                    supplier: material.supplier ?? "",
+                                    note: material.note ?? "",
+                                  })
+                                }
+                              >
+                                編集
+                              </Button>
+                              <Button type="button" size="sm" variant="secondary" onClick={() => handleMaterialCopy(material)}>
+                                コピー
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )
@@ -1679,28 +1947,33 @@ function MasterListView({ data, actions }: MasterTabProps) {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isEditing
-                            ? renderActionButtons(handlePackagingSave, resetPackaging)
-                            : (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    setEditingPackaging({
-                                      id: item.id,
-                                      name: item.name,
-                                      unit: item.unit,
-                                      sizeDescription: item.sizeDescription,
-                                      currency: item.currency,
-                                      unitCost: item.unitCost,
-                                      note: item.note ?? "",
-                                    })
-                                  }
-                                >
-                                  編集
-                                </Button>
-                              )}
+                          {isEditing ? (
+                            renderActionButtons(handlePackagingSave, resetPackaging, handlePackagingDelete)
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  setEditingPackaging({
+                                    id: item.id,
+                                    name: item.name,
+                                    unit: item.unit,
+                                    sizeDescription: item.sizeDescription,
+                                    currency: item.currency,
+                                    unitCost: item.unitCost,
+                                    note: item.note ?? "",
+                                  })
+                                }
+                              >
+                                編集
+                              </Button>
+                              <Button type="button" size="sm" variant="secondary" onClick={() => handlePackagingCopy(item)}>
+                                コピー
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )
@@ -1790,30 +2063,35 @@ function MasterListView({ data, actions }: MasterTabProps) {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isEditing
-                            ? renderActionButtons(handleOptionPresetSave, resetOptionPreset)
-                            : (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    setEditingOptionPreset({
-                                      id: preset.id,
-                                      name: preset.name,
-                                      variants:
-                                        preset.variants.length > 0
-                                          ? preset.variants.map((variant) => ({
-                                              label: variant.label,
-                                              quantity: variant.quantity,
-                                            }))
-                                          : [{ label: "", quantity: 0 }],
-                                    })
-                                  }
-                                >
-                                  編集
-                                </Button>
-                              )}
+                          {isEditing ? (
+                            renderActionButtons(handleOptionPresetSave, resetOptionPreset, handleOptionPresetDelete)
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  setEditingOptionPreset({
+                                    id: preset.id,
+                                    name: preset.name,
+                                    variants:
+                                      preset.variants.length > 0
+                                        ? preset.variants.map((variant) => ({
+                                            label: variant.label,
+                                            quantity: variant.quantity,
+                                          }))
+                                        : [{ label: "", quantity: 0 }],
+                                  })
+                                }
+                              >
+                                編集
+                              </Button>
+                              <Button type="button" size="sm" variant="secondary" onClick={() => handleOptionPresetCopy(preset)}>
+                                コピー
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )
@@ -1907,27 +2185,32 @@ function MasterListView({ data, actions }: MasterTabProps) {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isEditing
-                            ? renderActionButtons(handleShippingSave, resetShipping)
-                            : (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    setEditingShipping({
-                                      id: method.id,
-                                      name: method.name,
-                                      description: method.description ?? "",
-                                      unitCost: method.unitCost,
-                                      currency: method.currency,
-                                      note: method.note ?? "",
-                                    })
-                                  }
-                                >
-                                  編集
-                                </Button>
-                              )}
+                          {isEditing ? (
+                            renderActionButtons(handleShippingSave, resetShipping, handleShippingDelete)
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  setEditingShipping({
+                                    id: method.id,
+                                    name: method.name,
+                                    description: method.description ?? "",
+                                    unitCost: method.unitCost,
+                                    currency: method.currency,
+                                    note: method.note ?? "",
+                                  })
+                                }
+                              >
+                                編集
+                              </Button>
+                              <Button type="button" size="sm" variant="secondary" onClick={() => handleShippingCopy(method)}>
+                                コピー
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )
@@ -2008,26 +2291,31 @@ function MasterListView({ data, actions }: MasterTabProps) {
                           )}
                         </TableCell>
                         <TableCell className="text-right">
-                          {isEditing
-                            ? renderActionButtons(handleLaborSave, resetLabor)
-                            : (
-                                <Button
-                                  type="button"
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() =>
-                                    setEditingLabor({
-                                      id: role.id,
-                                      name: role.name,
-                                      hourlyRate: role.hourlyRate,
-                                      currency: role.currency,
-                                      note: role.note ?? "",
-                                    })
-                                  }
-                                >
-                                  編集
-                                </Button>
-                              )}
+                          {isEditing ? (
+                            renderActionButtons(handleLaborSave, resetLabor, handleLaborDelete)
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  setEditingLabor({
+                                    id: role.id,
+                                    name: role.name,
+                                    hourlyRate: role.hourlyRate,
+                                    currency: role.currency,
+                                    note: role.note ?? "",
+                                  })
+                                }
+                              >
+                                編集
+                              </Button>
+                              <Button type="button" size="sm" variant="secondary" onClick={() => handleLaborCopy(role)}>
+                                コピー
+                              </Button>
+                            </div>
+                          )}
                         </TableCell>
                       </TableRow>
                     )
@@ -2124,27 +2412,32 @@ function MasterListView({ data, actions }: MasterTabProps) {
                         )}
                       </TableCell>
                       <TableCell className="text-right">
-                        {isEditing
-                          ? renderActionButtons(handleEquipmentSave, resetEquipment)
-                          : (
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                onClick={() =>
-                                  setEditingEquipment({
-                                    id: equipment.id,
-                                    name: equipment.name,
-                                    acquisitionCost: equipment.acquisitionCost,
-                                    currency: equipment.currency,
-                                    amortizationYears: equipment.amortizationYears,
-                                    note: equipment.note ?? "",
-                                  })
-                                }
-                              >
-                                編集
-                              </Button>
-                            )}
+                        {isEditing ? (
+                          renderActionButtons(handleEquipmentSave, resetEquipment, handleEquipmentDelete)
+                        ) : (
+                          <div className="flex justify-end gap-2">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() =>
+                                setEditingEquipment({
+                                  id: equipment.id,
+                                  name: equipment.name,
+                                  acquisitionCost: equipment.acquisitionCost,
+                                  currency: equipment.currency,
+                                  amortizationYears: equipment.amortizationYears,
+                                  note: equipment.note ?? "",
+                                })
+                              }
+                            >
+                              編集
+                            </Button>
+                            <Button type="button" size="sm" variant="secondary" onClick={() => handleEquipmentCopy(equipment)}>
+                              コピー
+                            </Button>
+                          </div>
+                        )}
                       </TableCell>
                     </TableRow>
                   )

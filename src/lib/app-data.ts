@@ -93,6 +93,16 @@ export function useAppData() {
     }))
   }, [update])
 
+  const removeLargeCategory = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      categories: {
+        ...prev.categories,
+        large: prev.categories.large.filter((category) => category.id !== id),
+      },
+    }))
+  }, [update])
+
   const addMediumCategory = useCallback(
     (input: Omit<CategoryMedium, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -113,6 +123,16 @@ export function useAppData() {
       categories: {
         ...prev.categories,
         medium: prev.categories.medium.map((category) => (category.id === input.id ? input : category)),
+      },
+    }))
+  }, [update])
+
+  const removeMediumCategory = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      categories: {
+        ...prev.categories,
+        medium: prev.categories.medium.filter((category) => category.id !== id),
       },
     }))
   }, [update])
@@ -141,6 +161,16 @@ export function useAppData() {
     }))
   }, [update])
 
+  const removeSmallCategory = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      categories: {
+        ...prev.categories,
+        small: prev.categories.small.filter((category) => category.id !== id),
+      },
+    }))
+  }, [update])
+
   const addMaterial = useCallback(
     (input: Omit<Material, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -153,6 +183,17 @@ export function useAppData() {
     update((prev) => ({
       ...prev,
       materials: prev.materials.map((material) => (material.id === input.id ? input : material)),
+    }))
+  }, [update])
+
+  const removeMaterial = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      materials: prev.materials.filter((material) => material.id !== id),
+      costEntries: {
+        ...prev.costEntries,
+        materials: prev.costEntries.materials.filter((entry) => entry.materialId !== id),
+      },
     }))
   }, [update])
 
@@ -174,6 +215,17 @@ export function useAppData() {
     }))
   }, [update])
 
+  const removePackagingItem = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      packagingItems: prev.packagingItems.filter((item) => item.id !== id),
+      costEntries: {
+        ...prev.costEntries,
+        packaging: prev.costEntries.packaging.filter((entry) => entry.packagingItemId !== id),
+      },
+    }))
+  }, [update])
+
   const addShippingMethod = useCallback(
     (input: Omit<ShippingMethod, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -192,6 +244,17 @@ export function useAppData() {
     }))
   }, [update])
 
+  const removeShippingMethod = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      shippingMethods: (prev.shippingMethods ?? []).filter((method) => method.id !== id),
+      costEntries: {
+        ...prev.costEntries,
+        logistics: prev.costEntries.logistics.filter((entry) => entry.shippingMethodId !== id),
+      },
+    }))
+  }, [update])
+
   const addLaborRole = useCallback(
     (input: Omit<LaborRole, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -204,6 +267,17 @@ export function useAppData() {
     update((prev) => ({
       ...prev,
       laborRoles: prev.laborRoles.map((role) => (role.id === input.id ? input : role)),
+    }))
+  }, [update])
+
+  const removeLaborRole = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      laborRoles: prev.laborRoles.filter((role) => role.id !== id),
+      costEntries: {
+        ...prev.costEntries,
+        labor: prev.costEntries.labor.filter((entry) => entry.laborRoleId !== id),
+      },
     }))
   }, [update])
 
@@ -235,6 +309,13 @@ export function useAppData() {
     })
   }, [update])
 
+  const removeOptionPreset = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      optionPresets: (prev.optionPresets ?? []).filter((preset) => preset.id !== id),
+    }))
+  }, [update])
+
   const addEquipment = useCallback(
     (input: Omit<Equipment, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -247,6 +328,21 @@ export function useAppData() {
     update((prev) => ({
       ...prev,
       equipments: prev.equipments.map((equipment) => (equipment.id === input.id ? input : equipment)),
+    }))
+  }, [update])
+
+  const removeEquipment = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      equipments: prev.equipments.filter((equipment) => equipment.id !== id),
+      products: prev.products.map((product) => ({
+        ...product,
+        equipmentIds: product.equipmentIds.filter((equipmentId) => equipmentId !== id),
+      })),
+      costEntries: {
+        ...prev.costEntries,
+        equipmentAllocations: prev.costEntries.equipmentAllocations.filter((entry) => entry.equipmentId !== id),
+      },
     }))
   }, [update])
 
@@ -422,22 +518,31 @@ export function useAppData() {
     actions: {
       addLargeCategory,
       updateLargeCategory,
+      removeLargeCategory,
       addMediumCategory,
       updateMediumCategory,
+      removeMediumCategory,
       addSmallCategory,
       updateSmallCategory,
+      removeSmallCategory,
       addMaterial,
       updateMaterial,
+      removeMaterial,
       addPackagingItem,
       updatePackagingItem,
+      removePackagingItem,
       addShippingMethod,
       updateShippingMethod,
+      removeShippingMethod,
       addLaborRole,
       updateLaborRole,
+      removeLaborRole,
       addOptionPreset,
       updateOptionPreset,
+      removeOptionPreset,
       addEquipment,
       updateEquipment,
+      removeEquipment,
       addProduct,
       addMaterialCostEntry,
       addPackagingCostEntry,
