@@ -9,6 +9,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppData } from "@/lib/app-data"
 import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
+import type { Product } from "@/lib/types"
 import { MasterTab } from "./_components/master/master-tab"
 import { ProductTab } from "./_components/product/product-tab"
 import { CostTab } from "./_components/cost/cost-tab"
@@ -26,6 +27,48 @@ export default function Home() {
     return map
   }, [data])
 
+  const shippingMethodNameMap = useMemo(() => {
+    const map = new Map<string, string>()
+    ;(data.shippingMethods ?? []).forEach((method) => {
+      map.set(method.id, method.name)
+    })
+    return map
+  }, [data.shippingMethods])
+
+  const equipmentNameMap = useMemo(() => {
+    const map = new Map<string, string>()
+    data.equipments.forEach((equipment) => {
+      map.set(equipment.id, equipment.name)
+    })
+    return map
+  }, [data.equipments])
+
+  const getShippingText = useCallback(
+    (productId: string) => {
+      const entries = data.costEntries.logistics.filter((entry) => entry.productId === productId)
+      if (entries.length === 0) return "-"
+      const names = entries
+        .map((entry) => shippingMethodNameMap.get(entry.shippingMethodId))
+        .filter((name): name is string => Boolean(name && name.trim().length > 0))
+      if (names.length === 0) return "未設定"
+      return Array.from(new Set(names)).join(" / ")
+    },
+    [data.costEntries.logistics, shippingMethodNameMap]
+  )
+
+  const getEquipmentText = useCallback(
+    (product: Product) => {
+      const ids = product.equipmentIds ?? []
+      if (ids.length === 0) return "-"
+      const names = ids
+        .map((id) => equipmentNameMap.get(id))
+        .filter((name): name is string => Boolean(name && name.trim().length > 0))
+      if (names.length === 0) return "-"
+      return Array.from(new Set(names)).join(" / ")
+    },
+    [equipmentNameMap]
+  )
+
   const handleExportProductsCsv = useCallback(() => {
     if (typeof window === "undefined") return
     const headers = [
@@ -33,6 +76,8 @@ export default function Home() {
       "大カテゴリ",
       "中カテゴリ",
       "小カテゴリ",
+      "配送方法",
+      "使用設備",
       "販売価格",
       "原価",
       "利益",
@@ -51,11 +96,15 @@ export default function Home() {
         .filter((variant) => variant.label?.trim())
         .map((variant) => `${variant.label}: ${variant.quantity}`)
         .join(" / ")
+      const shippingText = getShippingText(product.id)
+      const equipmentText = getEquipmentText(product)
       return [
         product.name,
         largeName,
         mediumName,
         smallName,
+        shippingText,
+        equipmentText,
         salePrice.toString(),
         unitCost.toString(),
         profit.toString(),
@@ -82,7 +131,7 @@ export default function Home() {
     link.click()
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
-  }, [data, productCostMap])
+  }, [data, getEquipmentText, getShippingText, productCostMap])
 
   if (!hydrated) {
     return (
@@ -157,11 +206,13 @@ export default function Home() {
                     <TableRow>
                       <TableHead>商品</TableHead>
                       <TableHead>カテゴリ</TableHead>
-                      <TableHead>オプション/個数</TableHead>
-                      <TableHead>販売価格</TableHead>
-                      <TableHead>利益</TableHead>
-                      <TableHead>備考</TableHead>
-                      <TableHead />
+                    <TableHead>オプション/個数</TableHead>
+                    <TableHead>配送方法</TableHead>
+                    <TableHead>使用設備</TableHead>
+                    <TableHead>販売価格</TableHead>
+                    <TableHead>利益</TableHead>
+                    <TableHead>備考</TableHead>
+                    <TableHead />
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -182,12 +233,16 @@ export default function Home() {
                       const unitCost = productCostMap.get(product.id)?.total ?? 0
                       const salePrice = Number(product.salePrice ?? 0)
                       const profit = salePrice - unitCost
+                      const shippingText = getShippingText(product.id)
+                      const equipmentText = getEquipmentText(product)
 
                       return (
                         <TableRow key={product.id}>
                           <TableCell className="font-medium">{product.name}</TableCell>
                           <TableCell>{categoryPath}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{optionText}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{shippingText}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{equipmentText}</TableCell>
                           <TableCell>{formatCurrency(salePrice)}</TableCell>
                           <TableCell className={profit >= 0 ? "text-green-600" : "text-red-600"}>
                             {formatCurrency(profit)}
