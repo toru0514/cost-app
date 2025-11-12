@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -25,6 +25,64 @@ export default function Home() {
     })
     return map
   }, [data])
+
+  const handleExportProductsCsv = useCallback(() => {
+    if (typeof window === "undefined") return
+    const headers = [
+      "商品名",
+      "大カテゴリ",
+      "中カテゴリ",
+      "小カテゴリ",
+      "販売価格",
+      "原価",
+      "利益",
+      "オプション",
+      "備考",
+    ]
+
+    const rows = data.products.map((product) => {
+      const largeName = data.categories.large.find((c) => c.id === product.categoryLargeId)?.name ?? ""
+      const mediumName = data.categories.medium.find((c) => c.id === product.categoryMediumId)?.name ?? ""
+      const smallName = data.categories.small.find((c) => c.id === product.categorySmallId)?.name ?? ""
+      const unitCost = productCostMap.get(product.id)?.total ?? 0
+      const salePrice = Number(product.salePrice ?? 0)
+      const profit = salePrice - unitCost
+      const optionText = (product.sizeVariants ?? [])
+        .filter((variant) => variant.label?.trim())
+        .map((variant) => `${variant.label}: ${variant.quantity}`)
+        .join(" / ")
+      return [
+        product.name,
+        largeName,
+        mediumName,
+        smallName,
+        salePrice.toString(),
+        unitCost.toString(),
+        profit.toString(),
+        optionText,
+        product.notes ?? "",
+      ]
+    })
+
+    const escape = (value: string) => {
+      const normalized = value.replace(/\r?\n|\r/g, " ").replace(/"/g, '""')
+      return `"${normalized}"`
+    }
+
+    const csvContent = [headers, ...rows]
+      .map((row) => row.map((cell) => escape(cell ?? "")).join(","))
+      .join("\n")
+
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `products-${new Date().toISOString().slice(0, 10)}.csv`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+  }, [data, productCostMap])
 
   if (!hydrated) {
     return (
@@ -81,9 +139,14 @@ export default function Home() {
 
         <TabsContent value="list" className="space-y-6">
           <Card>
-            <CardHeader>
-              <CardTitle>商品一覧</CardTitle>
-              <CardDescription>登録済み商品のカテゴリ・オプション・備考を確認</CardDescription>
+            <CardHeader className="gap-3 md:flex md:flex-row md:items-center md:justify-between">
+              <div>
+                <CardTitle>商品一覧</CardTitle>
+                <CardDescription>登録済み商品のカテゴリ・オプション・備考を確認</CardDescription>
+              </div>
+              <Button type="button" variant="outline" onClick={handleExportProductsCsv} disabled={data.products.length === 0}>
+                CSVエクスポート
+              </Button>
             </CardHeader>
             <CardContent className="space-y-3">
               {data.products.length === 0 ? (
