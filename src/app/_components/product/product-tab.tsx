@@ -398,15 +398,17 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
     const mapOrFallback = <T,>(entries: T[], fallback: () => T) => (entries.length > 0 ? entries : [fallback()])
 
+    const clonedVariants =
+      product.sizeVariants && product.sizeVariants.length > 0
+        ? product.sizeVariants.map((variant) => ({ label: variant.label, quantity: variant.quantity }))
+        : [{ label: "", quantity: 0 }]
+
     setProductForm({
       name: adjustedName,
       categoryLargeId: product.categoryLargeId ?? "",
       categoryMediumId: product.categoryMediumId ?? "",
       categorySmallId: product.categorySmallId ?? "",
-      sizeVariants:
-        product.sizeVariants && product.sizeVariants.length > 0
-          ? product.sizeVariants
-          : [{ label: "", quantity: 0 }],
+      sizeVariants: clonedVariants,
       baseManHours: product.baseManHours,
       defaultElectricityCost: product.defaultElectricityCost,
       salePrice: product.salePrice ?? 0,
@@ -631,7 +633,9 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                       const material = data.materials.find((item) => item.id === draft.materialId)
                       if (!material) return
                       const usageRatio = Math.max(Number(draft.usageRatio) || 0, 0)
-                      const costPerUnit = (material.unitCost || 0) * (usageRatio / 100)
+                      const batchSize = Math.max(material.unitsPerBatch ?? 1, 1)
+                      const baseUnitCost = (material.unitCost || 0) / batchSize
+                      const costPerUnit = baseUnitCost * (usageRatio / 100)
                       addMaterialCostEntry({
                         productId: targetProductId,
                         materialId: draft.materialId,
@@ -647,11 +651,13 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                     .forEach((draft) => {
                       const packagingItem = data.packagingItems.find((item) => item.id === draft.packagingItemId)
                       if (!packagingItem) return
+                      const batchSize = Math.max(packagingItem.unitsPerBatch ?? 1, 1)
+                      const baseUnitCost = (packagingItem.unitCost || 0) / batchSize
                       addPackagingCostEntry({
                         productId: targetProductId,
                         packagingItemId: draft.packagingItemId,
                         quantity: Number(draft.quantity) || 0,
-                        costPerUnit: packagingItem.unitCost || 0,
+                        costPerUnit: baseUnitCost,
                         currency: packagingItem.currency,
                       })
                     })

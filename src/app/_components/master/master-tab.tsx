@@ -54,6 +54,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
     sizeDescription: "",
     currency: "JPY",
     unitCost: 0,
+    unitsPerBatch: 1,
     supplier: "",
     note: "",
   })
@@ -64,6 +65,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
     sizeDescription: "",
     currency: "JPY",
     unitCost: 0,
+    unitsPerBatch: 1,
     note: "",
   })
 
@@ -346,6 +348,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                   sizeDescription: "",
                   currency: "JPY",
                   unitCost: 0,
+                  unitsPerBatch: 1,
                   supplier: "",
                   note: "",
                 })
@@ -383,6 +386,17 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                     </SelectContent>
                   </Select>
                 </div>
+              </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">セット数量（例: 100枚セットなら100）</Label>
+                <NumberInput
+                  placeholder="例: 100"
+                  value={materialForm.unitsPerBatch ?? 1}
+                  min={1}
+                  onValueChange={(next) =>
+                    setMaterialForm((prev) => ({ ...prev, unitsPerBatch: next === "" ? 1 : Number(next) }))
+                  }
+                />
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">基準単価</Label>
@@ -426,7 +440,8 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
               items={data.materials.map((material) => {
                 const supplier = material.supplier ? ` / ${material.supplier}` : ""
                 const unitCostText = formatCurrency(material.unitCost, material.currency)
-                return `${material.name} / ${unitCostText} / ${material.unit} / ${material.sizeDescription}${supplier}`
+                const batchText = material.unitsPerBatch && material.unitsPerBatch > 1 ? `${material.unitsPerBatch}単位/セット` : "1単位/セット"
+                return `${material.name} / ${unitCostText} / ${material.unit} / ${batchText} / ${material.sizeDescription}${supplier}`
               })}
             />
           </CardContent>
@@ -452,6 +467,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                   sizeDescription: "",
                   currency: "JPY",
                   unitCost: 0,
+                  unitsPerBatch: 1,
                   note: "",
                 })
               }}
@@ -513,6 +529,17 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                   onChange={(event) => setPackagingForm((prev) => ({ ...prev, note: event.target.value }))}
                 />
               </div>
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">セット数量（例: 100枚セットなら100）</Label>
+                <NumberInput
+                  placeholder="例: 100"
+                  value={packagingForm.unitsPerBatch ?? 1}
+                  min={1}
+                  onValueChange={(next) =>
+                    setPackagingForm((prev) => ({ ...prev, unitsPerBatch: next === "" ? 1 : Number(next) }))
+                  }
+                />
+              </div>
               <Button type="submit" size="sm">
                 追加
               </Button>
@@ -522,7 +549,8 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
               title="登録済み 梱包材"
               items={data.packagingItems.map((item) => {
                 const unitCostText = formatCurrency(item.unitCost, item.currency)
-                return `${item.name} / ${unitCostText} / ${item.unit} / ${item.sizeDescription}`
+                const batchText = item.unitsPerBatch && item.unitsPerBatch > 1 ? `${item.unitsPerBatch}単位/セット` : "1単位/セット"
+                return `${item.name} / ${unitCostText} / ${item.unit} / ${batchText} / ${item.sizeDescription}`
               })}
             />
           </CardContent>
@@ -1041,6 +1069,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
     sizeDescription: "",
     currency: "JPY",
     unitCost: 0,
+    unitsPerBatch: 1,
     supplier: "",
     note: "",
   })
@@ -1051,6 +1080,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
     sizeDescription: "",
     currency: "JPY",
     unitCost: 0,
+    unitsPerBatch: 1,
     note: "",
   })
   const [editingShipping, setEditingShipping] = useState<Omit<ShippingMethod, "id"> & { id: string | null }>({
@@ -1086,9 +1116,9 @@ function MasterListView({ data, actions }: MasterTabProps) {
   const resetMedium = () => setEditingMedium({ id: null, name: "", description: "", largeId: "" })
   const resetSmall = () => setEditingSmall({ id: null, name: "", description: "", mediumId: "" })
   const resetMaterial = () =>
-    setEditingMaterial({ id: null, name: "", unit: "kg", sizeDescription: "", currency: "JPY", unitCost: 0, supplier: "", note: "" })
+    setEditingMaterial({ id: null, name: "", unit: "kg", sizeDescription: "", currency: "JPY", unitCost: 0, unitsPerBatch: 1, supplier: "", note: "" })
   const resetPackaging = () =>
-    setEditingPackaging({ id: null, name: "", unit: "set", sizeDescription: "", currency: "JPY", unitCost: 0, note: "" })
+    setEditingPackaging({ id: null, name: "", unit: "set", sizeDescription: "", currency: "JPY", unitCost: 0, unitsPerBatch: 1, note: "" })
   const resetShipping = () => setEditingShipping({ id: null, name: "", description: "", unitCost: 0, currency: "JPY", note: "" })
   const resetLabor = () => setEditingLabor({ id: null, name: "", hourlyRate: 1800, currency: "JPY", note: "" })
   const resetEquipment = () =>
@@ -1235,6 +1265,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
       sizeDescription: material.sizeDescription,
       currency: material.currency,
       unitCost: material.unitCost,
+      unitsPerBatch: material.unitsPerBatch,
       supplier: material.supplier,
       note: material.note,
     })
@@ -1246,6 +1277,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
       sizeDescription: material.sizeDescription,
       currency: material.currency,
       unitCost: material.unitCost,
+      unitsPerBatch: material.unitsPerBatch ?? 1,
       supplier: material.supplier ?? "",
       note: material.note ?? "",
     })
@@ -1282,6 +1314,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
       sizeDescription: item.sizeDescription,
       currency: item.currency,
       unitCost: item.unitCost,
+      unitsPerBatch: item.unitsPerBatch,
       note: item.note,
     })
     toast.success("梱包材をコピーしました", { description: `「${name}」を作成しました。` })
@@ -1292,6 +1325,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
       sizeDescription: item.sizeDescription,
       currency: item.currency,
       unitCost: item.unitCost,
+      unitsPerBatch: item.unitsPerBatch ?? 1,
       note: item.note ?? "",
     })
   }
@@ -1739,9 +1773,10 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     <TableHead>名称</TableHead>
                     <TableHead>単位</TableHead>
                     <TableHead>単価</TableHead>
+                    <TableHead>セット数</TableHead>
                     <TableHead>仕入先</TableHead>
                     <TableHead>備考</TableHead>
-                    <TableHead className="w-36 text-right"><span className="sr-only">操作</span></TableHead>
+                    <TableHead className="w-48 text-right"><span className="sr-only">操作</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1798,6 +1833,19 @@ function MasterListView({ data, actions }: MasterTabProps) {
                         </TableCell>
                         <TableCell>
                           {isEditing ? (
+                            <NumberInput
+                              value={editingMaterial.unitsPerBatch ?? 1}
+                              min={1}
+                              onValueChange={(next) =>
+                                setEditingMaterial((prev) => ({ ...prev, unitsPerBatch: next === "" ? 1 : Number(next) }))
+                              }
+                            />
+                          ) : (
+                            material.unitsPerBatch && material.unitsPerBatch > 0 ? `${material.unitsPerBatch}` : "1"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
                             <Input
                               value={editingMaterial.supplier}
                               onChange={(event) => setEditingMaterial((prev) => ({ ...prev, supplier: event.target.value }))}
@@ -1833,6 +1881,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
                                     sizeDescription: material.sizeDescription,
                                     currency: material.currency,
                                     unitCost: material.unitCost,
+                                    unitsPerBatch: material.unitsPerBatch ?? 1,
                                     supplier: material.supplier ?? "",
                                     note: material.note ?? "",
                                   })
@@ -1869,9 +1918,10 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     <TableHead>名称</TableHead>
                     <TableHead>単位</TableHead>
                     <TableHead>単価</TableHead>
+                    <TableHead>セット数</TableHead>
                     <TableHead>仕様</TableHead>
                     <TableHead>備考</TableHead>
-                    <TableHead className="w-36 text-right"><span className="sr-only">操作</span></TableHead>
+                    <TableHead className="w-48 text-right"><span className="sr-only">操作</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1928,6 +1978,19 @@ function MasterListView({ data, actions }: MasterTabProps) {
                         </TableCell>
                         <TableCell>
                           {isEditing ? (
+                            <NumberInput
+                              value={editingPackaging.unitsPerBatch ?? 1}
+                              min={1}
+                              onValueChange={(next) =>
+                                setEditingPackaging((prev) => ({ ...prev, unitsPerBatch: next === "" ? 1 : Number(next) }))
+                              }
+                            />
+                          ) : (
+                            item.unitsPerBatch && item.unitsPerBatch > 0 ? `${item.unitsPerBatch}` : "1"
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
                             <Input
                               value={editingPackaging.sizeDescription}
                               onChange={(event) => setEditingPackaging((prev) => ({ ...prev, sizeDescription: event.target.value }))}
@@ -1963,6 +2026,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
                                     sizeDescription: item.sizeDescription,
                                     currency: item.currency,
                                     unitCost: item.unitCost,
+                                    unitsPerBatch: item.unitsPerBatch ?? 1,
                                     note: item.note ?? "",
                                   })
                                 }

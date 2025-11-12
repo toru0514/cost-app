@@ -25,6 +25,7 @@ export type Material = {
   sizeDescription: string
   currency: string
   unitCost: number
+  unitsPerBatch?: number
   supplier?: string
   note?: string
 }
@@ -36,6 +37,7 @@ export type PackagingItem = {
   sizeDescription: string
   unitCost: number
   currency: string
+  unitsPerBatch?: number
   note?: string
 }
 
@@ -238,6 +240,7 @@ export const sampleAppData: AppData = {
       sizeDescription: "50m ロール",
       currency: "JPY",
       unitCost: 320,
+      unitsPerBatch: 1,
       supplier: "FabricMart",
       note: "8号帆布",
     },
@@ -248,6 +251,7 @@ export const sampleAppData: AppData = {
       sizeDescription: "10㎡ ロット",
       currency: "JPY",
       unitCost: 450,
+      unitsPerBatch: 1,
       supplier: "LeatherWorks",
       note: "タンニンなめし",
     },
@@ -260,6 +264,7 @@ export const sampleAppData: AppData = {
       sizeDescription: "320x250x120",
       unitCost: 80,
       currency: "JPY",
+      unitsPerBatch: 1,
       note: "クラフト",
     },
     {
@@ -269,6 +274,7 @@ export const sampleAppData: AppData = {
       sizeDescription: "ロール",
       unitCost: 30,
       currency: "JPY",
+      unitsPerBatch: 1,
       note: "エアキャップ",
     },
   ],
