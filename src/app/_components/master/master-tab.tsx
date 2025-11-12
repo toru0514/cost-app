@@ -96,7 +96,9 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
     name: "",
     variants: [{ label: "", quantity: 0 }],
   })
-  const [simulationInputs, setSimulationInputs] = useState<Record<string, { quantity: number; salePrice: number }>>({})
+  const [simulationInputs, setSimulationInputs] = useState<
+    Record<string, { quantity: number; salePrice: number; utilizationRatio: number }>
+  >({})
   const integerFormatter = useMemo(() => new Intl.NumberFormat("ja-JP", { maximumFractionDigits: 0 }), [])
   const formatInteger = (value: number) => integerFormatter.format(Math.round(value))
 
@@ -892,16 +894,28 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
             <p className="text-sm text-muted-foreground">設備が登録されると試算できます。</p>
           ) : (
             equipmentSimulationData.map((info) => {
-              const { equipment, annualCost, annualAllocation, currentAnnualQuantity, currentUnitCost, relatedProducts, baseSalePriceAverage } = info
+              const {
+                equipment,
+                annualCost,
+                annualAllocation,
+                currentAnnualQuantity,
+                currentUnitCost,
+                relatedProducts,
+                baseSalePriceAverage,
+              } = info
               const defaultSimulation = {
                 quantity: Math.max(Math.round(currentAnnualQuantity) || 1000, 1),
                 salePrice: Math.max(Math.round(baseSalePriceAverage) || 10000, 1),
+                utilizationRatio: 100,
               }
               const simulationValue = simulationInputs[equipment.id] ?? defaultSimulation
               const simQuantity = Math.max(simulationValue.quantity || 0, 0)
               const simSalePrice = Math.max(simulationValue.salePrice || 0, 0)
+              const simUtilizationRatioRaw = simulationValue.utilizationRatio ?? 0
+              const simUtilizationRatio = Math.min(Math.max(simUtilizationRatioRaw, 0), 100)
               const simUnitAllocation = annualCost / Math.max(simQuantity || 1, 1)
-              const simAnnualMargin = (simSalePrice - simUnitAllocation) * simQuantity
+              const effectiveSalePrice = (simSalePrice * simUtilizationRatio) / 100
+              const simAnnualMargin = (effectiveSalePrice - simUnitAllocation) * simQuantity
               const annualRecoveryRate = equipment.acquisitionCost > 0 ? (simAnnualMargin / equipment.acquisitionCost) * 100 : 0
               const paybackYears = simAnnualMargin > 0 ? equipment.acquisitionCost / simAnnualMargin : Infinity
               const paybackText = Number.isFinite(paybackYears) ? `${paybackYears.toFixed(1)}年` : "未達"
@@ -910,7 +924,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                 : "対象商品なし"
 
               const updateSimulationValue = (
-                patch: Partial<{ quantity: number; salePrice: number }>
+                patch: Partial<{ quantity: number; salePrice: number; utilizationRatio: number }>
               ) => {
                 setSimulationInputs((prev) => {
                   const current = prev[equipment.id] ?? defaultSimulation
@@ -961,10 +975,23 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                           min={0}
                         />
                       </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">設備利用割合 (%)</Label>
+                        <NumberInput
+                          value={simulationValue.utilizationRatio}
+                          onValueChange={(next) =>
+                            updateSimulationValue({ utilizationRatio: next === "" ? 0 : Number(next) })
+                          }
+                          min={0}
+                          max={100}
+                        />
+                      </div>
                     </div>
                     <div className="space-y-1 rounded-md border p-3 text-sm">
                       <p className="font-semibold">シミュレーション結果</p>
                       <p>設備単価: {formatCurrency(simUnitAllocation, equipment.currency)}</p>
+                      <p>有効販売価格: {formatCurrency(effectiveSalePrice, equipment.currency)}</p>
+                      <p>利用割合: {simUtilizationRatio.toFixed(1)}%</p>
                       <p>年間粗利: {formatCurrency(simAnnualMargin, equipment.currency)}</p>
                       <p>年間回収率: {simAnnualMargin > 0 && equipment.acquisitionCost > 0 ? `${annualRecoveryRate.toFixed(1)}%` : "-"}</p>
                       <p>回収見込み: {paybackText}</p>
