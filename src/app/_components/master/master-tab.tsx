@@ -23,6 +23,7 @@ import type {
   LaborRole,
   Material,
   PackagingItem,
+  ProductSizeVariant,
   ShippingMethod,
 } from "@/lib/types"
 import { RegisteredList } from "../shared/ui"
@@ -87,6 +88,34 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
     note: "",
   })
 
+  const [optionPresetForm, setOptionPresetForm] = useState({
+    name: "",
+    variants: [{ label: "", quantity: 0 }],
+  })
+
+  const addOptionPresetVariant = () => {
+    setOptionPresetForm((prev) => ({
+      ...prev,
+      variants: [...prev.variants, { label: "", quantity: 0 }],
+    }))
+  }
+
+  const updateOptionPresetVariant = (index: number, patch: Partial<{ label: string; quantity: number }>) => {
+    setOptionPresetForm((prev) => ({
+      ...prev,
+      variants: prev.variants.map((variant, i) =>
+        i === index ? { ...variant, ...patch } : variant
+      ),
+    }))
+  }
+
+  const removeOptionPresetVariant = (index: number) => {
+    setOptionPresetForm((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((_, i) => i !== index),
+    }))
+  }
+
   const {
     addLargeCategory,
     addMediumCategory,
@@ -96,6 +125,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
     addLaborRole,
     addEquipment,
     addShippingMethod,
+    addOptionPreset,
   } = actions
 
   const largeOptions = data.categories.large
@@ -543,6 +573,103 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
             />
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>オプションプリセット</CardTitle>
+            <CardDescription>S/M/L など定型セットを登録し、商品登録で一括インポートできます。</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <form
+              className="space-y-3"
+              onSubmit={(event) => {
+                event.preventDefault()
+                const name = optionPresetForm.name.trim()
+                const variants = optionPresetForm.variants
+                  .map((variant) => ({
+                    label: variant.label.trim(),
+                    quantity: Number(variant.quantity) || 0,
+                  }))
+                  .filter((variant) => variant.label.length > 0)
+                if (!name || variants.length === 0) return
+                addOptionPreset({ name, variants })
+                toast.success("オプションプリセットを追加しました", { description: `「${name}」を登録しました。` })
+                setOptionPresetForm({ name: "", variants: [{ label: "", quantity: 0 }] })
+              }}
+            >
+              <div className="space-y-1">
+                <Label className="text-xs text-muted-foreground">プリセット名</Label>
+                <Input
+                  placeholder="例: S/M/L 標準"
+                  value={optionPresetForm.name}
+                  onChange={(event) => setOptionPresetForm((prev) => ({ ...prev, name: event.target.value }))}
+                />
+              </div>
+              <div className="space-y-2">
+                <div className="flex items-center justify-between">
+                  <Label className="text-xs text-muted-foreground">含めるオプション</Label>
+                  <Button type="button" variant="outline" size="sm" onClick={addOptionPresetVariant}>
+                    行を追加
+                  </Button>
+                </div>
+                {optionPresetForm.variants.length === 0 ? (
+                  <p className="text-xs text-muted-foreground">オプションを追加してください。</p>
+                ) : (
+                  <div className="space-y-2">
+                    {optionPresetForm.variants.map((variant, index) => (
+                      <div key={`preset-variant-${index}`} className="flex flex-wrap gap-2 rounded-md border p-3">
+                        <div className="min-w-[140px] flex-1 space-y-1">
+                          <Label className="text-xs text-muted-foreground">名称</Label>
+                          <Input
+                            placeholder="例: S"
+                            value={variant.label}
+                            onChange={(event) =>
+                              updateOptionPresetVariant(index, { label: event.target.value })
+                            }
+                          />
+                        </div>
+                        <div className="w-32 min-w-[120px] space-y-1">
+                          <Label className="text-xs text-muted-foreground">数量</Label>
+                          <NumberInput
+                            placeholder="例: 500"
+                            value={variant.quantity}
+                            onValueChange={(next) =>
+                              updateOptionPresetVariant(index, { quantity: next === "" ? 0 : next })
+                            }
+                          />
+                        </div>
+                        <div className="flex items-end">
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removeOptionPresetVariant(index)}
+                            disabled={optionPresetForm.variants.length === 1}
+                          >
+                            削除
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+              <Button type="submit" size="sm">
+                プリセットを登録
+              </Button>
+            </form>
+
+            <RegisteredList
+              title="登録済み プリセット"
+              items={(data.optionPresets ?? []).map((preset) => {
+                const detail = preset.variants
+                  .map((variant) => `${variant.label}(${variant.quantity})`)
+                  .join(" / ") || "-"
+                return `${preset.name}: ${detail}`
+              })}
+            />
+          </CardContent>
+        </Card>
       </div>
 
       <Card>
@@ -731,6 +858,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
     updateShippingMethod,
     updateLaborRole,
     updateEquipment,
+    updateOptionPreset,
   } = actions
 
   const [editingLarge, setEditingLarge] = useState({ id: null as string | null, name: "", description: "" })
@@ -788,6 +916,11 @@ function MasterListView({ data, actions }: MasterTabProps) {
     amortizationYears: 5,
     note: "",
   })
+  const [editingOptionPreset, setEditingOptionPreset] = useState<{ id: string | null; name: string; variants: ProductSizeVariant[] }>({
+    id: null,
+    name: "",
+    variants: [{ label: "", quantity: 0 }],
+  })
 
   const resetLarge = () => setEditingLarge({ id: null, name: "", description: "" })
   const resetMedium = () => setEditingMedium({ id: null, name: "", description: "", largeId: "" })
@@ -800,6 +933,31 @@ function MasterListView({ data, actions }: MasterTabProps) {
   const resetLabor = () => setEditingLabor({ id: null, name: "", hourlyRate: 1800, currency: "JPY", note: "" })
   const resetEquipment = () =>
     setEditingEquipment({ id: null, name: "", acquisitionCost: 0, currency: "JPY", amortizationYears: 5, note: "" })
+  const resetOptionPreset = () =>
+    setEditingOptionPreset({ id: null, name: "", variants: [{ label: "", quantity: 0 }] })
+
+  const addEditingOptionPresetVariant = () => {
+    setEditingOptionPreset((prev) => ({
+      ...prev,
+      variants: [...prev.variants, { label: "", quantity: 0 }],
+    }))
+  }
+
+  const updateEditingOptionPresetVariant = (index: number, patch: Partial<ProductSizeVariant>) => {
+    setEditingOptionPreset((prev) => ({
+      ...prev,
+      variants: prev.variants.map((variant, variantIndex) =>
+        variantIndex === index ? { ...variant, ...patch } : variant
+      ),
+    }))
+  }
+
+  const removeEditingOptionPresetVariant = (index: number) => {
+    setEditingOptionPreset((prev) => ({
+      ...prev,
+      variants: prev.variants.filter((_, variantIndex) => variantIndex !== index),
+    }))
+  }
 
   const handleLargeSave = () => {
     if (!editingLarge.id) return
@@ -898,6 +1056,19 @@ function MasterListView({ data, actions }: MasterTabProps) {
     resetEquipment()
   }
 
+  const handleOptionPresetSave = () => {
+    const { id } = editingOptionPreset
+    if (!id) return
+    const name = editingOptionPreset.name.trim()
+    const variants = editingOptionPreset.variants
+      .map((variant) => ({ label: variant.label.trim(), quantity: Number(variant.quantity) || 0 }))
+      .filter((variant) => variant.label.length > 0)
+    if (!name || variants.length === 0) return
+    updateOptionPreset({ id, name, variants })
+    toast.success("オプションプリセットを更新しました", { description: `「${name}」を更新しました。` })
+    resetOptionPreset()
+  }
+
   const renderActionButtons = (onSave: () => void, onCancel: () => void) => (
     <div className="flex gap-2">
       <Button type="button" size="sm" onClick={onSave}>
@@ -927,7 +1098,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
                   <TableRow>
                     <TableHead>名称</TableHead>
                     <TableHead>概要</TableHead>
-                    <TableHead className="w-36">操作</TableHead>
+                    <TableHead className="w-36 text-right"><span className="sr-only">操作</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -983,7 +1154,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     <TableHead>名称</TableHead>
                     <TableHead>親カテゴリ</TableHead>
                     <TableHead>概要</TableHead>
-                    <TableHead className="w-36">操作</TableHead>
+                    <TableHead className="w-36 text-right"><span className="sr-only">操作</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1073,7 +1244,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     <TableHead>名称</TableHead>
                     <TableHead>親カテゴリ</TableHead>
                     <TableHead>概要</TableHead>
-                    <TableHead className="w-36">操作</TableHead>
+                    <TableHead className="w-36 text-right"><span className="sr-only">操作</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1171,7 +1342,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     <TableHead>単価</TableHead>
                     <TableHead>仕入先</TableHead>
                     <TableHead>備考</TableHead>
-                    <TableHead className="w-36">操作</TableHead>
+                    <TableHead className="w-36 text-right"><span className="sr-only">操作</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1296,7 +1467,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     <TableHead>単価</TableHead>
                     <TableHead>仕様</TableHead>
                     <TableHead>備考</TableHead>
-                    <TableHead className="w-36">操作</TableHead>
+                    <TableHead className="w-36 text-right"><span className="sr-only">操作</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1403,6 +1574,119 @@ function MasterListView({ data, actions }: MasterTabProps) {
             )}
           </CardContent>
         </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>オプションプリセット一覧</CardTitle>
+            <CardDescription>登録済みプリセットの名称や内容を編集できます。</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {(data.optionPresets ?? []).length === 0 ? (
+              <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>名称</TableHead>
+                    <TableHead>内容</TableHead>
+                    <TableHead className="w-40 text-right"><span className="sr-only">操作</span></TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {(data.optionPresets ?? []).map((preset) => {
+                    const isEditing = editingOptionPreset.id === preset.id
+                    const detailText =
+                      preset.variants.length > 0
+                        ? preset.variants.map((variant) => `${variant.label}(${variant.quantity})`).join(" / ")
+                        : "-"
+                    return (
+                      <TableRow key={preset.id}>
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              value={editingOptionPreset.name}
+                              onChange={(event) =>
+                                setEditingOptionPreset((prev) => ({ ...prev, name: event.target.value }))
+                              }
+                            />
+                          ) : (
+                            preset.name
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <div className="space-y-2">
+                              {editingOptionPreset.variants.map((variant, index) => (
+                                <div key={`editing-preset-${index}`} className="flex flex-wrap items-center gap-2">
+                                  <Input
+                                    className="min-w-[120px] flex-1"
+                                    placeholder="例: S"
+                                    value={variant.label}
+                                    onChange={(event) =>
+                                      updateEditingOptionPresetVariant(index, { label: event.target.value })
+                                    }
+                                  />
+                                  <NumberInput
+                                    value={variant.quantity}
+                                    onValueChange={(next) =>
+                                      updateEditingOptionPresetVariant(index, {
+                                        quantity: next === "" ? 0 : next,
+                                      })
+                                    }
+                                  />
+                                  <Button
+                                    type="button"
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={() => removeEditingOptionPresetVariant(index)}
+                                    disabled={editingOptionPreset.variants.length === 1}
+                                  >
+                                    削除
+                                  </Button>
+                                </div>
+                              ))}
+                              <Button type="button" variant="outline" size="sm" onClick={addEditingOptionPresetVariant}>
+                                行を追加
+                              </Button>
+                            </div>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">{detailText}</span>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isEditing
+                            ? renderActionButtons(handleOptionPresetSave, resetOptionPreset)
+                            : (
+                                <Button
+                                  type="button"
+                                  size="sm"
+                                  variant="outline"
+                                  onClick={() =>
+                                    setEditingOptionPreset({
+                                      id: preset.id,
+                                      name: preset.name,
+                                      variants:
+                                        preset.variants.length > 0
+                                          ? preset.variants.map((variant) => ({
+                                              label: variant.label,
+                                              quantity: variant.quantity,
+                                            }))
+                                          : [{ label: "", quantity: 0 }],
+                                    })
+                                  }
+                                >
+                                  編集
+                                </Button>
+                              )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
@@ -1421,7 +1705,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     <TableHead>説明</TableHead>
                     <TableHead>単価</TableHead>
                     <TableHead>備考</TableHead>
-                    <TableHead className="w-36">操作</TableHead>
+                    <TableHead className="w-36 text-right"><span className="sr-only">操作</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1532,7 +1816,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     <TableHead>作業カテゴリ</TableHead>
                     <TableHead>時給</TableHead>
                     <TableHead>備考</TableHead>
-                    <TableHead className="w-36">操作</TableHead>
+                    <TableHead className="w-36 text-right"><span className="sr-only">操作</span></TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -1634,7 +1918,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
                   <TableHead>取得額</TableHead>
                   <TableHead>償却年数</TableHead>
                   <TableHead>備考</TableHead>
-                  <TableHead className="w-36">操作</TableHead>
+                  <TableHead className="w-36 text-right"><span className="sr-only">操作</span></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

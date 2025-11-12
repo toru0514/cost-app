@@ -90,6 +90,12 @@ export type Product = {
   equipmentIds: string[]
 }
 
+export type OptionPreset = {
+  id: string
+  name: string
+  variants: ProductSizeVariant[]
+}
+
 export type MaterialCostEntry = {
   id: string
   productId: string
@@ -171,6 +177,7 @@ export type AppData = {
   shippingMethods: ShippingMethod[]
   laborRoles: LaborRole[]
   equipments: Equipment[]
+  optionPresets: OptionPreset[]
   products: Product[]
   costEntries: {
     materials: MaterialCostEntry[]
@@ -195,6 +202,7 @@ export const emptyAppData: AppData = {
   shippingMethods: [],
   laborRoles: [],
   equipments: [],
+  optionPresets: [],
   products: [],
   costEntries: {
     materials: [],
@@ -302,6 +310,17 @@ export const sampleAppData: AppData = {
       currency: "JPY",
       amortizationYears: 5,
       note: "自動裁断",
+    },
+  ],
+  optionPresets: [
+    {
+      id: "opt-pre-1",
+      name: "S/M/L 標準",
+      variants: [
+        { label: "S", quantity: 500 },
+        { label: "M", quantity: 750 },
+        { label: "L", quantity: 250 },
+      ],
     },
   ],
   products: [

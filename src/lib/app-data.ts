@@ -21,6 +21,7 @@ import {
   PackagingCostEntry,
   PackagingItem,
   Product,
+  OptionPreset,
   ShippingMethod,
   emptyAppData,
   sampleAppData,
@@ -204,6 +205,34 @@ export function useAppData() {
       ...prev,
       laborRoles: prev.laborRoles.map((role) => (role.id === input.id ? input : role)),
     }))
+  }, [update])
+
+  const addOptionPreset = useCallback(
+    (input: Omit<OptionPreset, "id"> & { id?: string }) => {
+      const { id, ...rest } = input
+      const sanitizedVariants = rest.variants.map((variant) => ({
+        label: variant.label.trim(),
+        quantity: Number(variant.quantity) || 0,
+      }))
+      update((prev) => {
+        const currentPresets = prev.optionPresets ?? []
+        return {
+          ...prev,
+          optionPresets: [...currentPresets, { id: id ?? createId(), name: rest.name, variants: sanitizedVariants }],
+        }
+      })
+    },
+    [update]
+  )
+
+  const updateOptionPreset = useCallback((input: OptionPreset) => {
+    update((prev) => {
+      const currentPresets = prev.optionPresets ?? []
+      return {
+        ...prev,
+        optionPresets: currentPresets.map((preset) => (preset.id === input.id ? input : preset)),
+      }
+    })
   }, [update])
 
   const addEquipment = useCallback(
@@ -405,6 +434,8 @@ export function useAppData() {
       updateShippingMethod,
       addLaborRole,
       updateLaborRole,
+      addOptionPreset,
+      updateOptionPreset,
       addEquipment,
       updateEquipment,
       addProduct,

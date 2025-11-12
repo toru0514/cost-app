@@ -1,6 +1,6 @@
 "use client"
 
-import { Dispatch, SetStateAction } from "react"
+import { Dispatch, SetStateAction, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -21,6 +21,14 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
   const largeOptions = data.categories.large
   const mediumOptions = data.categories.medium.filter((m) => !productForm.categoryLargeId || m.largeId === productForm.categoryLargeId)
   const smallOptions = data.categories.small.filter((s) => !productForm.categoryMediumId || s.mediumId === productForm.categoryMediumId)
+  const optionPresets = data.optionPresets ?? []
+  const [selectedPresetId, setSelectedPresetId] = useState<string>(optionPresets[0]?.id ?? "")
+
+  useEffect(() => {
+    if (!selectedPresetId && optionPresets.length > 0) {
+      setSelectedPresetId(optionPresets[0].id)
+    }
+  }, [optionPresets, selectedPresetId])
 
   const calculateSizeTotal = (variants: Product["sizeVariants"]) =>
     variants.reduce((sum, variant) => sum + (variant.label.trim() ? Number(variant.quantity) || 0 : 0), 0)
@@ -53,6 +61,24 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
 
   const handleRemoveSizeVariant = (index: number) => {
     updateSizeVariants((variants) => variants.filter((_, variantIndex) => variantIndex !== index))
+  }
+
+  const handleApplyOptionPreset = () => {
+    if (!selectedPresetId) return
+    const preset = optionPresets.find((entry) => entry.id === selectedPresetId)
+    if (!preset) return
+    const normalized = preset.variants.length
+      ? preset.variants.map((variant) => ({
+          label: variant.label,
+          quantity: Number(variant.quantity) || 0,
+        }))
+      : [{ label: "", quantity: 0 }]
+    const total = calculateSizeTotal(normalized)
+    setProductForm((prev) => ({
+      ...prev,
+      sizeVariants: normalized,
+      productionLotSize: total > 0 ? total : prev.productionLotSize,
+    }))
   }
 
   return (
@@ -164,6 +190,27 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
         <p className="text-xs text-muted-foreground">
           例: S を 50 個、金具変更を 30 個など、名称ごとの個数を入力してください。
         </p>
+      </div>
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">オプションプリセットを適用</Label>
+        <div className="flex flex-wrap gap-2">
+          <Select value={selectedPresetId} onValueChange={setSelectedPresetId} disabled={!optionPresets.length}>
+            <SelectTrigger className="min-w-[200px]">
+              <SelectValue placeholder="プリセットを選択" />
+            </SelectTrigger>
+            <SelectContent>
+              {optionPresets.map((preset) => (
+                <SelectItem key={preset.id} value={preset.id}>
+                  {preset.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Button type="button" variant="outline" onClick={handleApplyOptionPreset} disabled={!selectedPresetId || !optionPresets.length}>
+            プリセットを適用
+          </Button>
+        </div>
+        <p className="text-xs text-muted-foreground">プリセット適用後は自由に編集できます。</p>
       </div>
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">備考</Label>

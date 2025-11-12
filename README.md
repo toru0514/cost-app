@@ -32,6 +32,7 @@
 - **product_sizes**: `id`, `product_id`, `label`, `notes`, `created_at`, `updated_at`。
 - **product_expected_productions**: `id`, `product_id`, `period_years`, `quantity`, `effective_from`, `effective_to`, `created_at`, `updated_at`（編集履歴を持たせるため時系列管理）。
 - **product_options**: `id`, `product_id`, `name`, `additional_notes`, `created_at`, `updated_at`。
+- **option_presets**: `id`, `name`, `items(json)` → `[{ label, quantity }]` を保持し、商品登録フォームで一括インポートできるようにする。
 - **materials**: `id`, `name`, `unit`, `size_description`, `default_currency`, `supplier`, `notes`, `created_at`, `updated_at`。
 - **material_stocks**: `id`, `material_id`, `supplier`, `lot_name`, `quantity_on_hand`, `unit_cost`, `location`, `note`, `created_at`, `updated_at`。
 - **material_price_logs**: `id`, `material_id`, `purchase_date`, `purchase_place`, `purchase_price`, `lot_size`, `currency`, `exchange_rate`, `size_label`, `created_at`。
@@ -172,7 +173,7 @@ UI → Application Ports → Domain Services → Repository Adapters という�
 - [x] 商品登録のサイズ展開入力でカンマ等の文字列を自由に扱えるようにする。
 - [x] 開発コスト明細にタイトルを追加し、用途別に複数項目を登録できるようにする。
 - [x] 商品一覧に販売価格と利益（販売価格－原価）を表示するカラムを追加し、一覧画面で収益性を即座に把握できるようにする。
-- [ ] オプションのプリセットをマスタ登録し（例: S/M/L など）、商品登録時に一括インポートしてサイズ入力の手間を削減する。
+- [x] オプションのプリセットをマスタ登録し（例: S/M/L など）、商品登録時に一括インポートしてサイズ入力の手間を削減する。
 - [ ] 商品一覧データを CSV としてエクスポートできる機能を実装し、外部分析や共有を容易にする。
 - [ ] 設備導入シミュレーション機能を追加し、配賦額や想定生産数を変えた場合の投資回収を比較検討できるようにする。
 - [ ] ログイン機能を導入し、認証済みユーザーとゲスト（お試し）を切り替えられるようにする。
@@ -248,6 +249,7 @@ UI → Application Ports → Domain Services → Repository Adapters という�
 - **販売価格（1 個あたり）**: まずは JPY ベースで登録し、原価との差分を商品一覧で粗利として表示する。
 - **想定生産量**: 期間（年数）と期間内の生産予定数量をセットで入力（例: 2 年で 10,000 個）。登録後も商品編集画面から更新でき、設備投資・開発コストの配賦に即時反映。
 - **オプション一覧（名称＋個数）**: サイズやカスタムオプションを名称と数量で管理し、ロット内訳や在庫計画に利用。
+- **オプションプリセット**: マスタで登録した S/M/L などの定型セットを一括適用し、サイズ入力の手間を減らす。適用後は個別編集可能。
 - **設備利用設定**: 商品登録時に登録済み設備から複数選択し、各設備の利用割合/年間生産数量を紐づける。変更が必要になった場合は設備管理画面で再配分し、関連商品の配賦を再計算する。
 - **1 個あたりの制作工数**: 基準サイズ・仕様で製造する際の工数（時間）。人件費モジュールの初期値として利用。
 - **登録日**: 商品をシステムへ登録した日付。後続で履歴管理やソートに利用。
