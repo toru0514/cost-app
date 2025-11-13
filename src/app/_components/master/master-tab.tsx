@@ -28,7 +28,7 @@ import type {
   ProductSizeVariant,
   ShippingMethod,
 } from "@/lib/types"
-import { RegisteredList } from "../shared/ui"
+import { FormSection, RegisteredList } from "../shared/ui"
 
 interface MasterTabProps {
   data: AppData
@@ -179,12 +179,12 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
   return (
     <div className="space-y-6">
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>カテゴリマスタ</CardTitle>
-            <CardDescription>大・中・小カテゴリを事前登録し、商品登録時に選択できるようにします。</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
+        <FormSection
+          title="カテゴリマスタ"
+          description="大・中・小カテゴリを事前登録し、商品登録時に選択できるようにします。"
+          defaultOpen
+        >
+          <div className="space-y-4">
             <form
               className="space-y-2"
               onSubmit={(event) => {
@@ -329,15 +329,14 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                 return `${parent} › ${category.name}`
               })}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </FormSection>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>材料マスタ</CardTitle>
-            <CardDescription>名称・単位・サイズ・仕入先まで登録し、材料コスト入力時に再利用します。</CardDescription>
-          </CardHeader>
-      <CardContent className="space-y-2">
+        <FormSection
+          title="材料マスタ"
+          description="名称・単位・サイズ・仕入先まで登録し、材料コスト入力時に再利用します。"
+        >
+      <div className="space-y-2">
         <form
           className="grid gap-2"
           onSubmit={(event) => {
@@ -446,17 +445,16 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                 return `${material.name} / ${unitCostText} / ${material.unit} / ${batchText} / ${material.sizeDescription}${supplier}`
               })}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </FormSection>
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>梱包材マスタ</CardTitle>
-            <CardDescription>段ボールやフィルムなどを登録し、商品登録時に選べるようにします。</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        <FormSection
+          title="梱包材マスタ"
+          description="段ボールやフィルムなどを登録し、商品登録時に選べるようにします。"
+        >
+          <div className="space-y-2">
             <form
               className="grid gap-2"
               onSubmit={(event) => {
@@ -555,15 +553,14 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                 return `${item.name} / ${unitCostText} / ${item.unit} / ${batchText} / ${item.sizeDescription}`
               })}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </FormSection>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>配送方法マスタ</CardTitle>
-            <CardDescription>宅配便・メール便などの配送手段と送料を登録します。</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
+        <FormSection
+          title="配送方法マスタ"
+          description="宅配便・メール便などの配送手段と送料を登録します。"
+        >
+          <div className="space-y-2">
             <form
               className="grid gap-2"
               onSubmit={(event) => {
@@ -643,15 +640,14 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                 return `${method.name} / ${unitCostText}${method.description ? ` / ${method.description}` : ""}`
               })}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </FormSection>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>オプションプリセット</CardTitle>
-            <CardDescription>S/M/L など定型セットを登録し、商品登録で一括インポートできます。</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-3">
+        <FormSection
+          title="オプションプリセット"
+          description="S/M/L など定型セットを登録し、商品登録で一括インポートできます。"
+        >
+          <div className="space-y-3">
             <form
               className="space-y-3"
               onSubmit={(event) => {
@@ -740,16 +736,15 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                 return `${preset.name}: ${detail}`
               })}
             />
-          </CardContent>
-        </Card>
+          </div>
+        </FormSection>
       </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>人件費 / 設備マスタ</CardTitle>
-          <CardDescription>工数と時給、設備投資のベースをまとめて管理します。</CardDescription>
-        </CardHeader>
-        <CardContent className="grid gap-6 md:grid-cols-2">
+      <FormSection
+        title="人件費 / 設備マスタ"
+        description="工数と時給、設備投資のベースをまとめて管理します。"
+      >
+        <div className="grid gap-6 md:grid-cols-2">
           <form
             className="grid gap-2"
             onSubmit={(event) => {
@@ -881,15 +876,14 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
               items={data.equipments.map((equipment) => `${equipment.name} / ${formatCurrency(equipment.acquisitionCost, equipment.currency)} / ${equipment.amortizationYears}年`)}
             />
           </form>
-        </CardContent>
-      </Card>
+        </div>
+      </FormSection>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>設備導入シミュレーション</CardTitle>
-          <CardDescription>年間数量と販売価格を仮入力し、配賦単価と投資回収を比較します。</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <FormSection
+        title="設備導入シミュレーション"
+        description="年間数量と販売価格を仮入力し、配賦単価と投資回収を比較します。"
+      >
+        <div className="space-y-4">
           {equipmentSimulationData.length === 0 ? (
             <p className="text-sm text-muted-foreground">設備が登録されると試算できます。</p>
           ) : (
@@ -1001,8 +995,8 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
               )
             })
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </FormSection>
     </div>
   )
 }

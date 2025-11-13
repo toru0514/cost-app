@@ -1,10 +1,48 @@
 "use client"
 
-import type { ReactNode } from "react"
+import { useState, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+
+export function FormSection({
+  title,
+  description,
+  children,
+  defaultOpen = false,
+  action,
+  className = "",
+}: {
+  title: string
+  description?: string
+  children: ReactNode
+  defaultOpen?: boolean
+  action?: ReactNode
+  className?: string
+}) {
+  const [open, setOpen] = useState(defaultOpen)
+
+  return (
+    <section className={`rounded-lg border bg-card text-card-foreground ${className}`}>
+      <div className="flex flex-wrap items-center gap-3 px-4 py-3">
+        <button
+          type="button"
+          className="flex flex-1 items-center justify-between gap-3 text-left"
+          onClick={() => setOpen((prev) => !prev)}
+        >
+          <div>
+            <p className="font-semibold">{title}</p>
+            {description && <p className="text-sm text-muted-foreground">{description}</p>}
+          </div>
+          <span className="text-xs text-muted-foreground">{open ? "閉じる" : "開く"}</span>
+        </button>
+        {action ? <div className="shrink-0">{action}</div> : null}
+      </div>
+      {open && <div className="border-t p-4 space-y-4">{children}</div>}
+    </section>
+  )
+}
 
 type RegisteredItem = {
   id: string
@@ -19,34 +57,6 @@ export function HintList({ items }: { items: string[] }) {
         <li key={`hint-${index}`}>{item}</li>
       ))}
     </ul>
-  )
-}
-
-export function SectionHeader({
-  title,
-  description,
-  actionLabel,
-  actionDisabled,
-  onAction,
-}: {
-  title: string
-  description: string
-  actionLabel?: string
-  actionDisabled?: boolean
-  onAction?: () => void
-}) {
-  return (
-    <div className="flex flex-wrap items-center justify-between gap-2">
-      <div>
-        <p className="font-medium">{title}</p>
-        <p className="text-sm text-muted-foreground">{description}</p>
-      </div>
-      {actionLabel && onAction && (
-        <Button type="button" variant="outline" size="sm" onClick={onAction} disabled={actionDisabled}>
-          {actionLabel}
-        </Button>
-      )}
-    </div>
   )
 }
 

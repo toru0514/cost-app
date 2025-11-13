@@ -16,7 +16,7 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, Product } from "@/lib/types"
-import { DraftCard, HintList, SectionHeader } from "../shared/ui"
+import { DraftCard, FormSection, HintList } from "../shared/ui"
 import { ProductBasicsSection } from "./product-basics-section"
 
 const createTempId = () =>
@@ -759,12 +759,18 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                 }}
               >
 
-                <ProductBasicsSection
-                  data={data}
-                  productForm={productForm}
-                  setProductForm={setProductForm}
-                  handleToggleEquipment={handleToggleEquipment}
-                />
+                <FormSection
+                  title="商品基本情報"
+                  description="カテゴリ・生産計画・販売価格・備考を設定"
+                  defaultOpen
+                >
+                  <ProductBasicsSection
+                    data={data}
+                    productForm={productForm}
+                    setProductForm={setProductForm}
+                    handleToggleEquipment={handleToggleEquipment}
+                  />
+                </FormSection>
 
                 <div className="space-y-4">
                   <div>
@@ -774,14 +780,22 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                     </p>
                   </div>
 
-                  <div className="space-y-3 rounded-lg border p-4">
-                    <SectionHeader
-                      title="材料費"
-                      description="材料マスタから選択し、使用率だけ入力すれば単価を自動参照"
-                      actionLabel="行を追加"
-                      onAction={() => addDraft(setMaterialDrafts, createMaterialDraft())}
-                      actionDisabled={data.materials.length === 0}
-                    />
+                  <FormSection
+                    title="材料費"
+                    description="材料マスタから選択し、使用率だけ入力すれば単価を自動参照"
+                    defaultOpen
+                    action={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addDraft(setMaterialDrafts, createMaterialDraft())}
+                        disabled={data.materials.length === 0}
+                      >
+                        行を追加
+                      </Button>
+                    }
+                  >
                     <HintList
                       items={[
                         "材料マスタ: 事前登録した素材を選択（単価・通貨はマスタ値を使用）",
@@ -829,16 +843,16 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                               </div>
                               <div className="grid gap-2 md:grid-cols-2">
                                 <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">使用率 (%)</Label>
-                                <NumberInput
-                                  placeholder="例: 75"
-                                  value={draft.usageRatio}
-                                  onValueChange={(next) =>
-                                    updateDraft(setMaterialDrafts, draft.id, {
-                                      usageRatio: next === "" ? 0 : next,
-                                    })
-                                  }
-                                />
+                                  <Label className="text-xs text-muted-foreground">使用率 (%)</Label>
+                                  <NumberInput
+                                    placeholder="例: 75"
+                                    value={draft.usageRatio}
+                                    onValueChange={(next) =>
+                                      updateDraft(setMaterialDrafts, draft.id, {
+                                        usageRatio: next === "" ? 0 : next,
+                                      })
+                                    }
+                                  />
                                 </div>
                                 <div className="space-y-1">
                                   <Label className="text-xs text-muted-foreground">用途 (任意)</Label>
@@ -857,16 +871,24 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                         )
                       })
                     )}
-                  </div>
+                  </FormSection>
 
-                  <div className="space-y-3 rounded-lg border p-4">
-                    <SectionHeader
-                      title="梱包材費"
-                      description="梱包材マスタを選択し、数量だけ入力すれば単価は自動参照"
-                      actionLabel="行を追加"
-                      onAction={() => addDraft(setPackagingDrafts, createPackagingDraft())}
-                      actionDisabled={data.packagingItems.length === 0}
-                    />
+                  <FormSection
+                    title="梱包材費"
+                    description="梱包材マスタを選択し、数量だけ入力すれば単価は自動参照"
+                    defaultOpen
+                    action={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addDraft(setPackagingDrafts, createPackagingDraft())}
+                        disabled={data.packagingItems.length === 0}
+                      >
+                        行を追加
+                      </Button>
+                    }
+                  >
                     <HintList
                       items={[
                         "梱包材マスタ: 箱・袋などを事前登録（単価/通貨含む）",
@@ -925,16 +947,23 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                         )
                       })
                     )}
-                  </div>
+                  </FormSection>
 
-                  <div className="space-y-3 rounded-lg border p-4">
-                    <SectionHeader
-                      title="人件費"
-                      description="作業カテゴリごとに工数と人数を設定"
-                      actionLabel="行を追加"
-                      onAction={() => addDraft(setLaborDrafts, createLaborDraft(Number(productForm.baseManHours) || 0))}
-                      actionDisabled={data.laborRoles.length === 0}
-                    />
+                  <FormSection
+                    title="人件費"
+                    description="作業カテゴリごとに工数と人数を設定"
+                    action={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addDraft(setLaborDrafts, createLaborDraft(Number(productForm.baseManHours) || 0))}
+                        disabled={data.laborRoles.length === 0}
+                      >
+                        行を追加
+                      </Button>
+                    }
+                  >
                     <HintList
                       items={[
                         "作業カテゴリ: 裁断・縫製などの役割",
@@ -1013,15 +1042,22 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                         )
                       })
                     )}
-                  </div>
+                  </FormSection>
 
-                  <div className="space-y-3 rounded-lg border p-4">
-                    <SectionHeader
-                      title="外注費"
-                      description="商品1つあたりの外注コスト"
-                      actionLabel="行を追加"
-                      onAction={() => addDraft(setOutsourcingDrafts, createOutsourcingDraft())}
-                    />
+                  <FormSection
+                    title="外注費"
+                    description="商品1つあたりの外注コスト"
+                    action={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addDraft(setOutsourcingDrafts, createOutsourcingDraft())}
+                      >
+                        行を追加
+                      </Button>
+                    }
+                  >
                     <HintList
                       items={[
                         "外注内容: 作業内容や委託範囲をメモ",
@@ -1075,15 +1111,22 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                         </DraftCard>
                       ))
                     )}
-                  </div>
+                  </FormSection>
 
-                  <div className="space-y-3 rounded-lg border p-4">
-                    <SectionHeader
-                      title="開発コスト"
-                      description="試作工数・材料費・道具費を入力"
-                      actionLabel="行を追加"
-                      onAction={() => addDraft(setDevelopmentDrafts, createDevelopmentDraft())}
-                    />
+                  <FormSection
+                    title="開発コスト"
+                    description="試作工数・材料費・道具費を入力"
+                    action={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addDraft(setDevelopmentDrafts, createDevelopmentDraft())}
+                      >
+                        行を追加
+                      </Button>
+                    }
+                  >
                     <HintList
                       items={[
                         "試作工数コスト: 試作にかかった人件費トータル",
@@ -1154,13 +1197,9 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                         </DraftCard>
                       ))
                     )}
-                  </div>
+                  </FormSection>
 
-                  <div className="space-y-3 rounded-lg border p-4">
-                    <SectionHeader
-                      title="設備配賦"
-                      description="商品で利用する設備の配賦設定"
-                    />
+                  <FormSection title="設備配賦" description="商品で利用する設備の配賦設定">
                     <HintList
                       items={[
                         "利用率: 設備稼働のうち当該商品の占める割合 (0〜1)",
@@ -1215,16 +1254,23 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                         )
                       })
                     )}
-                  </div>
+                  </FormSection>
 
-                  <div className="space-y-3 rounded-lg border p-4">
-                    <SectionHeader
-                      title="物流・配送費"
-                      description="配送方法マスタから選択し、単価は自動適用"
-                      actionLabel="行を追加"
-                      onAction={() => addDraft(setLogisticsDrafts, createLogisticsDraft())}
-                      actionDisabled={shippingMethods.length === 0}
-                    />
+                  <FormSection
+                    title="物流・配送費"
+                    description="配送方法マスタから選択し、単価は自動適用"
+                    action={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addDraft(setLogisticsDrafts, createLogisticsDraft())}
+                        disabled={shippingMethods.length === 0}
+                      >
+                        行を追加
+                      </Button>
+                    }
+                  >
                     <HintList
                       items={[
                         "配送方法マスタ: 事前登録した配送パターンを選択",
@@ -1274,15 +1320,22 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                         )
                       })
                     )}
-                  </div>
+                  </FormSection>
 
-                  <div className="space-y-3 rounded-lg border p-4">
-                    <SectionHeader
-                      title="電気代"
-                      description="1個あたりの電力コスト"
-                      actionLabel="行を追加"
-                      onAction={() => addDraft(setElectricityDrafts, createElectricityDraft())}
-                    />
+                  <FormSection
+                    title="電気代"
+                    description="1個あたりの電力コスト"
+                    action={
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        onClick={() => addDraft(setElectricityDrafts, createElectricityDraft())}
+                      >
+                        行を追加
+                      </Button>
+                    }
+                  >
                     <HintList
                       items={[
                         "単価: 1商品を作る際にかかる電気料金",
@@ -1327,7 +1380,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                         </DraftCard>
                       ))
                     )}
-                  </div>
+                  </FormSection>
                 </div>
 
                 <Button type="submit" className="w-fit">
