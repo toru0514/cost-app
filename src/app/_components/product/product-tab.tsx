@@ -16,7 +16,7 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, Product } from "@/lib/types"
-import { DraftCard, FormSection, HintList } from "../shared/ui"
+import { DraftCard, FieldHint, FormSection, HintList } from "../shared/ui"
 import { ProductBasicsSection } from "./product-basics-section"
 
 const createTempId = () =>
@@ -843,28 +843,30 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                               </div>
                               <div className="grid gap-2 md:grid-cols-2">
                                 <div className="space-y-1">
-                                  <Label className="text-xs text-muted-foreground">使用率 (%)</Label>
-                                  <NumberInput
-                                    placeholder="例: 75"
-                                    value={draft.usageRatio}
-                                    onValueChange={(next) =>
-                                      updateDraft(setMaterialDrafts, draft.id, {
-                                        usageRatio: next === "" ? 0 : next,
-                                      })
-                                    }
-                                  />
-                                </div>
-                                <div className="space-y-1">
-                                  <Label className="text-xs text-muted-foreground">用途 (任意)</Label>
-                                  <Input
-                                    placeholder="例: 本体用"
-                                    value={draft.description}
-                                    onChange={(event) =>
-                                      updateDraft(setMaterialDrafts, draft.id, { description: event.target.value })
-                                    }
-                                  />
-                                </div>
-                              </div>
+                              <Label className="text-xs text-muted-foreground">使用率 (%)</Label>
+                              <NumberInput
+                                placeholder="例: 75"
+                                value={draft.usageRatio}
+                                onValueChange={(next) =>
+                                  updateDraft(setMaterialDrafts, draft.id, {
+                                    usageRatio: next === "" ? 0 : next,
+                                  })
+                                }
+                              />
+                              <FieldHint>仕入れたロットのうち1商品あたりで使う割合。例: 1ロールの25%なら25。</FieldHint>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">用途 (任意)</Label>
+                              <Input
+                                placeholder="例: 本体用"
+                                value={draft.description}
+                                onChange={(event) =>
+                                  updateDraft(setMaterialDrafts, draft.id, { description: event.target.value })
+                                }
+                              />
+                              <FieldHint>どの部位に使うかなど、後で見返せるメモ。</FieldHint>
+                            </div>
+                          </div>
                               <p className="text-xs text-muted-foreground">材料単価: {unitCostLabel}</p>
                             </div>
                           </DraftCard>
@@ -929,19 +931,20 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                                   </SelectContent>
                                 </Select>
                               </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">数量</Label>
-                                <NumberInput
-                                  placeholder="例: 1"
-                                  value={draft.quantity}
-                                  onValueChange={(next) =>
-                                    updateDraft(setPackagingDrafts, draft.id, {
-                                      quantity: next === "" ? 0 : next,
-                                    })
-                                  }
-                                />
-                              </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">数量</Label>
+                              <NumberInput
+                                placeholder="例: 1"
+                                value={draft.quantity}
+                                onValueChange={(next) =>
+                                  updateDraft(setPackagingDrafts, draft.id, {
+                                    quantity: next === "" ? 0 : next,
+                                  })
+                                }
+                              />
+                              <FieldHint>1商品あたりに必要な点数。箱1つなら1、緩衝材を2枚使うなら2。</FieldHint>
                             </div>
+                          </div>
                             <p className="text-xs text-muted-foreground">梱包材単価: {unitCostLabel}</p>
                           </DraftCard>
                         )
@@ -1006,37 +1009,40 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                             </div>
                             <div className="grid gap-2 md:grid-cols-3">
                               <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">工数 (時間)</Label>
-                                <NumberInput
-                                  placeholder="例: 0.5"
-                                  value={draft.hours}
-                                  onValueChange={(next) =>
-                                    updateDraft(setLaborDrafts, draft.id, { hours: next === "" ? 0 : next })
-                                  }
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">人数</Label>
-                                <NumberInput
-                                  placeholder="例: 1"
-                                  value={draft.peopleCount}
-                                  onValueChange={(next) =>
-                                    updateDraft(setLaborDrafts, draft.id, { peopleCount: next === "" ? 0 : next })
-                                  }
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">時給 (任意)</Label>
-                                <NumberInput
-                                  placeholder="例: 2000"
+                              <Label className="text-xs text-muted-foreground">工数 (時間)</Label>
+                              <NumberInput
+                                placeholder="例: 0.5"
+                                value={draft.hours}
+                                onValueChange={(next) =>
+                                  updateDraft(setLaborDrafts, draft.id, { hours: next === "" ? 0 : next })
+                                }
+                              />
+                              <FieldHint>1商品を作る際の作業時間。30分なら0.5のように少数で入力。</FieldHint>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">人数</Label>
+                              <NumberInput
+                                placeholder="例: 1"
+                                value={draft.peopleCount}
+                                onValueChange={(next) =>
+                                  updateDraft(setLaborDrafts, draft.id, { peopleCount: next === "" ? 0 : next })
+                                }
+                              />
+                              <FieldHint>同じ工程を同時に担当する人数（例: 2人で縫製するなら2）。</FieldHint>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">時給 (任意)</Label>
+                              <NumberInput
+                                placeholder="例: 2000"
                                   value={draft.hourlyRateOverride ?? ""}
                                   onValueChange={(next) =>
-                                    updateDraft(setLaborDrafts, draft.id, {
-                                      hourlyRateOverride: next === "" ? undefined : next,
-                                    })
-                                  }
-                                />
-                              </div>
+                                  updateDraft(setLaborDrafts, draft.id, {
+                                    hourlyRateOverride: next === "" ? undefined : next,
+                                  })
+                                }
+                              />
+                              <FieldHint>マスタ時給を上書きしたい場合のみ入力。未入力ならマスタ値を使用。</FieldHint>
+                            </div>
                             </div>
                           </DraftCard>
                         )
@@ -1220,35 +1226,37 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                           <DraftCard key={draft.id} hideRemove>
                             <p className="text-sm font-medium">{equipment.name}</p>
                             <div className="grid gap-2 md:grid-cols-2">
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">使用時間 (h)</Label>
-                                <NumberInput
-                                  placeholder="例: 0.5"
-                                  value={draft.usageHours ?? ""}
-                                  onValueChange={(next) =>
-                                    updateDraft(setEquipmentAllocDrafts, draft.id, {
-                                      usageHours: next === "" ? undefined : next,
-                                    })
-                                  }
-                                />
-                                <p className="text-xs text-muted-foreground">
-                                  {totalEquipmentHours > 0
-                                    ? `利用率 約${ratio}%`
-                                    : "利用率は使用時間から自動計算されます"}
-                                </p>
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-xs text-muted-foreground">年間生産数</Label>
-                                <NumberInput
-                                  placeholder="例: 3000"
-                                  value={draft.annualQuantity}
-                                  onValueChange={(next) =>
-                                    updateDraft(setEquipmentAllocDrafts, draft.id, {
-                                      annualQuantity: next === "" ? 0 : next,
-                                    })
-                                  }
-                                />
-                              </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">使用時間 (h)</Label>
+                              <NumberInput
+                                placeholder="例: 0.5"
+                                value={draft.usageHours ?? ""}
+                                onValueChange={(next) =>
+                                  updateDraft(setEquipmentAllocDrafts, draft.id, {
+                                    usageHours: next === "" ? undefined : next,
+                                  })
+                                }
+                              />
+                              <p className="text-xs text-muted-foreground">
+                                {totalEquipmentHours > 0
+                                  ? `利用率 約${ratio}%`
+                                  : "利用率は使用時間から自動計算されます"}
+                              </p>
+                              <FieldHint>1商品あたりで設備を使用する時間。複数設備で割ると自動的に配賦比率になります。</FieldHint>
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-xs text-muted-foreground">年間生産数</Label>
+                              <NumberInput
+                                placeholder="例: 3000"
+                                value={draft.annualQuantity}
+                                onValueChange={(next) =>
+                                  updateDraft(setEquipmentAllocDrafts, draft.id, {
+                                    annualQuantity: next === "" ? 0 : next,
+                                  })
+                                }
+                              />
+                              <FieldHint>この設備を利用して年間に生産する個数。配賦単価の割り算に使います。</FieldHint>
+                            </div>
                             </div>
                           </DraftCard>
                         )
@@ -1310,6 +1318,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                                     ))}
                                   </SelectContent>
                                 </Select>
+                                <FieldHint>選択した配送マスタの金額と通貨がそのまま適用されます。</FieldHint>
                               </div>
                               <p className="text-xs text-muted-foreground">
                                 単価: {unitCostText}
@@ -1357,6 +1366,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                                   updateDraft(setElectricityDrafts, draft.id, { costPerUnit: next })
                                 }
                               />
+                              <FieldHint>電気料金の1個あたり見込み額。月額を個数で割った値など。</FieldHint>
                             </div>
                             <div className="space-y-1">
                               <Label className="text-xs text-muted-foreground">通貨</Label>
@@ -1375,6 +1385,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                                   ))}
                                 </SelectContent>
                               </Select>
+                              <FieldHint>支払い通貨。海外電気料金を登録する場合に指定。</FieldHint>
                             </div>
                           </div>
                         </DraftCard>

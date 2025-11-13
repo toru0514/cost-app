@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { NumberInput } from "@/components/ui/number-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { FieldHint } from "../shared/ui"
 import type { AppData, Product } from "@/lib/types"
 
 interface ProductBasicsSectionProps {
@@ -230,6 +231,7 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
               setProductForm((prev) => ({ ...prev, baseManHours: next === "" ? 0 : next }))
             }
           />
+          <FieldHint>1商品を完成させるまでの総作業時間。人件費セクションの初期値にも利用します。</FieldHint>
         </div>
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">登録日</Label>
@@ -254,6 +256,7 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
               }))
             }
           />
+          <FieldHint>上記の「期間内生産予定数」と組み合わせて年間生産数を決定します。</FieldHint>
         </div>
       </div>
       <div className="grid gap-2 md:grid-cols-2">
@@ -272,6 +275,7 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
               }))
             }
           />
+          <FieldHint>想定期間（下記「生産期間」）で何個生産するか。設備配賦や単価計算に使用します。</FieldHint>
         </div>
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">制作個数 (今回ロット)</Label>
@@ -285,7 +289,7 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
               }))
             }
           />
-          <p className="text-xs text-muted-foreground">材料使用量サマリで参照するロット単位</p>
+          <FieldHint>材料使用量サマリで使用する1ロット当たりの個数。サイズ展開の合計値で自動更新されます。</FieldHint>
         </div>
       </div>
       <div className="space-y-1">
@@ -300,7 +304,7 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
             }))
           }
         />
-        <p className="text-xs text-muted-foreground">商品一覧で原価と合わせて粗利を表示します。</p>
+        <FieldHint>商品一覧やシミュレーションで粗利を算出する基準価格。</FieldHint>
       </div>
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">使用する設備 (複数選択)</Label>

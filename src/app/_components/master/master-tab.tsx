@@ -28,7 +28,7 @@ import type {
   ProductSizeVariant,
   ShippingMethod,
 } from "@/lib/types"
-import { FormSection, RegisteredList } from "../shared/ui"
+import { FieldHint, FormSection, RegisteredList } from "../shared/ui"
 
 interface MasterTabProps {
   data: AppData
@@ -398,6 +398,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                     setMaterialForm((prev) => ({ ...prev, unitsPerBatch: next === "" ? 1 : Number(next) }))
                   }
                 />
+                <FieldHint>仕入れ単位が1ロール=50mなどの場合の個数。1個売りなら1。</FieldHint>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">基準単価</Label>
@@ -406,6 +407,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                   value={materialForm.unitCost}
                   onValueChange={(next) => setMaterialForm((prev) => ({ ...prev, unitCost: next === "" ? 0 : next }))}
                 />
+                <FieldHint>セット価格を入力。セット数量で割った値が商品登録時に使われます。</FieldHint>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">サイズ・容量</Label>
@@ -520,6 +522,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                   value={packagingForm.unitCost}
                   onValueChange={(next) => setPackagingForm((prev) => ({ ...prev, unitCost: next === "" ? 0 : next }))}
                 />
+                <FieldHint>梱包材を仕入れる際の単価。セット売りの場合は下の数量と合わせて設定。</FieldHint>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">備考</Label>
@@ -539,6 +542,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                     setPackagingForm((prev) => ({ ...prev, unitsPerBatch: next === "" ? 1 : Number(next) }))
                   }
                 />
+                <FieldHint>仕入れ単位。100枚セットを登録する場合は100と入力。</FieldHint>
               </div>
               <Button type="submit" size="sm">
                 追加
@@ -600,6 +604,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                     value={shippingMethodForm.unitCost}
                     onValueChange={(next) => setShippingMethodForm((prev) => ({ ...prev, unitCost: next === "" ? 0 : next }))}
                   />
+                  <FieldHint>1件あたりの送料。クール便など追加料金を含める場合はここに入力。</FieldHint>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">通貨</Label>
@@ -771,6 +776,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                   value={laborForm.hourlyRate}
                   onValueChange={(next) => setLaborForm((prev) => ({ ...prev, hourlyRate: next === "" ? 0 : next }))}
                 />
+                <FieldHint>1時間あたりの標準人件費。原価計算で材料/人数と掛け合わせます。</FieldHint>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">通貨</Label>
@@ -832,6 +838,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                   value={equipmentForm.acquisitionCost}
                   onValueChange={(next) => setEquipmentForm((prev) => ({ ...prev, acquisitionCost: next === "" ? 0 : next }))}
                 />
+                <FieldHint>設備購入（またはリース）にかかった初期費用。</FieldHint>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">償却年数</Label>
@@ -842,6 +849,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
                     setEquipmentForm((prev) => ({ ...prev, amortizationYears: next === "" ? 0 : next }))
                   }
                 />
+                <FieldHint>設備コストを何年に分けて原価化するか。耐用年数の目安を入力。</FieldHint>
               </div>
             </div>
             <div className="space-y-1">

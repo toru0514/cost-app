@@ -118,6 +118,11 @@ export function RegisteredList({
   )
 }
 
+export function FieldHint({ children }: { children: ReactNode }) {
+  if (!children) return null
+  return <p className="text-xs text-muted-foreground">{children}</p>
+}
+
 export function CostDisplay({
   title,
   description,
