@@ -30,6 +30,7 @@ export function CostTab({ data }: CostTabProps) {
     }))
   }, [data])
 
+
   const materialUsageGroups = useMemo(() => {
     const groups = new Map<
       string,

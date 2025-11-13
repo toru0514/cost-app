@@ -13,6 +13,7 @@ import type { Product } from "@/lib/types"
 import { MasterTab } from "./_components/master/master-tab"
 import { ProductTab } from "./_components/product/product-tab"
 import { CostTab } from "./_components/cost/cost-tab"
+import { AnalyticsTab } from "./_components/analytics/analytics-tab"
 
 
 export default function Home() {
@@ -165,6 +166,7 @@ export default function Home() {
       <Tabs value={activeTab} onValueChange={setActiveTab}>
         <TabsList>
           <TabsTrigger value="cost">原価サマリ</TabsTrigger>
+          <TabsTrigger value="analytics">集計データ</TabsTrigger>
           <TabsTrigger value="product">商品登録</TabsTrigger>
           <TabsTrigger value="master">マスタ登録</TabsTrigger>
           <TabsTrigger value="list">商品一覧</TabsTrigger>
@@ -172,6 +174,10 @@ export default function Home() {
 
         <TabsContent value="cost" className="space-y-6">
           <CostTab data={data} />
+        </TabsContent>
+
+        <TabsContent value="analytics" className="space-y-6">
+          <AnalyticsTab data={data} />
         </TabsContent>
 
         <TabsContent value="product" className="space-y-6">
