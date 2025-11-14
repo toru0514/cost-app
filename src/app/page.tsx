@@ -16,6 +16,8 @@ import { MasterTab } from "./_components/master/master-tab"
 import { ProductTab } from "./_components/product/product-tab"
 import { CostTab } from "./_components/cost/cost-tab"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
+import { Copy, Edit3, FileDown, Plus, Trash2 } from "lucide-react"
+import { toast } from "sonner"
 
 
 export default function Home() {
@@ -163,6 +165,45 @@ export default function Home() {
     document.body.removeChild(link)
     URL.revokeObjectURL(url)
   }, [data, getEquipmentText, getShippingText, productCostMap])
+
+  const handleCreateProduct = useCallback(() => {
+    setEditingProductId(null)
+    setCopyProductId(null)
+    setActiveTab("product")
+  }, [])
+
+  const handleEditProduct = useCallback(
+    (productId: string) => {
+      setEditingProductId(productId)
+      setCopyProductId(null)
+      setActiveTab("product")
+    },
+    []
+  )
+
+  const handleCopyProduct = useCallback(
+    (productId: string) => {
+      setCopyProductId(productId)
+      setEditingProductId(null)
+      setActiveTab("product")
+    },
+    []
+  )
+
+  const handleDeleteProduct = useCallback(
+    (product: Product) => {
+      if (typeof window !== "undefined") {
+        const confirmed = window.confirm(`「${product.name}」を削除しますか？関連するコスト明細も削除されます。`)
+        if (!confirmed) return
+      }
+      actions.removeProduct(product.id)
+      actions.removeCostEntriesByProduct(product.id)
+      toast.success("商品を削除しました", {
+        description: `「${product.name}」の情報を削除しました。`,
+      })
+    },
+    [actions]
+  )
 
   const filteredProductEntries = useMemo(() => {
     const normalizedSearch = productSearchQuery.trim().toLowerCase()
@@ -314,6 +355,22 @@ export default function Home() {
                   <CardDescription>登録済み商品のカテゴリ・オプション・備考を確認</CardDescription>
                   <p className="text-xs text-muted-foreground">該当 {filteredProductEntries.length} 件</p>
                 </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" onClick={handleCreateProduct}>
+                    <Plus className="mr-1.5 h-4 w-4" />
+                    新規商品を登録
+                  </Button>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={handleExportProductsCsv}
+                    disabled={data.products.length === 0}
+                  >
+                    <FileDown className="mr-1.5 h-4 w-4" />
+                    CSVエクスポート
+                  </Button>
+                </div>
               </div>
               <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
                 <Input
@@ -353,15 +410,6 @@ export default function Home() {
                     <SelectItem value="profit-asc">粗利が低い順</SelectItem>
                   </SelectContent>
                 </Select>
-                <Button
-                  type="button"
-                  variant="outline"
-                  className="md:ml-auto"
-                  onClick={handleExportProductsCsv}
-                  disabled={data.products.length === 0}
-                >
-                  CSVエクスポート
-                </Button>
               </div>
             </CardHeader>
             <CardContent className="space-y-3">
@@ -404,30 +452,34 @@ export default function Home() {
                             {formatCurrency(profit)}
                           </TableCell>
                           <TableCell className="text-xs text-muted-foreground">{notesText}</TableCell>
-                          <TableCell className="w-32 text-right">
-                            <div className="flex justify-end gap-2">
+                          <TableCell className="w-48 text-right">
+                            <div className="flex flex-wrap justify-end gap-2">
                               <Button
                                 type="button"
                                 size="sm"
                                 variant="outline"
-                                onClick={() => {
-                                  setEditingProductId(product.id)
-                                  setActiveTab("product")
-                                }}
+                                onClick={() => handleEditProduct(product.id)}
                               >
+                                <Edit3 className="mr-1 h-4 w-4" />
                                 編集
                               </Button>
                               <Button
                                 type="button"
                                 size="sm"
                                 variant="secondary"
-                                onClick={() => {
-                                  setCopyProductId(product.id)
-                                  setEditingProductId(null)
-                                  setActiveTab("product")
-                                }}
+                                onClick={() => handleCopyProduct(product.id)}
                               >
+                                <Copy className="mr-1 h-4 w-4" />
                                 コピー
+                              </Button>
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => handleDeleteProduct(product)}
+                              >
+                                <Trash2 className="mr-1 h-4 w-4" />
+                                削除
                               </Button>
                             </div>
                           </TableCell>
