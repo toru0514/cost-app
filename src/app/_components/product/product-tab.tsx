@@ -18,6 +18,7 @@ import { currencyOptions } from "@/lib/constants"
 import type { AppData, Product } from "@/lib/types"
 import { DraftCard, FieldHint, FormSection, HintList } from "../shared/ui"
 import { ProductBasicsSection } from "./product-basics-section"
+import { ProductRealtimeSummary, type ProductCostSummary } from "./product-summary-panel"
 
 const createTempId = () =>
   typeof crypto !== "undefined" && "randomUUID" in crypto
@@ -387,6 +388,115 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
   } = actions
 
   const totalEquipmentHours = equipmentAllocDrafts.reduce((sum, draft) => sum + (draft.usageHours || 0), 0)
+  const costSummary = useMemo<ProductCostSummary>(() => {
+    const salePrice = Number(productForm.salePrice) || 0
+    const expectedQuantity = Math.max(Number(productForm.expectedProduction.quantity) || 1, 1)
+
+    const material = materialDrafts.reduce((sum, draft) => {
+      const material = data.materials.find((item) => item.id === draft.materialId)
+      if (!material) return sum
+      const usageRatio = Math.max(Number(draft.usageRatio) || 0, 0)
+      const batchSize = Math.max(material.unitsPerBatch ?? 1, 1)
+      const baseUnitCost = (material.unitCost || 0) / batchSize
+      return sum + baseUnitCost * (usageRatio / 100)
+    }, 0)
+
+    const packaging = packagingDrafts.reduce((sum, draft) => {
+      const item = data.packagingItems.find((entry) => entry.id === draft.packagingItemId)
+      if (!item) return sum
+      const batchSize = Math.max(item.unitsPerBatch ?? 1, 1)
+      const baseUnitCost = (item.unitCost || 0) / batchSize
+      const quantity = Number(draft.quantity) || 0
+      return sum + baseUnitCost * quantity
+    }, 0)
+
+    const labor = laborDrafts.reduce((sum, draft) => {
+      const role = data.laborRoles.find((entry) => entry.id === draft.laborRoleId)
+      const hourlyRate = draft.hourlyRateOverride ?? role?.hourlyRate ?? 0
+      const hours = Number(draft.hours) || 0
+      const peopleCount = Number(draft.peopleCount) || 0
+      return sum + hourlyRate * hours * peopleCount
+    }, 0)
+
+    const outsourcing = outsourcingDrafts.reduce((sum, draft) => sum + (Number(draft.costPerUnit) || 0), 0)
+
+    const development = developmentDrafts.reduce((sum, draft) => {
+      const laborCost = Number(draft.prototypeLaborCost) || 0
+      const materialCost = Number(draft.prototypeMaterialCost) || 0
+      const toolingCost = Number(draft.toolingCost) || 0
+      const total = laborCost + materialCost + toolingCost
+      const amortizationYears = Math.max(Number(draft.amortizationYears) || 1, 1)
+      return sum + total / amortizationYears / expectedQuantity
+    }, 0)
+
+    const equipment = equipmentAllocDrafts.reduce((sum, draft) => {
+      const equipment = data.equipments.find((entry) => entry.id === draft.equipmentId)
+      if (!equipment) return sum
+      const annualQuantity = Math.max(Number(draft.annualQuantity) || expectedQuantity, 1)
+      const amortizationYears = Math.max(equipment.amortizationYears || 1, 1)
+      const annualCost = equipment.acquisitionCost / amortizationYears
+      const usageHours = draft.usageHours ?? 0
+      const ratio =
+        totalEquipmentHours > 0 && draft.usageHours !== undefined
+          ? usageHours / totalEquipmentHours
+          : Number(draft.allocationRatio) || 0
+      return sum + (annualCost * ratio) / annualQuantity
+    }, 0)
+
+    const logistics = logisticsDrafts.reduce((sum, draft) => {
+      const method = shippingMethods.find((item) => item.id === draft.shippingMethodId)
+      if (!method) return sum
+      return sum + (method.unitCost || 0)
+    }, 0)
+
+    const electricity = electricityDrafts.reduce((sum, draft) => sum + (Number(draft.costPerUnit) || 0), 0)
+
+    const total =
+      material +
+      packaging +
+      labor +
+      outsourcing +
+      development +
+      equipment +
+      logistics +
+      electricity
+
+    const grossProfit = salePrice - total
+    const profitMargin = salePrice > 0 ? (grossProfit / salePrice) * 100 : 0
+
+    return {
+      salePrice,
+      totalCost: total,
+      grossProfit,
+      profitMargin,
+      breakdown: [
+        { key: "material", label: "材料費", value: material },
+        { key: "packaging", label: "梱包材費", value: packaging },
+        { key: "labor", label: "人件費", value: labor },
+        { key: "outsourcing", label: "外注費", value: outsourcing },
+        { key: "development", label: "開発費", value: development },
+        { key: "equipment", label: "設備配賦", value: equipment },
+        { key: "logistics", label: "物流費", value: logistics },
+        { key: "electricity", label: "電気代", value: electricity },
+      ],
+    }
+  }, [
+    data.materials,
+    data.packagingItems,
+    data.laborRoles,
+    data.equipments,
+    electricityDrafts,
+    equipmentAllocDrafts,
+    logisticsDrafts,
+    materialDrafts,
+    outsourcingDrafts,
+    packagingDrafts,
+    laborDrafts,
+    developmentDrafts,
+    productForm,
+    shippingMethods,
+    totalEquipmentHours,
+  ])
 
   const hydrateProductFromExisting = useCallback((sourceProductId: string, options?: { copy?: boolean }) => {
     const product = data.products.find((p) => p.id === sourceProductId)
@@ -578,14 +688,15 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
           </Button>
         </div>
       )}
-          <Card>
-            <CardHeader>
-              <CardTitle>商品登録フォーム</CardTitle>
-              <CardDescription>カテゴリ・想定生産量・制作工数・オプション（名称＋個数）・備考を設定します。</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <form
-                className="space-y-6"
+      <Card>
+        <CardHeader>
+          <CardTitle>商品登録フォーム</CardTitle>
+          <CardDescription>カテゴリ・想定生産量・制作工数・オプション（名称＋個数）・備考を設定します。</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,2.6fr)_minmax(280px,1fr)]">
+            <form
+              className="order-2 space-y-6 lg:order-1"
               onSubmit={(event) => {
                 event.preventDefault()
                 const missingFields = validateProductForm()
@@ -1398,60 +1509,65 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                   商品を登録
                 </Button>
               </form>
-            </CardContent>
-          </Card>
 
-          <Card>
-            <CardHeader>
-              <CardTitle>登録済み商品</CardTitle>
-              <CardDescription>想定生産量・設備利用状況の一覧。</CardDescription>
-            </CardHeader>
-            <CardContent>
-              {data.products.length === 0 ? (
-                <p className="text-sm text-muted-foreground">まだ商品がありません。</p>
-              ) : (
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>商品名</TableHead>
-                      <TableHead>カテゴリ</TableHead>
-                      <TableHead>生産計画</TableHead>
-                      <TableHead>設備</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {data.products.map((product) => (
-                      <TableRow key={product.id}>
-                        <TableCell className="font-medium">{product.name}</TableCell>
-                        <TableCell>
-                          {[product.categoryLargeId, product.categoryMediumId, product.categorySmallId]
-                            .map((categoryId) =>
-                              data.categories.large.find((c) => c.id === categoryId) ||
-                              data.categories.medium.find((c) => c.id === categoryId) ||
-                              data.categories.small.find((c) => c.id === categoryId)
-                            )
+              <div className="order-1 lg:order-2">
+                <ProductRealtimeSummary summary={costSummary} />
+              </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>登録済み商品</CardTitle>
+          <CardDescription>想定生産量・設備利用状況の一覧。</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {data.products.length === 0 ? (
+            <p className="text-sm text-muted-foreground">まだ商品がありません。</p>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>商品名</TableHead>
+                  <TableHead>カテゴリ</TableHead>
+                  <TableHead>生産計画</TableHead>
+                  <TableHead>設備</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {data.products.map((product) => (
+                  <TableRow key={product.id}>
+                    <TableCell className="font-medium">{product.name}</TableCell>
+                    <TableCell>
+                      {[product.categoryLargeId, product.categoryMediumId, product.categorySmallId]
+                        .map((categoryId) =>
+                          data.categories.large.find((c) => c.id === categoryId) ||
+                          data.categories.medium.find((c) => c.id === categoryId) ||
+                          data.categories.small.find((c) => c.id === categoryId)
+                        )
+                        .filter(Boolean)
+                        .map((category) => (category as { id: string; name: string }).name)
+                        .join(" / ") || "-"}
+                    </TableCell>
+                    <TableCell>
+                      {product.expectedProduction.quantity} 個 / {product.expectedProduction.periodYears} 年
+                    </TableCell>
+                    <TableCell>
+                      {product.equipmentIds.length === 0
+                        ? "-"
+                        : product.equipmentIds
+                            .map((id) => data.equipments.find((equipment) => equipment.id === id)?.name ?? "")
                             .filter(Boolean)
-                            .map((category) => (category as { id: string; name: string }).name)
-                            .join(" / ") || "-"}
-                        </TableCell>
-                        <TableCell>
-                          {product.expectedProduction.quantity} 個 / {product.expectedProduction.periodYears} 年
-                        </TableCell>
-                        <TableCell>
-                          {product.equipmentIds.length === 0
-                            ? "-"
-                            : product.equipmentIds
-                                .map((id) => data.equipments.find((equipment) => equipment.id === id)?.name ?? "")
-                                .filter(Boolean)
-                                .join(", ")}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              )}
-            </CardContent>
-          </Card>
+                            .join(", ")}
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
     </div>
   )
 }

@@ -5,6 +5,8 @@ import { useCallback, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppData } from "@/lib/app-data"
@@ -21,6 +23,9 @@ export default function Home() {
   const [activeTab, setActiveTab] = useState("cost")
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [copyProductId, setCopyProductId] = useState<string | null>(null)
+  const [productSearchQuery, setProductSearchQuery] = useState("")
+  const [productCategoryFilter, setProductCategoryFilter] = useState<string | null>(null)
+  const [productSortKey, setProductSortKey] = useState("registered-desc")
   const productCostMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateProductUnitCosts>>()
     data.products.forEach((product) => {
@@ -44,6 +49,30 @@ export default function Home() {
     })
     return map
   }, [data.equipments])
+
+  const categoryLargeNameMap = useMemo(() => {
+    const map = new Map<string | undefined, string>()
+    data.categories.large.forEach((category) => {
+      map.set(category.id, category.name)
+    })
+    return map
+  }, [data.categories.large])
+
+  const categoryMediumNameMap = useMemo(() => {
+    const map = new Map<string | undefined, string>()
+    data.categories.medium.forEach((category) => {
+      map.set(category.id, category.name)
+    })
+    return map
+  }, [data.categories.medium])
+
+  const categorySmallNameMap = useMemo(() => {
+    const map = new Map<string | undefined, string>()
+    data.categories.small.forEach((category) => {
+      map.set(category.id, category.name)
+    })
+    return map
+  }, [data.categories.small])
 
   const getShippingText = useCallback(
     (productId: string) => {
@@ -135,6 +164,87 @@ export default function Home() {
     URL.revokeObjectURL(url)
   }, [data, getEquipmentText, getShippingText, productCostMap])
 
+  const filteredProductEntries = useMemo(() => {
+    const normalizedSearch = productSearchQuery.trim().toLowerCase()
+    const collator = new Intl.Collator("ja-JP")
+
+    const base = data.products
+      .map((product) => {
+        const unitCost = productCostMap.get(product.id)?.total ?? 0
+        const salePrice = Number(product.salePrice ?? 0)
+        const profit = salePrice - unitCost
+        const categoryLargeName = categoryLargeNameMap.get(product.categoryLargeId) ?? ""
+        const categoryMediumName = categoryMediumNameMap.get(product.categoryMediumId) ?? ""
+        const categorySmallName = categorySmallNameMap.get(product.categorySmallId) ?? ""
+        const categoryPath = [categoryLargeName, categoryMediumName, categorySmallName].filter(Boolean).join(" / ") || "-"
+        const shippingText = getShippingText(product.id)
+        const equipmentText = getEquipmentText(product)
+        const searchBucket = [
+          product.name,
+          product.notes ?? "",
+          categoryLargeName,
+          categoryMediumName,
+          categorySmallName,
+          shippingText,
+          equipmentText,
+        ]
+          .filter(Boolean)
+          .map((text) => text.toLowerCase())
+        const matchesSearch = normalizedSearch.length === 0 || searchBucket.some((text) => text.includes(normalizedSearch))
+        const matchesCategory = !productCategoryFilter || product.categoryLargeId === productCategoryFilter
+        const registeredTime = new Date(product.registeredAt ?? "").getTime() || 0
+
+        return {
+          product,
+          unitCost,
+          salePrice,
+          profit,
+          categoryPath,
+          shippingText,
+          equipmentText,
+          matchesSearch,
+          matchesCategory,
+          registeredTime,
+        }
+      })
+      .filter((entry) => entry.matchesSearch && entry.matchesCategory)
+
+    const sorted = [...base].sort((a, b) => {
+      switch (productSortKey) {
+        case "name-asc":
+          return collator.compare(a.product.name, b.product.name)
+        case "name-desc":
+          return collator.compare(b.product.name, a.product.name)
+        case "sale-asc":
+          return a.salePrice - b.salePrice
+        case "sale-desc":
+          return b.salePrice - a.salePrice
+        case "profit-asc":
+          return a.profit - b.profit
+        case "profit-desc":
+          return b.profit - a.profit
+        case "registered-asc":
+          return a.registeredTime - b.registeredTime
+        case "registered-desc":
+        default:
+          return b.registeredTime - a.registeredTime
+      }
+    })
+
+    return sorted
+  }, [
+    categoryLargeNameMap,
+    categoryMediumNameMap,
+    categorySmallNameMap,
+    data.products,
+    getEquipmentText,
+    getShippingText,
+    productCategoryFilter,
+    productCostMap,
+    productSearchQuery,
+    productSortKey,
+  ])
+
   if (!hydrated) {
     return (
       <main className="mx-auto flex min-h-screen max-w-4xl items-center justify-center p-10 text-muted-foreground">
@@ -197,18 +307,68 @@ export default function Home() {
 
         <TabsContent value="list" className="space-y-6">
           <Card>
-            <CardHeader className="gap-3 md:flex md:flex-row md:items-center md:justify-between">
-              <div>
-                <CardTitle>商品一覧</CardTitle>
-                <CardDescription>登録済み商品のカテゴリ・オプション・備考を確認</CardDescription>
+            <CardHeader className="space-y-4">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <CardTitle>商品一覧</CardTitle>
+                  <CardDescription>登録済み商品のカテゴリ・オプション・備考を確認</CardDescription>
+                  <p className="text-xs text-muted-foreground">該当 {filteredProductEntries.length} 件</p>
+                </div>
               </div>
-              <Button type="button" variant="outline" onClick={handleExportProductsCsv} disabled={data.products.length === 0}>
-                CSVエクスポート
-              </Button>
+              <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
+                <Input
+                  value={productSearchQuery}
+                  onChange={(event) => setProductSearchQuery(event.target.value)}
+                  placeholder="商品名・備考・設備で検索"
+                  className="w-full flex-1 min-w-[220px]"
+                />
+                <Select
+                  value={productCategoryFilter ?? "all"}
+                  onValueChange={(value) => setProductCategoryFilter(value === "all" ? null : value)}
+                >
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="大カテゴリで絞り込み" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">すべてのカテゴリ</SelectItem>
+                    {data.categories.large.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select value={productSortKey} onValueChange={setProductSortKey}>
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="並び替え" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="registered-desc">登録が新しい順</SelectItem>
+                    <SelectItem value="registered-asc">登録が古い順</SelectItem>
+                    <SelectItem value="name-asc">商品名 (昇順)</SelectItem>
+                    <SelectItem value="name-desc">商品名 (降順)</SelectItem>
+                    <SelectItem value="sale-desc">販売価格が高い順</SelectItem>
+                    <SelectItem value="sale-asc">販売価格が低い順</SelectItem>
+                    <SelectItem value="profit-desc">粗利が高い順</SelectItem>
+                    <SelectItem value="profit-asc">粗利が低い順</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="md:ml-auto"
+                  onClick={handleExportProductsCsv}
+                  disabled={data.products.length === 0}
+                >
+                  CSVエクスポート
+                </Button>
+              </div>
             </CardHeader>
             <CardContent className="space-y-3">
               {data.products.length === 0 ? (
                 <p className="text-sm text-muted-foreground">まだ商品がありません。</p>
+              ) : filteredProductEntries.length === 0 ? (
+                <p className="text-sm text-muted-foreground">条件に一致する商品がありません。</p>
               ) : (
                 <Table>
                   <TableHeader>
@@ -225,25 +385,12 @@ export default function Home() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {data.products.map((product) => {
-                      const categoryPath = [
-                        data.categories.large.find((c) => c.id === product.categoryLargeId)?.name,
-                        data.categories.medium.find((c) => c.id === product.categoryMediumId)?.name,
-                        data.categories.small.find((c) => c.id === product.categorySmallId)?.name,
-                      ]
-                        .filter(Boolean)
-                        .join(" / ") || "-"
-
+                    {filteredProductEntries.map(({ product, salePrice, profit, categoryPath, shippingText, equipmentText }) => {
                       const optionText = (product.sizeVariants ?? [])
                         .filter((variant) => variant.label?.trim())
                         .map((variant) => `${variant.label}: ${variant.quantity}個`)
                         .join(" / ") || "-"
                       const notesText = product.notes?.trim() || "-"
-                      const unitCost = productCostMap.get(product.id)?.total ?? 0
-                      const salePrice = Number(product.salePrice ?? 0)
-                      const profit = salePrice - unitCost
-                      const shippingText = getShippingText(product.id)
-                      const equipmentText = getEquipmentText(product)
 
                       return (
                         <TableRow key={product.id}>
