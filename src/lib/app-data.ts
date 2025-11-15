@@ -1,6 +1,7 @@
 "use client"
 
 import { startTransition, useCallback, useEffect, useRef, useState } from "react"
+import { toast } from "sonner"
 
 import {
   AppData,
@@ -27,6 +28,7 @@ import {
   sampleAppData,
 } from "./types"
 import { useAuth } from "./auth"
+import type { AuthState } from "./auth"
 import { loadUserAppData, saveUserAppData } from "./app-data-sync"
 
 const STORAGE_KEY = "cost-app-data-v1"
@@ -42,16 +44,88 @@ const apply = <T,>(set: React.Dispatch<React.SetStateAction<T>>, updater: Update
   set(updater)
 }
 
+const hasMeaningfulData = (dataset: AppData) => {
+  if (dataset.products.length > 0) return true
+  if (dataset.materials.length > 0) return true
+  if (dataset.packagingItems.length > 0) return true
+  if ((dataset.shippingMethods ?? []).length > 0) return true
+  if (dataset.laborRoles.length > 0) return true
+  if (dataset.equipments.length > 0) return true
+  if (dataset.optionPresets.length > 0) return true
+  if (dataset.categories.large.length > 0) return true
+  if (dataset.categories.medium.length > 0) return true
+  if (dataset.categories.small.length > 0) return true
+  const entries = dataset.costEntries
+  if (entries.materials.length > 0) return true
+  if (entries.packaging.length > 0) return true
+  if (entries.labor.length > 0) return true
+  if (entries.outsourcing.length > 0) return true
+  if (entries.development.length > 0) return true
+  if (entries.equipmentAllocations.length > 0) return true
+  if (entries.logistics.length > 0) return true
+  if (entries.electricity.length > 0) return true
+  return false
+}
+
+const MAX_SAVE_RETRIES = 3
+
 export function useAppData() {
   const { state: authState } = useAuth()
   const [data, setData] = useState<AppData>(defaultAppData)
   const [hydrated, setHydrated] = useState(false)
   const skipNextSaveRef = useRef(false)
   const dataRef = useRef<AppData>(defaultAppData)
+  const [pendingRemoteData, setPendingRemoteData] = useState<AppData | null>(null)
+  const authStatusRef = useRef<AuthState["status"]>(authState.status)
+  const previousAuthStatus = authStatusRef.current
+  const saveRetryRef = useRef<{ attempts: number; timeoutId: ReturnType<typeof setTimeout> | null }>({ attempts: 0, timeoutId: null })
+
+  const clearSaveRetry = useCallback(() => {
+    if (saveRetryRef.current.timeoutId) {
+      clearTimeout(saveRetryRef.current.timeoutId)
+      saveRetryRef.current.timeoutId = null
+    }
+    saveRetryRef.current.attempts = 0
+  }, [])
+
+  const persistSupabaseWithRetry = useCallback(() => {
+    if (authState.status !== "authenticated") return
+    const attemptSave = async () => {
+      if (authState.status !== "authenticated") return
+      try {
+        await saveUserAppData(authState.user.id, dataRef.current)
+        clearSaveRetry()
+      } catch (error) {
+        console.error("Failed to save data to Supabase", error)
+        const nextAttempts = saveRetryRef.current.attempts + 1
+        saveRetryRef.current.attempts = nextAttempts
+        if (nextAttempts >= MAX_SAVE_RETRIES) {
+          toast.error("Supabase への保存に失敗しました。接続を確認して再同期してください。")
+          clearSaveRetry()
+        } else {
+          saveRetryRef.current.timeoutId = setTimeout(() => {
+            void attemptSave()
+          }, nextAttempts * 2000)
+        }
+      }
+    }
+    clearSaveRetry()
+    void attemptSave()
+  }, [authState, clearSaveRetry])
+
+  useEffect(() => {
+    return () => {
+      clearSaveRetry()
+    }
+  }, [clearSaveRetry])
 
   useEffect(() => {
     dataRef.current = data
   }, [data])
+
+  useEffect(() => {
+    authStatusRef.current = authState.status
+  }, [authState.status])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -71,48 +145,56 @@ export function useAppData() {
 
   useEffect(() => {
     if (!hydrated) return
-    if (authState.status === "authenticated") {
-      let cancelled = false
-      ;(async () => {
-        try {
-          const remote = await loadUserAppData(authState.user.id)
-          if (cancelled) return
-          if (remote) {
-            skipNextSaveRef.current = true
-            setData(remote)
-          } else {
-            await saveUserAppData(authState.user.id, dataRef.current)
-          }
-        } catch (error) {
-          console.error("Remote sync failed", error)
+    if (authState.status !== "authenticated") {
+      setPendingRemoteData(null)
+      return
+    }
+    let cancelled = false
+    ;(async () => {
+      try {
+        const remote = await loadUserAppData(authState.user.id)
+        if (cancelled) return
+        if (!remote) {
+          await saveUserAppData(authState.user.id, dataRef.current)
+          return
         }
-      })()
-      return () => {
-        cancelled = true
+        if (!hasMeaningfulData(dataRef.current)) {
+          skipNextSaveRef.current = true
+          setData(remote)
+        } else {
+          clearSaveRetry()
+          setPendingRemoteData(remote)
+        }
+      } catch (error) {
+        console.error("Remote sync failed", error)
+        toast.error("Supabase からデータを取得できませんでした。ネットワーク状況を確認してください。")
       }
+    })()
+    return () => {
+      cancelled = true
     }
   }, [authState, hydrated])
 
   useEffect(() => {
-    if (!hydrated) return
+    if (!hydrated || pendingRemoteData) return
     if (skipNextSaveRef.current) {
       skipNextSaveRef.current = false
       return
     }
     if (authState.status === "authenticated") {
-      ;(async () => {
-        try {
-          await saveUserAppData(authState.user.id, data)
-        } catch (error) {
-          console.error("Failed to save data to Supabase", error)
-        }
-      })()
+      persistSupabaseWithRetry()
     } else if (authState.status === "guest") {
+      if (previousAuthStatus === "authenticated") {
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(STORAGE_KEY)
+        }
+        return
+      }
       if (typeof window !== "undefined") {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
       }
     }
-  }, [data, hydrated, authState])
+  }, [data, hydrated, authState, pendingRemoteData, persistSupabaseWithRetry, previousAuthStatus])
 
   const update = useCallback(
     (updater: Updater<AppData>) => {
@@ -547,6 +629,26 @@ export function useAppData() {
     [update]
   )
 
+  const resolveSyncConflict = useCallback(
+    async (choice: "local" | "remote") => {
+      if (authState.status !== "authenticated" || !pendingRemoteData) return
+      if (choice === "remote") {
+        skipNextSaveRef.current = true
+        setData(pendingRemoteData)
+      } else {
+        try {
+          await saveUserAppData(authState.user.id, dataRef.current)
+          toast.success("Supabase のデータを現在の内容で更新しました")
+        } catch (error) {
+          console.error("Failed to overwrite Supabase data", error)
+          toast.error("Supabase への上書きに失敗しました。再度お試しください。")
+        }
+      }
+      setPendingRemoteData(null)
+    },
+    [authState, pendingRemoteData]
+  )
+
   const resetAll = useCallback(() => {
     update(() => emptyAppData)
     if (typeof window !== "undefined" && authState.status !== "authenticated") {
@@ -564,6 +666,8 @@ export function useAppData() {
   return {
     data,
     hydrated,
+    syncConflict: Boolean(pendingRemoteData),
+    resolveSyncConflict,
     actions: {
       addLargeCategory,
       updateLargeCategory,

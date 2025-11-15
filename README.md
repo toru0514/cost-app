@@ -201,9 +201,9 @@ UI → Application Ports → Domain Services → Repository Adapters という�
     - 今回はマルチテナント/権限分離は行わず、`user_id` だけでアクセス制御する。
   - [x] Supabase API キー、URL を `.env.local` に定義し、必要パッケージ（`@supabase/supabase-js` など）を導入する。
   - [x] `AuthProvider` を Supabase Auth ベースに書き換え、セッション情報をアプリ全体に配信する。
-  - [ ] `useAppData` の読み書きを抽象化し、ゲスト時は localStorage、ログイン時は Supabase DB を参照・更新するアダプタを追加する。
-  - [ ] ゲストデータ → ログイン時の Supabase へ移行処理、およびログアウト時の扱い（localStorage 退避など）を決めて実装する。
-  - [ ] エラー/オフライン時のリトライや差分競合の扱いを決め、必要に応じて通知や再同期フローを追加する。
+  - [x] `useAppData` の読み書きを抽象化し、ゲスト時は localStorage、ログイン時は Supabase DB を参照・更新するアダプタを追加する。
+  - [x] ゲストデータ → ログイン時の Supabase へ移行処理、およびログアウト時の扱い（localStorage 退避など）を決めて実装する。
+  - [x] エラー/オフライン時のリトライや差分競合の扱いを決め、必要に応じて通知や再同期フローを追加する。
 - [ ] ログイン・権限対応後にスマホUI微調整（タブ保持やボトムナビ化など）を行い、最終モバイル最適化を完了する。
 
 ## 材料費モジュール（第一弾）

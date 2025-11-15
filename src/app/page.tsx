@@ -19,6 +19,7 @@ import { AnalyticsTab } from "./_components/analytics/analytics-tab"
 import { Copy, Edit3, FileDown, Menu, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 const tabOptions = [
   { value: "cost", label: "原価サマリ" },
@@ -30,7 +31,7 @@ const tabOptions = [
 
 
 export default function Home() {
-  const { data, hydrated, actions } = useAppData()
+  const { data, hydrated, actions, syncConflict, resolveSyncConflict } = useAppData()
   const [activeTab, setActiveTabState] = useState(() => {
     if (typeof window === "undefined") return "cost"
     return window.localStorage.getItem("cost-app-active-tab") ?? "cost"
@@ -673,6 +674,25 @@ export default function Home() {
           </Card>
         </TabsContent>
       </Tabs>
+
+      <Dialog open={syncConflict} onOpenChange={() => {}}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>保存先を選択してください</DialogTitle>
+            <DialogDescription>
+              Supabase に既存データが見つかりました。今回ログインする前の入力内容と、クラウド上のデータのどちらを優先するか選択してください。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={() => resolveSyncConflict("remote")}>
+              Supabaseのデータを使う
+            </Button>
+            <Button type="button" onClick={() => resolveSyncConflict("local")}>
+              今の内容で上書き
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   )
 }
