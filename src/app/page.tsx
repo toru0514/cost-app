@@ -16,18 +16,35 @@ import { MasterTab } from "./_components/master/master-tab"
 import { ProductTab } from "./_components/product/product-tab"
 import { CostTab } from "./_components/cost/cost-tab"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
-import { Copy, Edit3, FileDown, Plus, Trash2 } from "lucide-react"
+import { Copy, Edit3, FileDown, Menu, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
+import { useAuth } from "@/lib/auth"
+
+const tabOptions = [
+  { value: "cost", label: "原価サマリ" },
+  { value: "analytics", label: "集計データ" },
+  { value: "product", label: "商品登録" },
+  { value: "master", label: "マスタ登録" },
+  { value: "list", label: "商品一覧" },
+]
 
 
 export default function Home() {
   const { data, hydrated, actions } = useAppData()
-  const [activeTab, setActiveTab] = useState("cost")
+  const [activeTab, setActiveTabState] = useState(() => {
+    if (typeof window === "undefined") return "cost"
+    return window.localStorage.getItem("cost-app-active-tab") ?? "cost"
+  })
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [copyProductId, setCopyProductId] = useState<string | null>(null)
   const [productSearchQuery, setProductSearchQuery] = useState("")
   const [productCategoryFilter, setProductCategoryFilter] = useState<string | null>(null)
   const [productSortKey, setProductSortKey] = useState("registered-desc")
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const { state: authState, login, logout, signup } = useAuth()
+  const [loginPanelOpen, setLoginPanelOpen] = useState(false)
+  const [loginForm, setLoginForm] = useState({ name: "", email: "", password: "" })
+  const [authMode, setAuthMode] = useState<"login" | "signup">("login")
   const productCostMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateProductUnitCosts>>()
     data.products.forEach((product) => {
@@ -166,28 +183,36 @@ export default function Home() {
     URL.revokeObjectURL(url)
   }, [data, getEquipmentText, getShippingText, productCostMap])
 
+  const handleTabChange = useCallback((value: string) => {
+    setActiveTabState(value)
+    if (typeof window !== "undefined") {
+      window.localStorage.setItem("cost-app-active-tab", value)
+    }
+    setMobileNavOpen(false)
+  }, [])
+
   const handleCreateProduct = useCallback(() => {
     setEditingProductId(null)
     setCopyProductId(null)
-    setActiveTab("product")
-  }, [])
+    handleTabChange("product")
+  }, [handleTabChange])
 
   const handleEditProduct = useCallback(
     (productId: string) => {
       setEditingProductId(productId)
       setCopyProductId(null)
-      setActiveTab("product")
+      handleTabChange("product")
     },
-    []
+    [handleTabChange]
   )
 
   const handleCopyProduct = useCallback(
     (productId: string) => {
       setCopyProductId(productId)
       setEditingProductId(null)
-      setActiveTab("product")
+      handleTabChange("product")
     },
-    []
+    [handleTabChange]
   )
 
   const handleDeleteProduct = useCallback(
@@ -204,6 +229,42 @@ export default function Home() {
     },
     [actions]
   )
+  const handleLoginSubmit = useCallback(
+    async (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault()
+      const email = loginForm.email.trim()
+      const password = loginForm.password
+      if (!email || !password) {
+        toast.error("メールアドレスとパスワードを入力してください。")
+        return
+      }
+      try {
+        if (authMode === "signup") {
+          const name = loginForm.name.trim()
+          if (!name) {
+            toast.error("氏名を入力してください。")
+            return
+          }
+          await signup({ email, password, name })
+          toast.success("登録しました", { description: `${email} でログインしました。` })
+        } else {
+          await login({ email, password })
+          toast.success("ログインしました", { description: `${email} として利用中です。` })
+        }
+        setLoginPanelOpen(false)
+        setLoginForm({ name: "", email: "", password: "" })
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "認証に失敗しました。"
+        toast.error(message)
+      }
+    },
+    [authMode, loginForm, login, signup]
+  )
+
+  const handleLogout = useCallback(() => {
+    logout()
+    toast.message("ゲストモードに戻りました")
+  }, [logout])
 
   const filteredProductEntries = useMemo(() => {
     const normalizedSearch = productSearchQuery.trim().toLowerCase()
@@ -312,10 +373,124 @@ export default function Home() {
             ローカル保存をクリア
           </Button>
         </div>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={authState.status === "authenticated" ? "default" : "outline"}>
+            {authState.status === "loading"
+              ? "認証状態を確認中..."
+              : authState.status === "authenticated"
+                ? `ログイン中: ${authState.user.name ?? authState.user.email}`
+                : "ゲストモード"}
+          </Badge>
+          {authState.status !== "authenticated" ? (
+            <Button type="button" size="sm" onClick={() => setLoginPanelOpen((prev) => !prev)}>
+              ログイン
+            </Button>
+          ) : (
+            <Button type="button" size="sm" variant="outline" onClick={handleLogout}>
+              ログアウト
+            </Button>
+          )}
+        </div>
+        <Button type="button" variant="outline" className="mt-2 w-full md:hidden" onClick={() => setMobileNavOpen(true)}>
+          <Menu className="mr-2 h-4 w-4" />
+          メニューを開く
+        </Button>
+        {loginPanelOpen && authState.status !== "authenticated" && (
+          <Card className="mt-3 border-primary/50 bg-background/95 shadow-lg">
+            <CardHeader>
+              <CardTitle className="text-base">ログインして保存を共有</CardTitle>
+              <CardDescription>
+                {authMode === "login" ? "登録済みのメール・パスワードでログインします。" : "新規登録して Supabase 上にデータを保存します。"}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form className="space-y-3" onSubmit={handleLoginSubmit}>
+                {authMode === "signup" && (
+                  <div className="space-y-1">
+                    <label className="text-xs text-muted-foreground">氏名</label>
+                    <Input
+                      value={loginForm.name}
+                      onChange={(event) => setLoginForm((prev) => ({ ...prev, name: event.target.value }))}
+                      placeholder="例: コスト太郎"
+                    />
+                  </div>
+                )}
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">メールアドレス</label>
+                  <Input
+                    type="email"
+                    value={loginForm.email}
+                    onChange={(event) => setLoginForm((prev) => ({ ...prev, email: event.target.value }))}
+                    placeholder="example@example.com"
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs text-muted-foreground">パスワード</label>
+                  <Input
+                    type="password"
+                    value={loginForm.password}
+                    onChange={(event) => setLoginForm((prev) => ({ ...prev, password: event.target.value }))}
+                    placeholder="8文字以上"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                  <button
+                    type="button"
+                    className={`rounded border px-2 py-1 ${authMode === "login" ? "border-primary text-primary" : "border-transparent"}`}
+                    onClick={() => setAuthMode("login")}
+                  >
+                    ログイン
+                  </button>
+                  <button
+                    type="button"
+                    className={`rounded border px-2 py-1 ${authMode === "signup" ? "border-primary text-primary" : "border-transparent"}`}
+                    onClick={() => setAuthMode("signup")}
+                  >
+                    新規登録
+                  </button>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="submit" size="sm">
+                    {authMode === "login" ? "ログイン" : "登録してログイン"}
+                  </Button>
+                  <Button type="button" size="sm" variant="ghost" onClick={() => setLoginPanelOpen(false)}>
+                    キャンセル
+                  </Button>
+                </div>
+              </form>
+            </CardContent>
+          </Card>
+        )}
       </header>
 
-      <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList>
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-50 bg-black/40 px-4 pb-8 pt-16 md:hidden">
+          <div className="mx-auto max-w-sm rounded-2xl bg-background p-4 shadow-lg">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold">移動先を選択</p>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setMobileNavOpen(false)}>
+                閉じる
+              </Button>
+            </div>
+            <div className="space-y-2">
+              {tabOptions.map((tab) => (
+                <Button
+                  key={tab.value}
+                  type="button"
+                  variant={activeTab === tab.value ? "secondary" : "outline"}
+                  className="w-full justify-between"
+                  onClick={() => handleTabChange(tab.value)}
+                >
+                  {tab.label}
+                </Button>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Tabs value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="hidden md:inline-flex">
           <TabsTrigger value="cost">原価サマリ</TabsTrigger>
           <TabsTrigger value="analytics">集計データ</TabsTrigger>
           <TabsTrigger value="product">商品登録</TabsTrigger>
@@ -418,6 +593,7 @@ export default function Home() {
               ) : filteredProductEntries.length === 0 ? (
                 <p className="text-sm text-muted-foreground">条件に一致する商品がありません。</p>
               ) : (
+                <div className="overflow-x-auto">
                 <Table>
                   <TableHeader>
                     <TableRow>
@@ -458,6 +634,7 @@ export default function Home() {
                                 type="button"
                                 size="sm"
                                 variant="outline"
+                                className="w-full sm:w-auto"
                                 onClick={() => handleEditProduct(product.id)}
                               >
                                 <Edit3 className="mr-1 h-4 w-4" />
@@ -467,6 +644,7 @@ export default function Home() {
                                 type="button"
                                 size="sm"
                                 variant="secondary"
+                                className="w-full sm:w-auto"
                                 onClick={() => handleCopyProduct(product.id)}
                               >
                                 <Copy className="mr-1 h-4 w-4" />
@@ -476,6 +654,7 @@ export default function Home() {
                                 type="button"
                                 size="sm"
                                 variant="destructive"
+                                className="w-full sm:w-auto"
                                 onClick={() => handleDeleteProduct(product)}
                               >
                                 <Trash2 className="mr-1 h-4 w-4" />
@@ -487,7 +666,8 @@ export default function Home() {
                       )
                     })}
                   </TableBody>
-                </Table>
+                  </Table>
+                </div>
               )}
             </CardContent>
           </Card>

@@ -189,10 +189,22 @@ UI → Application Ports → Domain Services → Repository Adapters という�
 - [x] 商品一覧・マスタ一覧に検索/フィルタ/ソート機能を追加し、目的のエントリへ素早くアクセスできるようにする。
 - [x] 集計タブの可視化に期間比較やカテゴリフィルタを導入し、トレンドを把握できるようにする。
 - [x] 操作ボタン（編集/コピー/削除やエクスポート）を行末でアイコン＋テキストにまとめ、主なアクションをヘッダーからアクセスできるショートカットも用意する。
-- [ ] モバイル/小画面向けのレスポンシブ最適化（カード縦積み、タップ領域拡大、ドロワーメニュー化）を行う。
+- [x] モバイル/小画面向けのレスポンシブ最適化（カード縦積み、タップ領域拡大、ドロワーメニュー化）を行う。
 - [ ] タブを跨いでも検索条件やフィルタが保持されるよう状態を保存し、シミュレーション条件をプリセット共有できる仕組みを追加する。
-- [ ] ログイン機能を導入し、認証済みユーザーとゲスト（お試し）を切り替えられるようにする。
+- [x] ログイン機能を導入し、認証済みユーザーとゲスト（お試し）を切り替えられるようにする。
 - [ ] 認証状態に応じて保存先を自動切り替える（ゲスト時は localStorage、ログイン時は DB）仕組みを整備する。
+  - [ ] Supabase プロジェクト作成・Auth 有効化、永続化するスキーマ設計（AppData を分割するか JSON で保存するか）を確定する。**→ 方針: AppData をテーブル単位へ分割し、各テーブルに `user_id`（Supabase Auth の UID）を持たせてユーザーと紐付ける。** テーブル例:
+    - `profiles`: `user_id (PK)`, `name`, `email`, `created_at`.
+    - `products`: `id`, `user_id`, `name`, `category_large_id`, `category_medium_id`, `category_small_id`, `sale_price`, `expected_production_quantity`, `notes`, `created_at`, `updated_at`.
+    - `materials`, `packaging_items`, `shipping_methods`, `labor_roles`, `equipments` ...（既存マスタと同名で、全て `user_id` を保持）。
+    - `cost_entries_*` 系（materials/packaging/labor/...）も同様に `user_id` を持たせ、`product_id` と合わせて参照。
+    - 今回はマルチテナント/権限分離は行わず、`user_id` だけでアクセス制御する。
+  - [ ] Supabase API キー、URL を `.env.local` に定義し、必要パッケージ（`@supabase/supabase-js` など）を導入する。
+  - [ ] `AuthProvider` を Supabase Auth ベースに書き換え、セッション情報をアプリ全体に配信する。
+  - [ ] `useAppData` の読み書きを抽象化し、ゲスト時は localStorage、ログイン時は Supabase DB を参照・更新するアダプタを追加する。
+  - [ ] ゲストデータ → ログイン時の Supabase へ移行処理、およびログアウト時の扱い（localStorage 退避など）を決めて実装する。
+  - [ ] エラー/オフライン時のリトライや差分競合の扱いを決め、必要に応じて通知や再同期フローを追加する。
+- [ ] ログイン・権限対応後にスマホUI微調整（タブ保持やボトムナビ化など）を行い、最終モバイル最適化を完了する。
 
 ## 材料費モジュール（第一弾）
 - **目的**: 製品を構成する主要素材のコストを正確に積み上げる。歩留まりや為替差も考慮可能な器を用意。
