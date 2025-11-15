@@ -1,6 +1,6 @@
 "use client"
 
-import { startTransition, useCallback, useEffect, useState } from "react"
+import { startTransition, useCallback, useEffect, useRef, useState } from "react"
 
 import {
   AppData,
@@ -26,6 +26,8 @@ import {
   emptyAppData,
   sampleAppData,
 } from "./types"
+import { useAuth } from "./auth"
+import { loadUserAppData, saveUserAppData } from "./app-data-sync"
 
 const STORAGE_KEY = "cost-app-data-v1"
 
@@ -41,8 +43,15 @@ const apply = <T,>(set: React.Dispatch<React.SetStateAction<T>>, updater: Update
 }
 
 export function useAppData() {
+  const { state: authState } = useAuth()
   const [data, setData] = useState<AppData>(defaultAppData)
   const [hydrated, setHydrated] = useState(false)
+  const skipNextSaveRef = useRef(false)
+  const dataRef = useRef<AppData>(defaultAppData)
+
+  useEffect(() => {
+    dataRef.current = data
+  }, [data])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -62,8 +71,48 @@ export function useAppData() {
 
   useEffect(() => {
     if (!hydrated) return
-    window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
-  }, [data, hydrated])
+    if (authState.status === "authenticated") {
+      let cancelled = false
+      ;(async () => {
+        try {
+          const remote = await loadUserAppData(authState.user.id)
+          if (cancelled) return
+          if (remote) {
+            skipNextSaveRef.current = true
+            setData(remote)
+          } else {
+            await saveUserAppData(authState.user.id, dataRef.current)
+          }
+        } catch (error) {
+          console.error("Remote sync failed", error)
+        }
+      })()
+      return () => {
+        cancelled = true
+      }
+    }
+  }, [authState, hydrated])
+
+  useEffect(() => {
+    if (!hydrated) return
+    if (skipNextSaveRef.current) {
+      skipNextSaveRef.current = false
+      return
+    }
+    if (authState.status === "authenticated") {
+      ;(async () => {
+        try {
+          await saveUserAppData(authState.user.id, data)
+        } catch (error) {
+          console.error("Failed to save data to Supabase", error)
+        }
+      })()
+    } else if (authState.status === "guest") {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
+      }
+    }
+  }, [data, hydrated, authState])
 
   const update = useCallback(
     (updater: Updater<AppData>) => {
@@ -500,17 +549,17 @@ export function useAppData() {
 
   const resetAll = useCallback(() => {
     update(() => emptyAppData)
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && authState.status !== "authenticated") {
       window.localStorage.removeItem(STORAGE_KEY)
     }
-  }, [update])
+  }, [update, authState])
 
   const seedSample = useCallback(() => {
     update(() => sampleAppData)
-    if (typeof window !== "undefined") {
+    if (typeof window !== "undefined" && authState.status !== "authenticated") {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleAppData))
     }
-  }, [update])
+  }, [update, authState])
 
   return {
     data,
