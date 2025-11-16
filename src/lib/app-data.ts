@@ -76,6 +76,7 @@ export function useAppData() {
   const skipNextSaveRef = useRef(false)
   const dataRef = useRef<AppData>(defaultAppData)
   const [pendingRemoteData, setPendingRemoteData] = useState<AppData | null>(null)
+  const [hasLocalGuestData, setHasLocalGuestData] = useState(false)
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
   const previousAuthStatus = authStatusRef.current
   const saveRetryRef = useRef<{ attempts: number; timeoutId: ReturnType<typeof setTimeout> | null }>({ attempts: 0, timeoutId: null })
@@ -136,6 +137,7 @@ export function useAppData() {
         startTransition(() => {
           setData(parsed)
         })
+        setHasLocalGuestData(true)
       } catch (error) {
         console.warn("Failed to parse stored data", error)
       }
@@ -159,14 +161,16 @@ export function useAppData() {
           if (typeof window !== "undefined") {
             window.localStorage.removeItem(STORAGE_KEY)
           }
+          setHasLocalGuestData(false)
           return
         }
-        if (!hasMeaningfulData(dataRef.current)) {
+        if (!hasLocalGuestData || !hasMeaningfulData(dataRef.current)) {
           skipNextSaveRef.current = true
           setData(remote)
           if (typeof window !== "undefined") {
             window.localStorage.removeItem(STORAGE_KEY)
           }
+          setHasLocalGuestData(false)
         } else {
           clearSaveRetry()
           setPendingRemoteData(remote)
@@ -179,7 +183,7 @@ export function useAppData() {
     return () => {
       cancelled = true
     }
-  }, [authState, hydrated])
+  }, [authState, hydrated, hasLocalGuestData, clearSaveRetry])
 
   useEffect(() => {
     if (!hydrated || pendingRemoteData) return
@@ -653,6 +657,7 @@ export function useAppData() {
       if (typeof window !== "undefined") {
         window.localStorage.removeItem(STORAGE_KEY)
       }
+      setHasLocalGuestData(false)
       setPendingRemoteData(null)
     },
     [authState, pendingRemoteData]
