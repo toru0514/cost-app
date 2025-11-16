@@ -155,7 +155,7 @@ export function CostTab({ data }: CostTabProps) {
 
   return (
     <div className="space-y-6">
-      <Card>
+      <Card className="overflow-x-hidden">
         <CardHeader>
           <CardTitle>原価サマリ</CardTitle>
           <CardDescription>カテゴリ別の積み上げと合計を確認できます。</CardDescription>
@@ -164,8 +164,8 @@ export function CostTab({ data }: CostTabProps) {
           {productSummaries.length === 0 ? (
             <p className="text-sm text-muted-foreground">まだ原価計算対象の商品がありません。</p>
           ) : (
-            <div className="overflow-x-auto">
-              <Table>
+            <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain">
+              <Table className="w-auto min-w-max">
                 <TableHeader>
                   <TableRow>
                     <TableHead>商品</TableHead>
@@ -304,7 +304,7 @@ export function CostTab({ data }: CostTabProps) {
       </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <Card>
+        <Card className="overflow-x-hidden">
           <CardHeader>
             <CardTitle>材料サマリ</CardTitle>
             <CardDescription>材料ごとの使用状況と単価を確認</CardDescription>
@@ -313,8 +313,8 @@ export function CostTab({ data }: CostTabProps) {
             {materialUsageGroups.length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ材料明細がありません。</p>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="w-auto min-w-max">
                   <TableHeader>
                     <TableRow>
                       <TableHead>材料</TableHead>
@@ -422,7 +422,7 @@ export function CostTab({ data }: CostTabProps) {
             }
           })}
         />
-        <Card>
+        <Card className="overflow-x-hidden">
           <CardHeader>
             <CardTitle>設備配賦</CardTitle>
             <CardDescription>設備単位での配賦状況</CardDescription>
@@ -431,8 +431,8 @@ export function CostTab({ data }: CostTabProps) {
             {equipmentUsageGroups.length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ設備配賦が登録されていません。</p>
             ) : (
-              <div className="overflow-x-auto">
-                <Table>
+              <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="w-auto min-w-max">
                   <TableHeader>
                     <TableRow>
                       <TableHead>設備</TableHead>

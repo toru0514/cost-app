@@ -133,7 +133,7 @@ export function CostDisplay({
   rows: { product: string; detail: string; amount: string }[]
 }) {
   return (
-    <Card>
+    <Card className="overflow-x-hidden">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
@@ -142,8 +142,8 @@ export function CostDisplay({
         {rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだデータがありません。</p>
         ) : (
-          <div className="overflow-x-auto">
-            <Table>
+          <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+            <Table className="w-auto min-w-max">
               <TableHeader>
                 <TableRow>
                   <TableHead>商品</TableHead>
