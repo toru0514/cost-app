@@ -156,11 +156,17 @@ export function useAppData() {
         if (cancelled) return
         if (!remote) {
           await saveUserAppData(authState.user.id, dataRef.current)
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem(STORAGE_KEY)
+          }
           return
         }
         if (!hasMeaningfulData(dataRef.current)) {
           skipNextSaveRef.current = true
           setData(remote)
+          if (typeof window !== "undefined") {
+            window.localStorage.removeItem(STORAGE_KEY)
+          }
         } else {
           clearSaveRetry()
           setPendingRemoteData(remote)
@@ -643,6 +649,9 @@ export function useAppData() {
           console.error("Failed to overwrite Supabase data", error)
           toast.error("Supabase への上書きに失敗しました。再度お試しください。")
         }
+      }
+      if (typeof window !== "undefined") {
+        window.localStorage.removeItem(STORAGE_KEY)
       }
       setPendingRemoteData(null)
     },
