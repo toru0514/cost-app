@@ -192,7 +192,7 @@ UI → Application Ports → Domain Services → Repository Adapters という�
 - [x] モバイル/小画面向けのレスポンシブ最適化（カード縦積み、タップ領域拡大、ドロワーメニュー化）を行う。
 - [ ] タブを跨いでも検索条件やフィルタが保持されるよう状態を保存し、シミュレーション条件をプリセット共有できる仕組みを追加する。
 - [x] ログイン機能を導入し、認証済みユーザーとゲスト（お試し）を切り替えられるようにする。
-- [ ] 認証状態に応じて保存先を自動切り替える（ゲスト時は localStorage、ログイン時は DB）仕組みを整備する。
+- [x] 認証状態に応じて保存先を自動切り替える（ゲスト時は localStorage、ログイン時は DB）仕組みを整備する。
   - [x] Supabase プロジェクト作成・Auth 有効化、永続化するスキーマ設計（AppData を分割するか JSON で保存するか）を確定する。**→ 方針: AppData をテーブル単位へ分割し、各テーブルに `user_id`（Supabase Auth の UID）を持たせてユーザーと紐付ける。** テーブル例:
     - `profiles`: `user_id (PK)`, `name`, `email`, `created_at`.
     - `products`: `id`, `user_id`, `name`, `category_large_id`, `category_medium_id`, `category_small_id`, `sale_price`, `expected_production_quantity`, `notes`, `created_at`, `updated_at`.

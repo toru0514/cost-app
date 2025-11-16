@@ -142,24 +142,26 @@ export function CostDisplay({
         {rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだデータがありません。</p>
         ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>商品</TableHead>
-                <TableHead>内容</TableHead>
-                <TableHead>金額</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row, index) => (
-                <TableRow key={`${title}-${index}`}>
-                  <TableCell>{row.product}</TableCell>
-                  <TableCell>{row.detail}</TableCell>
-                  <TableCell className="text-right font-medium">{row.amount}</TableCell>
+          <div className="overflow-x-auto">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>商品</TableHead>
+                  <TableHead>内容</TableHead>
+                  <TableHead>金額</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {rows.map((row, index) => (
+                  <TableRow key={`${title}-${index}`}>
+                    <TableCell>{row.product}</TableCell>
+                    <TableCell>{row.detail}</TableCell>
+                    <TableCell className="text-right font-medium">{row.amount}</TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
         )}
       </CardContent>
     </Card>

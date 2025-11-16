@@ -164,38 +164,40 @@ export function CostTab({ data }: CostTabProps) {
           {productSummaries.length === 0 ? (
             <p className="text-sm text-muted-foreground">まだ原価計算対象の商品がありません。</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>商品</TableHead>
-                  <TableHead>材料</TableHead>
-                  <TableHead>梱包</TableHead>
-                  <TableHead>人件費</TableHead>
-                  <TableHead>外注</TableHead>
-                  <TableHead>開発</TableHead>
-                  <TableHead>設備</TableHead>
-                  <TableHead>物流</TableHead>
-                  <TableHead>電気</TableHead>
-                  <TableHead>合計</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {productSummaries.map(({ product, costs }) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>{formatCurrency(costs.material)}</TableCell>
-                    <TableCell>{formatCurrency(costs.packaging)}</TableCell>
-                    <TableCell>{formatCurrency(costs.labor)}</TableCell>
-                    <TableCell>{formatCurrency(costs.outsourcing)}</TableCell>
-                    <TableCell>{formatCurrency(costs.development)}</TableCell>
-                    <TableCell>{formatCurrency(costs.equipment)}</TableCell>
-                    <TableCell>{formatCurrency(costs.logistics)}</TableCell>
-                    <TableCell>{formatCurrency(costs.electricity)}</TableCell>
-                    <TableCell className="font-semibold">{formatCurrency(costs.total)}</TableCell>
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>商品</TableHead>
+                    <TableHead>材料</TableHead>
+                    <TableHead>梱包</TableHead>
+                    <TableHead>人件費</TableHead>
+                    <TableHead>外注</TableHead>
+                    <TableHead>開発</TableHead>
+                    <TableHead>設備</TableHead>
+                    <TableHead>物流</TableHead>
+                    <TableHead>電気</TableHead>
+                    <TableHead>合計</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {productSummaries.map(({ product, costs }) => (
+                    <TableRow key={product.id}>
+                      <TableCell className="font-medium">{product.name}</TableCell>
+                      <TableCell>{formatCurrency(costs.material)}</TableCell>
+                      <TableCell>{formatCurrency(costs.packaging)}</TableCell>
+                      <TableCell>{formatCurrency(costs.labor)}</TableCell>
+                      <TableCell>{formatCurrency(costs.outsourcing)}</TableCell>
+                      <TableCell>{formatCurrency(costs.development)}</TableCell>
+                      <TableCell>{formatCurrency(costs.equipment)}</TableCell>
+                      <TableCell>{formatCurrency(costs.logistics)}</TableCell>
+                      <TableCell>{formatCurrency(costs.electricity)}</TableCell>
+                      <TableCell className="font-semibold">{formatCurrency(costs.total)}</TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
@@ -311,48 +313,50 @@ export function CostTab({ data }: CostTabProps) {
             {materialUsageGroups.length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ材料明細がありません。</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>材料</TableHead>
-                    <TableHead>仕入先</TableHead>
-                    <TableHead>登録使用率合計</TableHead>
-                    <TableHead>材料単価</TableHead>
-                    <TableHead>原価内訳</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {materialUsageGroups.map((group) => (
-                    <TableRow key={`summary-${group.materialId}`}>
-                      <TableCell>{group.materialName}</TableCell>
-                      <TableCell>{group.supplier ?? "-"}</TableCell>
-                      <TableCell>
-                        {group.totalUsageRatio !== undefined ? `${group.totalUsageRatio}%` : "-"}
-                      </TableCell>
-                      <TableCell>
-                        {group.baseUnitCost !== undefined
-                          ? formatCurrency(group.baseUnitCost, group.currency ?? "JPY")
-                          : "-"}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {group.entries.length === 0
-                          ? "-"
-                          : group.entries
-                              .map((entry) => {
-                                const ratioText = entry.usageRatio !== undefined ? `${entry.usageRatio}%` : "-"
-                                const costText =
-                                  entry.costShare !== undefined
-                                    ? formatCurrency(entry.costShare, group.currency ?? "JPY")
-                                    : "-"
-                                const lotText = entry.lotSize ? `${entry.lotSize}個` : "-"
-                                return `${entry.productName}: ${ratioText} / ${costText} / ${lotText}`
-                              })
-                              .join(" / ")}
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>材料</TableHead>
+                      <TableHead>仕入先</TableHead>
+                      <TableHead>登録使用率合計</TableHead>
+                      <TableHead>材料単価</TableHead>
+                      <TableHead>原価内訳</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {materialUsageGroups.map((group) => (
+                      <TableRow key={`summary-${group.materialId}`}>
+                        <TableCell>{group.materialName}</TableCell>
+                        <TableCell>{group.supplier ?? "-"}</TableCell>
+                        <TableCell>
+                          {group.totalUsageRatio !== undefined ? `${group.totalUsageRatio}%` : "-"}
+                        </TableCell>
+                        <TableCell>
+                          {group.baseUnitCost !== undefined
+                            ? formatCurrency(group.baseUnitCost, group.currency ?? "JPY")
+                            : "-"}
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {group.entries.length === 0
+                            ? "-"
+                            : group.entries
+                                .map((entry) => {
+                                  const ratioText = entry.usageRatio !== undefined ? `${entry.usageRatio}%` : "-"
+                                  const costText =
+                                    entry.costShare !== undefined
+                                      ? formatCurrency(entry.costShare, group.currency ?? "JPY")
+                                      : "-"
+                                  const lotText = entry.lotSize ? `${entry.lotSize}個` : "-"
+                                  return `${entry.productName}: ${ratioText} / ${costText} / ${lotText}`
+                                })
+                                .join(" / ")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -427,38 +431,40 @@ export function CostTab({ data }: CostTabProps) {
             {equipmentUsageGroups.length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ設備配賦が登録されていません。</p>
             ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>設備</TableHead>
-                    <TableHead>取得額 / 償却年数</TableHead>
-                    <TableHead>配賦内訳</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {equipmentUsageGroups.map((group) => (
-                    <TableRow key={`equipment-group-${group.equipment.id}`}>
-                      <TableCell>{group.equipment.name}</TableCell>
-                      <TableCell>
-                        {formatCurrency(group.equipment.acquisitionCost, group.equipment.currency)} /
-                        {group.equipment.amortizationYears}年
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {group.entries
-                          .map((entry) => {
-                            const ratio =
-                              group.totalUsageHours && entry.usageHours !== undefined && group.totalUsageHours > 0
-                                ? Math.round((entry.usageHours / group.totalUsageHours) * 100)
-                                : Math.round(entry.allocationRatio * 100)
-                            const hoursText = entry.usageHours !== undefined ? `${entry.usageHours.toFixed(2)}h` : "-"
-                            return `${entry.productName}: ${ratio}% / ${entry.annualQuantity}個 / ${hoursText} / ${formatCurrency(entry.unitCost, group.equipment.currency)}`
-                          })
-                          .join(" / ")}
-                      </TableCell>
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>設備</TableHead>
+                      <TableHead>取得額 / 償却年数</TableHead>
+                      <TableHead>配賦内訳</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
+                  </TableHeader>
+                  <TableBody>
+                    {equipmentUsageGroups.map((group) => (
+                      <TableRow key={`equipment-group-${group.equipment.id}`}>
+                        <TableCell>{group.equipment.name}</TableCell>
+                        <TableCell>
+                          {formatCurrency(group.equipment.acquisitionCost, group.equipment.currency)} /
+                          {group.equipment.amortizationYears}年
+                        </TableCell>
+                        <TableCell className="text-xs text-muted-foreground">
+                          {group.entries
+                            .map((entry) => {
+                              const ratio =
+                                group.totalUsageHours && entry.usageHours !== undefined && group.totalUsageHours > 0
+                                  ? Math.round((entry.usageHours / group.totalUsageHours) * 100)
+                                  : Math.round(entry.allocationRatio * 100)
+                              const hoursText = entry.usageHours !== undefined ? `${entry.usageHours.toFixed(2)}h` : "-"
+                              return `${entry.productName}: ${ratio}% / ${entry.annualQuantity}個 / ${hoursText} / ${formatCurrency(entry.unitCost, group.equipment.currency)}`
+                            })
+                            .join(" / ")}
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
