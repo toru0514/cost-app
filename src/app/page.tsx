@@ -376,11 +376,9 @@ export default function Home() {
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={authState.status === "authenticated" ? "default" : "outline"}>
-            {authState.status === "loading"
-              ? "認証状態を確認中..."
-              : authState.status === "authenticated"
-                ? `ログイン中: ${authState.user.name ?? authState.user.email}`
-                : "ゲストモード"}
+            {authState.status === "authenticated"
+              ? `ログイン中: ${authState.user.name ?? authState.user.email}`
+              : "ゲストモード"}
           </Badge>
           {authState.status !== "authenticated" ? (
             <Button type="button" size="sm" onClick={() => setLoginPanelOpen((prev) => !prev)}>
