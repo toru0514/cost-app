@@ -1234,30 +1234,32 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
           {masterOverviewRows.length === 0 ? (
             <p className="text-sm text-muted-foreground">条件に一致するマスタはありません。</p>
           ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>名称</TableHead>
-                  <TableHead>詳細</TableHead>
-                  <TableHead className="w-32 text-right">基準値</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {masterOverviewRows.map((row) => (
-                  <TableRow key={row.id}>
-                    <TableCell className="font-medium">{row.name}</TableCell>
-                    <TableCell className="text-sm text-muted-foreground">{row.detail || "-"}</TableCell>
-                    <TableCell className="text-right">
-                      {row.value !== undefined
-                        ? row.currency
-                          ? formatCurrency(row.value, row.currency)
-                          : row.value.toLocaleString()
-                        : "-"}
-                    </TableCell>
+            <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+              <Table className="w-auto min-w-max">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>名称</TableHead>
+                    <TableHead>詳細</TableHead>
+                    <TableHead className="w-32 text-right">基準値</TableHead>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+                </TableHeader>
+                <TableBody>
+                  {masterOverviewRows.map((row) => (
+                    <TableRow key={row.id}>
+                      <TableCell className="font-medium whitespace-nowrap">{row.name}</TableCell>
+                      <TableCell className="text-sm text-muted-foreground">{row.detail || "-"}</TableCell>
+                      <TableCell className="w-32 whitespace-nowrap text-right">
+                        {row.value !== undefined
+                          ? row.currency
+                            ? formatCurrency(row.value, row.currency)
+                            : row.value.toLocaleString()
+                          : "-"}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
           )}
         </CardContent>
       </Card>
