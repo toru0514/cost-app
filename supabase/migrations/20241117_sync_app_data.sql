@@ -105,6 +105,7 @@ declare
   v_message text;
   v_detail text;
   v_hint text;
+  v_stage text := 'init';
 begin
   begin
     perform pg_advisory_xact_lock(
@@ -112,11 +113,13 @@ begin
       hashtext(p_user_id::text)
     );
 
+  v_stage := 'categories_large';
   delete from categories_large where user_id = p_user_id;
   insert into categories_large (id, user_id, name, description)
   select coalesce((value->>'id')::uuid, gen_random_uuid()), p_user_id, value->>'name', nullif(value->>'description','')
   from jsonb_array_elements(coalesce(p_payload->'categories_large', '[]'::jsonb)) as value;
 
+  v_stage := 'categories_medium';
   delete from categories_medium where user_id = p_user_id;
   insert into categories_medium (id, user_id, name, description, large_id)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -126,6 +129,7 @@ begin
          nullif(value->>'large_id','')::uuid
   from jsonb_array_elements(coalesce(p_payload->'categories_medium', '[]'::jsonb)) as value;
 
+  v_stage := 'categories_small';
   delete from categories_small where user_id = p_user_id;
   insert into categories_small (id, user_id, name, description, medium_id)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -135,6 +139,7 @@ begin
          nullif(value->>'medium_id','')::uuid
   from jsonb_array_elements(coalesce(p_payload->'categories_small', '[]'::jsonb)) as value;
 
+  v_stage := 'materials';
   delete from materials where user_id = p_user_id;
   insert into materials (id, user_id, name, unit, size_description, currency, unit_cost, supplier, note, units_per_batch)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -149,6 +154,7 @@ begin
          nullif(value->>'units_per_batch','')::numeric
   from jsonb_array_elements(coalesce(p_payload->'materials', '[]'::jsonb)) as value;
 
+  v_stage := 'packaging_items';
   delete from packaging_items where user_id = p_user_id;
   insert into packaging_items (id, user_id, name, unit, size_description, currency, unit_cost, note, units_per_batch)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -162,6 +168,7 @@ begin
          nullif(value->>'units_per_batch','')::numeric
   from jsonb_array_elements(coalesce(p_payload->'packaging_items', '[]'::jsonb)) as value;
 
+  v_stage := 'shipping_methods';
   delete from shipping_methods where user_id = p_user_id;
   insert into shipping_methods (id, user_id, name, unit_cost, currency, note, description)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -173,6 +180,7 @@ begin
          nullif(value->>'description','')
   from jsonb_array_elements(coalesce(p_payload->'shipping_methods', '[]'::jsonb)) as value;
 
+  v_stage := 'labor_roles';
   delete from labor_roles where user_id = p_user_id;
   insert into labor_roles (id, user_id, name, hourly_rate, currency, note)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -183,6 +191,7 @@ begin
          nullif(value->>'note','')
   from jsonb_array_elements(coalesce(p_payload->'labor_roles', '[]'::jsonb)) as value;
 
+  v_stage := 'equipments';
   delete from equipments where user_id = p_user_id;
   insert into equipments (id, user_id, name, acquisition_cost, currency, amortization_years, note)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -194,6 +203,7 @@ begin
          nullif(value->>'note','')
   from jsonb_array_elements(coalesce(p_payload->'equipments', '[]'::jsonb)) as value;
 
+  v_stage := 'option_presets';
   delete from option_presets where user_id = p_user_id;
   insert into option_presets (id, user_id, name, variants)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -202,6 +212,7 @@ begin
          coalesce(value->'variants', '[]'::jsonb)
   from jsonb_array_elements(coalesce(p_payload->'option_presets', '[]'::jsonb)) as value;
 
+  v_stage := 'products';
   delete from products where user_id = p_user_id;
   insert into products (
     id,
@@ -239,6 +250,7 @@ begin
          coalesce(value->'equipment_ids', '[]'::jsonb)
   from jsonb_array_elements(coalesce(p_payload->'products', '[]'::jsonb)) as value;
 
+  v_stage := 'cost_entries_materials';
   delete from cost_entries_materials where user_id = p_user_id;
   insert into cost_entries_materials (id, user_id, product_id, material_id, description, usage_ratio, cost_per_unit, currency)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -251,6 +263,7 @@ begin
          value->>'currency'
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_materials', '[]'::jsonb)) as value;
 
+  v_stage := 'cost_entries_packaging';
   delete from cost_entries_packaging where user_id = p_user_id;
   insert into cost_entries_packaging (id, user_id, product_id, packaging_item_id, quantity, cost_per_unit, currency)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -262,6 +275,7 @@ begin
          value->>'currency'
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_packaging', '[]'::jsonb)) as value;
 
+  v_stage := 'cost_entries_labor';
   delete from cost_entries_labor where user_id = p_user_id;
   insert into cost_entries_labor (id, user_id, product_id, labor_role_id, hours, people_count, hourly_rate_override)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -273,6 +287,7 @@ begin
          nullif(value->>'hourly_rate_override','')::numeric
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_labor', '[]'::jsonb)) as value;
 
+  v_stage := 'cost_entries_outsourcing';
   delete from cost_entries_outsourcing where user_id = p_user_id;
   insert into cost_entries_outsourcing (id, user_id, product_id, cost_per_unit, currency, note)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -283,6 +298,7 @@ begin
          nullif(value->>'note','')
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_outsourcing', '[]'::jsonb)) as value;
 
+  v_stage := 'cost_entries_development';
   delete from cost_entries_development where user_id = p_user_id;
   insert into cost_entries_development (id, user_id, product_id, title, prototype_labor_cost, prototype_material_cost, tooling_cost, amortization_years)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -295,6 +311,7 @@ begin
          coalesce(nullif(value->>'amortization_years','')::int, 1)
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_development', '[]'::jsonb)) as value;
 
+  v_stage := 'cost_entries_equipment';
   delete from cost_entries_equipment where user_id = p_user_id;
   insert into cost_entries_equipment (id, user_id, product_id, equipment_id, allocation_ratio, annual_quantity, usage_hours)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -306,6 +323,7 @@ begin
          nullif(value->>'usage_hours','')::numeric
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_equipment', '[]'::jsonb)) as value;
 
+  v_stage := 'cost_entries_logistics';
   delete from cost_entries_logistics where user_id = p_user_id;
   insert into cost_entries_logistics (id, user_id, product_id, shipping_method_id, cost_per_unit, currency)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -316,6 +334,7 @@ begin
          value->>'currency'
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_logistics', '[]'::jsonb)) as value;
 
+    v_stage := 'cost_entries_electricity';
     delete from cost_entries_electricity where user_id = p_user_id;
     insert into cost_entries_electricity (id, user_id, product_id, cost_per_unit, currency)
     select coalesce((value->>'id')::uuid, gen_random_uuid()),
@@ -332,7 +351,7 @@ begin
         v_detail = pg_exception_detail,
         v_hint = pg_exception_hint;
       raise exception using
-        message = format('sync_app_data failed (%s): %s', v_state, v_message),
+        message = format('sync_app_data failed at %s (%s): %s', v_stage, v_state, v_message),
         detail = v_detail,
         hint = v_hint;
   end;
