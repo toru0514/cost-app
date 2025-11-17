@@ -686,15 +686,23 @@ export function useAppData() {
   )
 
   const resetAll = useCallback(() => {
+    if (authState.status === "authenticated") {
+      toast.error("ログイン中はリセットできません")
+      return
+    }
     update(() => emptyAppData)
-    if (typeof window !== "undefined" && authState.status !== "authenticated") {
+    if (typeof window !== "undefined") {
       window.localStorage.removeItem(STORAGE_KEY)
     }
   }, [update, authState])
 
   const seedSample = useCallback(() => {
+    if (authState.status === "authenticated") {
+      toast.error("ログイン中はデモデータを投入できません")
+      return
+    }
     update(() => sampleAppData)
-    if (typeof window !== "undefined" && authState.status !== "authenticated") {
+    if (typeof window !== "undefined") {
       window.localStorage.setItem(STORAGE_KEY, JSON.stringify(sampleAppData))
     }
   }, [update, authState])

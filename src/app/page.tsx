@@ -43,6 +43,7 @@ export default function Home() {
   const [productSortKey, setProductSortKey] = useState("registered-desc")
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const { state: authState, login, logout, signup } = useAuth()
+  const isAuthenticated = authState.status === "authenticated"
   const [loginPanelOpen, setLoginPanelOpen] = useState(false)
   const [loginForm, setLoginForm] = useState({ name: "", email: "", password: "" })
   const [authMode, setAuthMode] = useState<"login" | "signup">("login")
@@ -370,20 +371,30 @@ export default function Home() {
           <Badge variant="outline">マスタ {data.materials.length + data.packagingItems.length + data.laborRoles.length + data.equipments.length} 件</Badge>
           <Badge variant="outline">商品 {data.products.length} 件</Badge>
           <Badge variant="outline">コスト明細 {Object.values(data.costEntries).reduce((sum, list) => sum + list.length, 0)} 件</Badge>
-          <Button variant="outline" size="sm" onClick={actions.seedSample}>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={actions.seedSample}
+            disabled={isAuthenticated}
+            title={isAuthenticated ? "ログイン中は利用できません" : undefined}
+          >
             デモデータ投入
           </Button>
-          <Button variant="ghost" size="sm" onClick={actions.resetAll}>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={actions.resetAll}
+            disabled={isAuthenticated}
+            title={isAuthenticated ? "ログイン中は利用できません" : undefined}
+          >
             ローカル保存をクリア
           </Button>
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={authState.status === "authenticated" ? "default" : "outline"}>
-            {authState.status === "authenticated"
-              ? `ログイン中: ${authState.user.name ?? authState.user.email}`
-              : "ゲストモード"}
+          <Badge variant={isAuthenticated ? "default" : "outline"}>
+            {isAuthenticated ? `ログイン中: ${authState.user.name ?? authState.user.email}` : "ゲストモード"}
           </Badge>
-          {authState.status !== "authenticated" ? (
+          {!isAuthenticated ? (
             <Button type="button" size="sm" onClick={() => setLoginPanelOpen((prev) => !prev)}>
               ログイン
             </Button>
