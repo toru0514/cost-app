@@ -238,8 +238,8 @@ begin
   insert into cost_entries_materials (id, user_id, product_id, material_id, description, usage_ratio, cost_per_unit, currency)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
-         (value->>'product_id')::uuid,
-         (value->>'material_id')::uuid,
+         nullif(value->>'product_id','')::uuid,
+         nullif(value->>'material_id','')::uuid,
          nullif(value->>'description',''),
          (value->>'usage_ratio')::numeric,
          coalesce((value->>'cost_per_unit')::numeric, 0),
@@ -250,8 +250,8 @@ begin
   insert into cost_entries_packaging (id, user_id, product_id, packaging_item_id, quantity, cost_per_unit, currency)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
-         (value->>'product_id')::uuid,
-         (value->>'packaging_item_id')::uuid,
+         nullif(value->>'product_id','')::uuid,
+         nullif(value->>'packaging_item_id','')::uuid,
          coalesce((value->>'quantity')::numeric, 0),
          coalesce((value->>'cost_per_unit')::numeric, 0),
          value->>'currency'
@@ -261,8 +261,8 @@ begin
   insert into cost_entries_labor (id, user_id, product_id, labor_role_id, hours, people_count, hourly_rate_override)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
-         (value->>'product_id')::uuid,
-         (value->>'labor_role_id')::uuid,
+         nullif(value->>'product_id','')::uuid,
+         nullif(value->>'labor_role_id','')::uuid,
          coalesce((value->>'hours')::numeric, 0),
          coalesce((value->>'people_count')::numeric, 0),
          (value->>'hourly_rate_override')::numeric
@@ -272,7 +272,7 @@ begin
   insert into cost_entries_outsourcing (id, user_id, product_id, cost_per_unit, currency, note)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
-         (value->>'product_id')::uuid,
+         nullif(value->>'product_id','')::uuid,
          coalesce((value->>'cost_per_unit')::numeric, 0),
          value->>'currency',
          nullif(value->>'note','')
@@ -282,7 +282,7 @@ begin
   insert into cost_entries_development (id, user_id, product_id, title, prototype_labor_cost, prototype_material_cost, tooling_cost, amortization_years)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
-         (value->>'product_id')::uuid,
+         nullif(value->>'product_id','')::uuid,
          nullif(value->>'title',''),
          coalesce((value->>'prototype_labor_cost')::numeric, 0),
          coalesce((value->>'prototype_material_cost')::numeric, 0),
@@ -294,8 +294,8 @@ begin
   insert into cost_entries_equipment (id, user_id, product_id, equipment_id, allocation_ratio, annual_quantity, usage_hours)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
-         (value->>'product_id')::uuid,
-         (value->>'equipment_id')::uuid,
+         nullif(value->>'product_id','')::uuid,
+         nullif(value->>'equipment_id','')::uuid,
          coalesce((value->>'allocation_ratio')::numeric, 0),
          coalesce((value->>'annual_quantity')::numeric, 0),
          (value->>'usage_hours')::numeric
@@ -305,8 +305,8 @@ begin
   insert into cost_entries_logistics (id, user_id, product_id, shipping_method_id, cost_per_unit, currency)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
-         (value->>'product_id')::uuid,
-         (value->>'shipping_method_id')::uuid,
+         nullif(value->>'product_id','')::uuid,
+         nullif(value->>'shipping_method_id','')::uuid,
          coalesce((value->>'cost_per_unit')::numeric, 0),
          value->>'currency'
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_logistics', '[]'::jsonb)) as value;
@@ -315,7 +315,7 @@ begin
   insert into cost_entries_electricity (id, user_id, product_id, cost_per_unit, currency)
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
-         (value->>'product_id')::uuid,
+         nullif(value->>'product_id','')::uuid,
          coalesce((value->>'cost_per_unit')::numeric, 0),
          value->>'currency'
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_electricity', '[]'::jsonb)) as value;
