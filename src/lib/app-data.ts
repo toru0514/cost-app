@@ -532,6 +532,13 @@ export function useAppData() {
     [update]
   )
 
+  const updateProduct = useCallback((input: Product) => {
+    update((prev) => ({
+      ...prev,
+      products: prev.products.map((product) => (product.id === input.id ? input : product)),
+    }))
+  }, [update])
+
   const addMaterialCostEntry = useCallback(
     (input: Omit<MaterialCostEntry, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -757,6 +764,7 @@ export function useAppData() {
       updateEquipment,
       removeEquipment,
       addProduct,
+      updateProduct,
       addMaterialCostEntry,
       addPackagingCostEntry,
       addLaborCostEntry,

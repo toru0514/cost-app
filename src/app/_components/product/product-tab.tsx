@@ -375,6 +375,7 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
   const {
     addProduct,
+    updateProduct,
     addMaterialCostEntry,
     addPackagingCostEntry,
     addLaborCostEntry,
@@ -383,7 +384,6 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
     addEquipmentAllocation,
     addLogisticsCostEntry,
     addElectricityCostEntry,
-    removeProduct,
     removeCostEntriesByProduct,
   } = actions
 
@@ -731,12 +731,12 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
                     defaultElectricityCost: Number(electricityUnitCost) || 0,
                     salePrice: Number(productForm.salePrice) || 0,
                   }
-                  if (editingProductId) {
-                    removeProduct(editingProductId)
+                  if (isEditing && editingProductId) {
+                    updateProduct({ id: targetProductId, ...normalizedProduct })
                     removeCostEntriesByProduct(editingProductId)
+                  } else {
+                    addProduct({ id: targetProductId, ...normalizedProduct })
                   }
-
-                  addProduct({ id: targetProductId, ...normalizedProduct })
 
                   materialDrafts
                     .filter((draft) => draft.materialId)
