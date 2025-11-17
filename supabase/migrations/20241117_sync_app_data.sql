@@ -138,10 +138,10 @@ begin
          value->>'unit',
          value->>'size_description',
          value->>'currency',
-         coalesce((value->>'unit_cost')::numeric, 0),
+         coalesce(nullif(value->>'unit_cost','')::numeric, 0),
          nullif(value->>'supplier',''),
          nullif(value->>'note',''),
-         (value->>'units_per_batch')::numeric
+         nullif(value->>'units_per_batch','')::numeric
   from jsonb_array_elements(coalesce(p_payload->'materials', '[]'::jsonb)) as value;
 
   delete from packaging_items where user_id = p_user_id;
@@ -152,9 +152,9 @@ begin
          value->>'unit',
          value->>'size_description',
          value->>'currency',
-         coalesce((value->>'unit_cost')::numeric, 0),
+         coalesce(nullif(value->>'unit_cost','')::numeric, 0),
          nullif(value->>'note',''),
-         (value->>'units_per_batch')::numeric
+         nullif(value->>'units_per_batch','')::numeric
   from jsonb_array_elements(coalesce(p_payload->'packaging_items', '[]'::jsonb)) as value;
 
   delete from shipping_methods where user_id = p_user_id;
@@ -162,7 +162,7 @@ begin
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
          value->>'name',
-         coalesce((value->>'unit_cost')::numeric, 0),
+         coalesce(nullif(value->>'unit_cost','')::numeric, 0),
          value->>'currency',
          nullif(value->>'note',''),
          nullif(value->>'description','')
@@ -173,7 +173,7 @@ begin
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
          value->>'name',
-         coalesce((value->>'hourly_rate')::numeric, 0),
+         coalesce(nullif(value->>'hourly_rate','')::numeric, 0),
          value->>'currency',
          nullif(value->>'note','')
   from jsonb_array_elements(coalesce(p_payload->'labor_roles', '[]'::jsonb)) as value;
@@ -183,9 +183,9 @@ begin
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
          value->>'name',
-         coalesce((value->>'acquisition_cost')::numeric, 0),
+         coalesce(nullif(value->>'acquisition_cost','')::numeric, 0),
          value->>'currency',
-         coalesce((value->>'amortization_years')::int, 1),
+         coalesce(nullif(value->>'amortization_years','')::int, 1),
          nullif(value->>'note','')
   from jsonb_array_elements(coalesce(p_payload->'equipments', '[]'::jsonb)) as value;
 
@@ -223,14 +223,14 @@ begin
          nullif(value->>'category_medium_id','')::uuid,
          nullif(value->>'category_small_id','')::uuid,
          coalesce(value->'size_variants', '[]'::jsonb),
-         coalesce((value->>'base_man_hours')::numeric, 0),
-         coalesce((value->>'default_electricity_cost')::numeric, 0),
-         coalesce((value->>'sale_price')::numeric, 0),
-         (value->>'registered_at')::timestamptz,
+         coalesce(nullif(value->>'base_man_hours','')::numeric, 0),
+         coalesce(nullif(value->>'default_electricity_cost','')::numeric, 0),
+         coalesce(nullif(value->>'sale_price','')::numeric, 0),
+         nullif(value->>'registered_at','')::timestamptz,
          nullif(value->>'notes',''),
-         coalesce((value->>'production_lot_size')::numeric, 0),
-         coalesce((value->>'expected_production_period_years')::numeric, 1),
-         coalesce((value->>'expected_production_quantity')::numeric, 1),
+         coalesce(nullif(value->>'production_lot_size','')::numeric, 0),
+         coalesce(nullif(value->>'expected_production_period_years','')::numeric, 1),
+         coalesce(nullif(value->>'expected_production_quantity','')::numeric, 1),
          coalesce(value->'equipment_ids', '[]'::jsonb)
   from jsonb_array_elements(coalesce(p_payload->'products', '[]'::jsonb)) as value;
 
@@ -241,8 +241,8 @@ begin
          nullif(value->>'product_id','')::uuid,
          nullif(value->>'material_id','')::uuid,
          nullif(value->>'description',''),
-         (value->>'usage_ratio')::numeric,
-         coalesce((value->>'cost_per_unit')::numeric, 0),
+         nullif(value->>'usage_ratio','')::numeric,
+         coalesce(nullif(value->>'cost_per_unit','')::numeric, 0),
          value->>'currency'
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_materials', '[]'::jsonb)) as value;
 
@@ -252,8 +252,8 @@ begin
          p_user_id,
          nullif(value->>'product_id','')::uuid,
          nullif(value->>'packaging_item_id','')::uuid,
-         coalesce((value->>'quantity')::numeric, 0),
-         coalesce((value->>'cost_per_unit')::numeric, 0),
+         coalesce(nullif(value->>'quantity','')::numeric, 0),
+         coalesce(nullif(value->>'cost_per_unit','')::numeric, 0),
          value->>'currency'
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_packaging', '[]'::jsonb)) as value;
 
@@ -263,9 +263,9 @@ begin
          p_user_id,
          nullif(value->>'product_id','')::uuid,
          nullif(value->>'labor_role_id','')::uuid,
-         coalesce((value->>'hours')::numeric, 0),
-         coalesce((value->>'people_count')::numeric, 0),
-         (value->>'hourly_rate_override')::numeric
+         coalesce(nullif(value->>'hours','')::numeric, 0),
+         coalesce(nullif(value->>'people_count','')::numeric, 0),
+         nullif(value->>'hourly_rate_override','')::numeric
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_labor', '[]'::jsonb)) as value;
 
   delete from cost_entries_outsourcing where user_id = p_user_id;
@@ -273,7 +273,7 @@ begin
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
          nullif(value->>'product_id','')::uuid,
-         coalesce((value->>'cost_per_unit')::numeric, 0),
+         coalesce(nullif(value->>'cost_per_unit','')::numeric, 0),
          value->>'currency',
          nullif(value->>'note','')
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_outsourcing', '[]'::jsonb)) as value;
@@ -284,10 +284,10 @@ begin
          p_user_id,
          nullif(value->>'product_id','')::uuid,
          nullif(value->>'title',''),
-         coalesce((value->>'prototype_labor_cost')::numeric, 0),
-         coalesce((value->>'prototype_material_cost')::numeric, 0),
-         coalesce((value->>'tooling_cost')::numeric, 0),
-         coalesce((value->>'amortization_years')::int, 1)
+         coalesce(nullif(value->>'prototype_labor_cost','')::numeric, 0),
+         coalesce(nullif(value->>'prototype_material_cost','')::numeric, 0),
+         coalesce(nullif(value->>'tooling_cost','')::numeric, 0),
+         coalesce(nullif(value->>'amortization_years','')::int, 1)
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_development', '[]'::jsonb)) as value;
 
   delete from cost_entries_equipment where user_id = p_user_id;
@@ -296,9 +296,9 @@ begin
          p_user_id,
          nullif(value->>'product_id','')::uuid,
          nullif(value->>'equipment_id','')::uuid,
-         coalesce((value->>'allocation_ratio')::numeric, 0),
-         coalesce((value->>'annual_quantity')::numeric, 0),
-         (value->>'usage_hours')::numeric
+         coalesce(nullif(value->>'allocation_ratio','')::numeric, 0),
+         coalesce(nullif(value->>'annual_quantity','')::numeric, 0),
+         nullif(value->>'usage_hours','')::numeric
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_equipment', '[]'::jsonb)) as value;
 
   delete from cost_entries_logistics where user_id = p_user_id;
@@ -307,7 +307,7 @@ begin
          p_user_id,
          nullif(value->>'product_id','')::uuid,
          nullif(value->>'shipping_method_id','')::uuid,
-         coalesce((value->>'cost_per_unit')::numeric, 0),
+         coalesce(nullif(value->>'cost_per_unit','')::numeric, 0),
          value->>'currency'
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_logistics', '[]'::jsonb)) as value;
 
@@ -316,7 +316,7 @@ begin
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
          nullif(value->>'product_id','')::uuid,
-         coalesce((value->>'cost_per_unit')::numeric, 0),
+         coalesce(nullif(value->>'cost_per_unit','')::numeric, 0),
          value->>'currency'
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_electricity', '[]'::jsonb)) as value;
 end;
