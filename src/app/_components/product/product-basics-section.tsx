@@ -21,16 +21,14 @@ interface ProductBasicsSectionProps {
 export function ProductBasicsSection({ data, productForm, setProductForm, handleToggleEquipment }: ProductBasicsSectionProps) {
   const largeOptions = data.categories.large
   const mediumOptions = data.categories.medium.filter((m) => {
+    if (productForm.categoryMediumId && m.id === productForm.categoryMediumId) return true
     if (!productForm.categoryLargeId) return true
-    if (m.largeId === productForm.categoryLargeId) return true
-    if (!m.largeId && productForm.categoryMediumId === m.id) return true
-    return false
+    return m.largeId === productForm.categoryLargeId
   })
   const smallOptions = data.categories.small.filter((s) => {
+    if (productForm.categorySmallId && s.id === productForm.categorySmallId) return true
     if (!productForm.categoryMediumId) return true
-    if (s.mediumId === productForm.categoryMediumId) return true
-    if (!s.mediumId && productForm.categorySmallId === s.id) return true
-    return false
+    return s.mediumId === productForm.categoryMediumId
   })
   const optionPresets = data.optionPresets ?? []
   const [selectedPresetId, setSelectedPresetId] = useState<string>(optionPresets[0]?.id ?? "")
@@ -120,7 +118,11 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
         <Select
           value={productForm.categoryMediumId}
           onValueChange={(value) =>
-            setProductForm((prev) => ({ ...prev, categoryMediumId: value, categorySmallId: "" }))
+            setProductForm((prev) => {
+              const selectedMedium = data.categories.medium.find((category) => category.id === value)
+              const derivedLargeId = selectedMedium?.largeId ?? prev.categoryLargeId ?? ""
+              return { ...prev, categoryLargeId: derivedLargeId, categoryMediumId: value, categorySmallId: "" }
+            })
           }
         >
           <SelectTrigger>
@@ -136,7 +138,22 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
         </Select>
         <Select
           value={productForm.categorySmallId}
-          onValueChange={(value) => setProductForm((prev) => ({ ...prev, categorySmallId: value }))}
+          onValueChange={(value) =>
+            setProductForm((prev) => {
+              const selectedSmall = data.categories.small.find((category) => category.id === value)
+              const parentMedium = selectedSmall?.mediumId
+                ? data.categories.medium.find((category) => category.id === selectedSmall.mediumId)
+                : undefined
+              const derivedMediumId = selectedSmall?.mediumId ?? prev.categoryMediumId ?? ""
+              const derivedLargeId = parentMedium?.largeId ?? prev.categoryLargeId ?? ""
+              return {
+                ...prev,
+                categoryLargeId: derivedLargeId,
+                categoryMediumId: derivedMediumId,
+                categorySmallId: value,
+              }
+            })
+          }
         >
           <SelectTrigger>
             <SelectValue placeholder="小カテゴリ" />

@@ -508,6 +508,18 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
     const mapOrFallback = <T,>(entries: T[], fallback: () => T) => (entries.length > 0 ? entries : [fallback()])
 
+    const resolvedMediumId =
+      product.categoryMediumId ??
+      (product.categorySmallId
+        ? data.categories.small.find((category) => category.id === product.categorySmallId)?.mediumId
+        : undefined)
+
+    const resolvedLargeId =
+      product.categoryLargeId ??
+      (resolvedMediumId
+        ? data.categories.medium.find((category) => category.id === resolvedMediumId)?.largeId
+        : undefined)
+
     const clonedVariants =
       product.sizeVariants && product.sizeVariants.length > 0
         ? product.sizeVariants.map((variant) => ({ label: variant.label, quantity: variant.quantity }))
@@ -515,8 +527,8 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
     setProductForm({
       name: adjustedName,
-      categoryLargeId: product.categoryLargeId ?? "",
-      categoryMediumId: product.categoryMediumId ?? "",
+      categoryLargeId: resolvedLargeId ?? "",
+      categoryMediumId: resolvedMediumId ?? "",
       categorySmallId: product.categorySmallId ?? "",
       sizeVariants: clonedVariants,
       baseManHours: product.baseManHours,
@@ -650,6 +662,8 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
     createMaterialDraft,
     createOutsourcingDraft,
     createPackagingDraft,
+    data.categories.medium,
+    data.categories.small,
     data.costEntries.development,
     data.costEntries.electricity,
     data.costEntries.equipmentAllocations,
