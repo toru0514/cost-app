@@ -1,6 +1,6 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -1267,7 +1267,16 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
 }
 
 export function MasterTab({ data, actions }: MasterTabProps) {
-  const [view, setView] = useState<"register" | "list">("register")
+  const [view, setView] = useState<"register" | "list">(() => {
+    if (typeof window === "undefined") return "register"
+    const stored = window.localStorage.getItem("cost-app-master-view")
+    return stored === "list" ? "list" : "register"
+  })
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem("cost-app-master-view", view)
+  }, [view])
 
   return (
     <div className="space-y-6">
