@@ -350,8 +350,9 @@ export default function Home() {
 
   if (!hydrated) {
     return (
-      <main className="mx-auto flex min-h-screen max-w-4xl items-center justify-center p-10 text-muted-foreground">
-        ローカルストレージからデータを読み込み中です...
+      <main className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center gap-4 p-10 text-muted-foreground">
+        <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-transparent" />
+        <p>データを読み込み中です...</p>
       </main>
     )
   }
