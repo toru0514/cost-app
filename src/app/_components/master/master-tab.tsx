@@ -365,7 +365,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="space-y-6">
         <FormSection
           title="カテゴリマスタ"
           description="大・中・小カテゴリを事前登録し、商品登録時に選択できるようにします。"
@@ -638,7 +638,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
         </FormSection>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="space-y-6">
         <FormSection
           title="梱包材マスタ"
           description="段ボールやフィルムなどを登録し、商品登録時に選べるようにします。"
@@ -2045,7 +2045,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>材料一覧</CardTitle>
@@ -2454,7 +2454,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="space-y-6">
         <Card>
           <CardHeader>
             <CardTitle>配送方法一覧</CardTitle>
