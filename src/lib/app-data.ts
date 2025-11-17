@@ -173,11 +173,13 @@ export function useAppData() {
         const remote = await loadUserAppData(authState.user.id)
         if (cancelled) return
         if (!remote) {
-          await saveUserAppData(authState.user.id, dataRef.current)
-          if (typeof window !== "undefined") {
-            window.localStorage.removeItem(STORAGE_KEY)
+          if (hasMeaningfulData(dataRef.current)) {
+            await saveUserAppData(authState.user.id, dataRef.current)
+            if (typeof window !== "undefined") {
+              window.localStorage.removeItem(STORAGE_KEY)
+            }
+            setHasLocalGuestData(false)
           }
-          setHasLocalGuestData(false)
           setRemoteLoadCompleted(true)
           return
         }
