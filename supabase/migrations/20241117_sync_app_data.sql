@@ -114,12 +114,20 @@ begin
 
   delete from categories_medium where user_id = p_user_id;
   insert into categories_medium (id, user_id, name, description, large_id)
-  select coalesce((value->>'id')::uuid, gen_random_uuid()), p_user_id, value->>'name', nullif(value->>'description',''), (value->>'large_id')::uuid
+  select coalesce((value->>'id')::uuid, gen_random_uuid()),
+         p_user_id,
+         value->>'name',
+         nullif(value->>'description',''),
+         nullif(value->>'large_id','')::uuid
   from jsonb_array_elements(coalesce(p_payload->'categories_medium', '[]'::jsonb)) as value;
 
   delete from categories_small where user_id = p_user_id;
   insert into categories_small (id, user_id, name, description, medium_id)
-  select coalesce((value->>'id')::uuid, gen_random_uuid()), p_user_id, value->>'name', nullif(value->>'description',''), (value->>'medium_id')::uuid
+  select coalesce((value->>'id')::uuid, gen_random_uuid()),
+         p_user_id,
+         value->>'name',
+         nullif(value->>'description',''),
+         nullif(value->>'medium_id','')::uuid
   from jsonb_array_elements(coalesce(p_payload->'categories_small', '[]'::jsonb)) as value;
 
   delete from materials where user_id = p_user_id;
@@ -211,9 +219,9 @@ begin
   select coalesce((value->>'id')::uuid, gen_random_uuid()),
          p_user_id,
          value->>'name',
-         (value->>'category_large_id')::uuid,
-         (value->>'category_medium_id')::uuid,
-         (value->>'category_small_id')::uuid,
+         nullif(value->>'category_large_id','')::uuid,
+         nullif(value->>'category_medium_id','')::uuid,
+         nullif(value->>'category_small_id','')::uuid,
          coalesce(value->'size_variants', '[]'::jsonb),
          coalesce((value->>'base_man_hours')::numeric, 0),
          coalesce((value->>'default_electricity_cost')::numeric, 0),
