@@ -300,11 +300,30 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
 }
 
 async function replaceTable(table: string, rows: any[], userId: string) {
-  const { error: deleteError } = await supabaseClient.from(table).delete().eq("user_id", userId)
-  if (deleteError) throw deleteError
-  if (rows.length === 0) return
-  const { error } = await supabaseClient.from(table).insert(rows)
-  if (error) throw error
+  const { data: existingRows, error: selectError } = await supabaseClient
+    .from(table)
+    .select("id")
+    .eq("user_id", userId)
+  if (selectError) throw selectError
+
+  if (rows.length > 0) {
+    const { error: upsertError } = await supabaseClient.from(table).upsert(rows, { onConflict: "id" })
+    if (upsertError) throw upsertError
+  }
+
+  const incomingIds = new Set(rows.map((row) => row.id))
+  const idsToDelete = (existingRows ?? [])
+    .map((row: { id: string }) => row.id)
+    .filter((id) => !incomingIds.has(id))
+
+  if (idsToDelete.length > 0) {
+    const { error: deleteError } = await supabaseClient
+      .from(table)
+      .delete()
+      .eq("user_id", userId)
+      .in("id", idsToDelete)
+    if (deleteError) throw deleteError
+  }
 }
 
 export async function saveUserAppData(userId: string, data: AppData) {

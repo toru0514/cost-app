@@ -92,8 +92,13 @@ export function useAppData() {
 
   const persistSupabaseWithRetry = useCallback(() => {
     if (authState.status !== "authenticated") return
+    if (!hasMeaningfulData(dataRef.current)) {
+      console.warn("Skip saving empty dataset to Supabase")
+      return
+    }
     const attemptSave = async () => {
       if (authState.status !== "authenticated") return
+      if (!hasMeaningfulData(dataRef.current)) return
       try {
         await saveUserAppData(authState.user.id, dataRef.current)
         clearSaveRetry()
