@@ -20,16 +20,25 @@ interface ProductBasicsSectionProps {
 
 export function ProductBasicsSection({ data, productForm, setProductForm, handleToggleEquipment }: ProductBasicsSectionProps) {
   const largeOptions = data.categories.large
+  const selectedLargeCategory = productForm.categoryLargeId
+    ? largeOptions.find((category) => category.id === productForm.categoryLargeId)
+    : undefined
   const mediumOptions = data.categories.medium.filter((m) => {
     if (productForm.categoryMediumId && m.id === productForm.categoryMediumId) return true
     if (!productForm.categoryLargeId) return true
     return m.largeId === productForm.categoryLargeId
   })
+  const selectedMediumCategory = productForm.categoryMediumId
+    ? data.categories.medium.find((category) => category.id === productForm.categoryMediumId)
+    : undefined
   const smallOptions = data.categories.small.filter((s) => {
     if (productForm.categorySmallId && s.id === productForm.categorySmallId) return true
     if (!productForm.categoryMediumId) return true
     return s.mediumId === productForm.categoryMediumId
   })
+  const selectedSmallCategory = productForm.categorySmallId
+    ? data.categories.small.find((category) => category.id === productForm.categorySmallId)
+    : undefined
   const optionPresets = data.optionPresets ?? []
   const [selectedPresetId, setSelectedPresetId] = useState<string>(optionPresets[0]?.id ?? "")
 
@@ -105,7 +114,9 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="大カテゴリ" />
+            <SelectValue placeholder="大カテゴリ">
+              {selectedLargeCategory?.name}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {largeOptions.map((category) => (
@@ -126,7 +137,9 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="中カテゴリ" />
+            <SelectValue placeholder="中カテゴリ">
+              {selectedMediumCategory?.name}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {mediumOptions.map((category) => (
@@ -156,7 +169,9 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="小カテゴリ" />
+            <SelectValue placeholder="小カテゴリ">
+              {selectedSmallCategory?.name}
+            </SelectValue>
           </SelectTrigger>
           <SelectContent>
             {smallOptions.map((category) => (
