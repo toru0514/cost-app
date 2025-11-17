@@ -77,6 +77,7 @@ export function useAppData() {
   const dataRef = useRef<AppData>(defaultAppData)
   const [pendingRemoteData, setPendingRemoteData] = useState<AppData | null>(null)
   const [hasLocalGuestData, setHasLocalGuestData] = useState(false)
+  const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
   const previousAuthStatus = authStatusRef.current
   const saveRetryRef = useRef<{ attempts: number; timeoutId: ReturnType<typeof setTimeout> | null }>({ attempts: 0, timeoutId: null })
@@ -146,12 +147,18 @@ export function useAppData() {
   }, [])
 
   useEffect(() => {
+    setRemoteLoadCompleted(authState.status !== "authenticated")
+  }, [authState.status])
+
+  useEffect(() => {
     if (!hydrated) return
     if (authState.status !== "authenticated") {
       setPendingRemoteData(null)
+      setRemoteLoadCompleted(true)
       return
     }
     let cancelled = false
+    setRemoteLoadCompleted(false)
     ;(async () => {
       try {
         const remote = await loadUserAppData(authState.user.id)
@@ -162,6 +169,7 @@ export function useAppData() {
             window.localStorage.removeItem(STORAGE_KEY)
           }
           setHasLocalGuestData(false)
+          setRemoteLoadCompleted(true)
           return
         }
         if (!hasLocalGuestData || !hasMeaningfulData(dataRef.current)) {
@@ -175,9 +183,11 @@ export function useAppData() {
           clearSaveRetry()
           setPendingRemoteData(remote)
         }
+        setRemoteLoadCompleted(true)
       } catch (error) {
         console.error("Remote sync failed", error)
         toast.error("Supabase からデータを取得できませんでした。ネットワーク状況を確認してください。")
+        setRemoteLoadCompleted(true)
       }
     })()
     return () => {
@@ -186,13 +196,15 @@ export function useAppData() {
   }, [authState, hydrated, hasLocalGuestData, clearSaveRetry])
 
   useEffect(() => {
-    if (!hydrated || pendingRemoteData) return
+    if (!hydrated || pendingRemoteData || !remoteLoadCompleted) return
     if (skipNextSaveRef.current) {
       skipNextSaveRef.current = false
       return
     }
     if (authState.status === "authenticated") {
-      persistSupabaseWithRetry()
+      if (hasMeaningfulData(dataRef.current)) {
+        persistSupabaseWithRetry()
+      }
     } else if (authState.status === "guest") {
       if (previousAuthStatus === "authenticated") {
         if (typeof window !== "undefined") {
@@ -204,7 +216,7 @@ export function useAppData() {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
       }
     }
-  }, [data, hydrated, authState, pendingRemoteData, persistSupabaseWithRetry, previousAuthStatus])
+  }, [data, hydrated, authState, pendingRemoteData, remoteLoadCompleted, persistSupabaseWithRetry, previousAuthStatus])
 
   const update = useCallback(
     (updater: Updater<AppData>) => {
@@ -647,7 +659,9 @@ export function useAppData() {
         setData(pendingRemoteData)
       } else {
         try {
-          await saveUserAppData(authState.user.id, dataRef.current)
+          if (hasMeaningfulData(dataRef.current)) {
+            await saveUserAppData(authState.user.id, dataRef.current)
+          }
           toast.success("Supabase のデータを現在の内容で更新しました")
         } catch (error) {
           console.error("Failed to overwrite Supabase data", error)
@@ -659,6 +673,7 @@ export function useAppData() {
       }
       setHasLocalGuestData(false)
       setPendingRemoteData(null)
+      setRemoteLoadCompleted(true)
     },
     [authState, pendingRemoteData]
   )
