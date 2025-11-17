@@ -306,8 +306,12 @@ async function replaceTable(table: string, rows: any[], userId: string) {
     .eq("user_id", userId)
   if (selectError) throw selectError
 
-  if (rows.length > 0) {
-    const { error: upsertError } = await supabaseClient.from(table).upsert(rows, { onConflict: "id" })
+  const upsertPayload = rows.map((row) => ({ ...row, user_id: userId }))
+
+  if (upsertPayload.length > 0) {
+    const { error: upsertError } = await supabaseClient
+      .from(table)
+      .upsert(upsertPayload, { onConflict: "id" })
     if (upsertError) throw upsertError
   }
 
