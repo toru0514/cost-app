@@ -1,6 +1,6 @@
 "use client"
 
-import { createContext, useCallback, useContext, useEffect, useMemo, useState } from "react"
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react"
 
 import { supabaseClient } from "./supabase-client"
 
@@ -28,6 +28,22 @@ const AuthContext = createContext<AuthContextValue | undefined>(undefined)
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [state, setState] = useState<AuthState>({ status: "loading" })
+  const guestDelayRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const commitState = useCallback((next: AuthState) => {
+    if (guestDelayRef.current) {
+      clearTimeout(guestDelayRef.current)
+      guestDelayRef.current = null
+    }
+    if (next.status === "guest") {
+      guestDelayRef.current = setTimeout(() => {
+        setState({ status: "guest" })
+        guestDelayRef.current = null
+      }, 1000)
+    } else {
+      setState(next)
+    }
+  }, [])
 
   const fetchProfile = useCallback(async (userId: string, email: string) => {
     const { data, error } = await supabaseClient.from("profiles").select("*").eq("user_id", userId).single()
@@ -35,8 +51,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       console.error("Failed to fetch profile", error)
     }
     const name = data?.name ?? email
-    setState({ status: "authenticated", user: { id: userId, email, name } })
-  }, [])
+    commitState({ status: "authenticated", user: { id: userId, email, name } })
+  }, [commitState])
 
   useEffect(() => {
     let mounted = true
@@ -48,7 +64,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         await fetchProfile(session.user.id, session.user.email ?? "")
       } else {
-        setState({ status: "guest" })
+        commitState({ status: "guest" })
       }
     }
     void init()
@@ -57,14 +73,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (session?.user) {
         void fetchProfile(session.user.id, session.user.email ?? "")
       } else {
-        setState({ status: "guest" })
+        commitState({ status: "guest" })
       }
     })
     return () => {
       mounted = false
       subscription.subscription.unsubscribe()
+      if (guestDelayRef.current) {
+        clearTimeout(guestDelayRef.current)
+        guestDelayRef.current = null
+      }
     }
-  }, [fetchProfile])
+  }, [fetchProfile, commitState])
 
   const ensureProfile = useCallback(async (userId: string, name: string, email: string) => {
     const { error } = await supabaseClient
