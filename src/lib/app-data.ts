@@ -202,9 +202,7 @@ export function useAppData() {
       return
     }
     if (authState.status === "authenticated") {
-      if (hasMeaningfulData(dataRef.current)) {
-        persistSupabaseWithRetry()
-      }
+      persistSupabaseWithRetry()
     } else if (authState.status === "guest") {
       if (previousAuthStatus === "authenticated") {
         if (typeof window !== "undefined") {
@@ -659,9 +657,7 @@ export function useAppData() {
         setData(pendingRemoteData)
       } else {
         try {
-          if (hasMeaningfulData(dataRef.current)) {
-            await saveUserAppData(authState.user.id, dataRef.current)
-          }
+          await saveUserAppData(authState.user.id, dataRef.current)
           toast.success("Supabase のデータを現在の内容で更新しました")
         } catch (error) {
           console.error("Failed to overwrite Supabase data", error)
