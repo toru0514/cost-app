@@ -74,8 +74,6 @@ export function useAppData() {
   const [hydrated, setHydrated] = useState(false)
   const skipNextSaveRef = useRef(false)
   const dataRef = useRef<AppData>(emptyAppData)
-  const [pendingRemoteData, setPendingRemoteData] = useState<AppData | null>(null)
-  const [hasLocalGuestData, setHasLocalGuestData] = useState(false)
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
@@ -141,7 +139,6 @@ export function useAppData() {
     if (authState.status === "authenticated") {
       skipNextSaveRef.current = true
       window.localStorage.removeItem(STORAGE_KEY)
-      setHasLocalGuestData(false)
       setData(emptyAppData)
       startTransition(() => setHydrated(true))
       return
@@ -153,7 +150,6 @@ export function useAppData() {
         startTransition(() => {
           setData(parsed)
         })
-        setHasLocalGuestData(true)
       } catch (error) {
         console.warn("Failed to parse stored data", error)
       }
@@ -168,7 +164,6 @@ export function useAppData() {
   useEffect(() => {
     if (!hydrated) return
     if (authState.status !== "authenticated") {
-      setPendingRemoteData(null)
       setRemoteLoadCompleted(true)
       setRemoteLoadFailed(false)
       return
@@ -181,27 +176,15 @@ export function useAppData() {
         const remote = await loadUserAppData(authState.user.id)
         if (cancelled) return
         if (!remote) {
-          if (hasMeaningfulData(dataRef.current)) {
-            await saveUserAppData(authState.user.id, dataRef.current)
-            if (typeof window !== "undefined") {
-              window.localStorage.removeItem(STORAGE_KEY)
-            }
-            setHasLocalGuestData(false)
-          }
           setRemoteLoadFailed(false)
           setRemoteLoadCompleted(true)
           return
         }
-        if (!hasLocalGuestData || !hasMeaningfulData(dataRef.current)) {
-          skipNextSaveRef.current = true
-          setData(remote)
-          if (typeof window !== "undefined") {
-            window.localStorage.removeItem(STORAGE_KEY)
-          }
-          setHasLocalGuestData(false)
-        } else {
-          clearSaveRetry()
-          setPendingRemoteData(remote)
+        skipNextSaveRef.current = true
+        clearSaveRetry()
+        setData(remote)
+        if (typeof window !== "undefined") {
+          window.localStorage.removeItem(STORAGE_KEY)
         }
         setRemoteLoadFailed(false)
         setRemoteLoadCompleted(true)
@@ -215,10 +198,10 @@ export function useAppData() {
     return () => {
       cancelled = true
     }
-  }, [authState, hydrated, hasLocalGuestData, clearSaveRetry])
+  }, [authState, hydrated, clearSaveRetry])
 
   useEffect(() => {
-    if (!hydrated || pendingRemoteData || !remoteLoadCompleted) return
+    if (!hydrated || !remoteLoadCompleted) return
     if (authState.status === "authenticated" && remoteLoadFailed) return
     if (skipNextSaveRef.current) {
       skipNextSaveRef.current = false
@@ -241,7 +224,6 @@ export function useAppData() {
     data,
     hydrated,
     authState,
-    pendingRemoteData,
     remoteLoadCompleted,
     remoteLoadFailed,
     persistSupabaseWithRetry,
@@ -688,31 +670,6 @@ export function useAppData() {
     [update]
   )
 
-  const resolveSyncConflict = useCallback(
-    async (choice: "local" | "remote") => {
-      if (authState.status !== "authenticated" || !pendingRemoteData) return
-      if (choice === "remote") {
-        skipNextSaveRef.current = true
-        setData(pendingRemoteData)
-      } else {
-        try {
-          await saveUserAppData(authState.user.id, dataRef.current)
-          toast.success("Supabase のデータを現在の内容で更新しました")
-        } catch (error) {
-          console.error("Failed to overwrite Supabase data", error)
-          toast.error("Supabase への上書きに失敗しました。再度お試しください。")
-        }
-      }
-      if (typeof window !== "undefined") {
-        window.localStorage.removeItem(STORAGE_KEY)
-      }
-      setHasLocalGuestData(false)
-      setPendingRemoteData(null)
-      setRemoteLoadCompleted(true)
-    },
-    [authState, pendingRemoteData]
-  )
-
   const resetAll = useCallback(() => {
     if (authState.status === "authenticated") {
       toast.error("ログイン中はリセットできません")
@@ -738,8 +695,6 @@ export function useAppData() {
   return {
     data,
     hydrated,
-    syncConflict: Boolean(pendingRemoteData),
-    resolveSyncConflict,
     actions: {
       addLargeCategory,
       updateLargeCategory,
