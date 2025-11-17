@@ -133,6 +133,7 @@ export function useAppData() {
     if (hydrated) return
     if (authState.status === "loading") return
     if (authState.status === "authenticated") {
+      skipNextSaveRef.current = true
       window.localStorage.removeItem(STORAGE_KEY)
       setHasLocalGuestData(false)
       setData(emptyAppData)
