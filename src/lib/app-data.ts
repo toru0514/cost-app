@@ -8,7 +8,6 @@ import {
   CategoryLarge,
   CategoryMedium,
   CategorySmall,
-  defaultAppData,
   DevelopmentCostEntry,
   ElectricityCostEntry,
   Equipment,
@@ -71,10 +70,10 @@ const MAX_SAVE_RETRIES = 3
 
 export function useAppData() {
   const { state: authState } = useAuth()
-  const [data, setData] = useState<AppData>(defaultAppData)
+  const [data, setData] = useState<AppData>(emptyAppData)
   const [hydrated, setHydrated] = useState(false)
   const skipNextSaveRef = useRef(false)
-  const dataRef = useRef<AppData>(defaultAppData)
+  const dataRef = useRef<AppData>(emptyAppData)
   const [pendingRemoteData, setPendingRemoteData] = useState<AppData | null>(null)
   const [hasLocalGuestData, setHasLocalGuestData] = useState(false)
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
