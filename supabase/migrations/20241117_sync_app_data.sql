@@ -101,11 +101,16 @@ security definer
 set search_path = public
 as $$
 declare
+  v_state text;
+  v_message text;
+  v_detail text;
+  v_hint text;
 begin
-  perform pg_advisory_xact_lock(
-    hashtext('sync_app_data'),
-    hashtext(p_user_id::text)
-  );
+  begin
+    perform pg_advisory_xact_lock(
+      hashtext('sync_app_data'),
+      hashtext(p_user_id::text)
+    );
 
   delete from categories_large where user_id = p_user_id;
   insert into categories_large (id, user_id, name, description)
@@ -311,14 +316,26 @@ begin
          value->>'currency'
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_logistics', '[]'::jsonb)) as value;
 
-  delete from cost_entries_electricity where user_id = p_user_id;
-  insert into cost_entries_electricity (id, user_id, product_id, cost_per_unit, currency)
-  select coalesce((value->>'id')::uuid, gen_random_uuid()),
-         p_user_id,
-         nullif(value->>'product_id','')::uuid,
-         coalesce(nullif(value->>'cost_per_unit','')::numeric, 0),
-         value->>'currency'
-  from jsonb_array_elements(coalesce(p_payload->'cost_entries_electricity', '[]'::jsonb)) as value;
+    delete from cost_entries_electricity where user_id = p_user_id;
+    insert into cost_entries_electricity (id, user_id, product_id, cost_per_unit, currency)
+    select coalesce((value->>'id')::uuid, gen_random_uuid()),
+           p_user_id,
+           nullif(value->>'product_id','')::uuid,
+           coalesce(nullif(value->>'cost_per_unit','')::numeric, 0),
+           value->>'currency'
+    from jsonb_array_elements(coalesce(p_payload->'cost_entries_electricity', '[]'::jsonb)) as value;
+  exception
+    when others then
+      get stacked diagnostics
+        v_state = returned_sqlstate,
+        v_message = message_text,
+        v_detail = pg_exception_detail,
+        v_hint = pg_exception_hint;
+      raise exception using
+        message = format('sync_app_data failed (%s): %s', v_state, v_message),
+        detail = v_detail,
+        hint = v_hint;
+  end;
 end;
 $$;
 
