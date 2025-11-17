@@ -1,6 +1,6 @@
 "use client"
 
-import { startTransition, useCallback, useEffect, useRef, useState } from "react"
+import { startTransition, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 
 import {
@@ -154,7 +154,7 @@ export function useAppData() {
     startTransition(() => setHydrated(true))
   }, [authState.status, hydrated])
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     setRemoteLoadCompleted(authState.status !== "authenticated")
   }, [authState.status])
 
