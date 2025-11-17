@@ -131,6 +131,14 @@ export function useAppData() {
 
   useEffect(() => {
     if (typeof window === "undefined") return
+    if (hydrated) return
+    if (authState.status === "loading") return
+    if (authState.status === "authenticated") {
+      window.localStorage.removeItem(STORAGE_KEY)
+      setHasLocalGuestData(false)
+      startTransition(() => setHydrated(true))
+      return
+    }
     const stored = window.localStorage.getItem(STORAGE_KEY)
     if (stored) {
       try {
@@ -144,7 +152,7 @@ export function useAppData() {
       }
     }
     startTransition(() => setHydrated(true))
-  }, [])
+  }, [authState.status, hydrated])
 
   useEffect(() => {
     setRemoteLoadCompleted(authState.status !== "authenticated")
