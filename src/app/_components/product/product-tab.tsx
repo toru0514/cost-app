@@ -662,9 +662,9 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
   ])
 
   useEffect(() => {
-    if (!editingProductId) return
+    if (!editingProductId || !editingProduct) return
     hydrateProductFromExisting(editingProductId)
-  }, [editingProductId, hydrateProductFromExisting])
+  }, [editingProductId, editingProduct, hydrateProductFromExisting])
 
   useEffect(() => {
     if (!copySourceProductId) return
