@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type ReactNode } from "react"
+import { useEffect, useState, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -13,6 +13,7 @@ export function FormSection({
   defaultOpen = false,
   action,
   className = "",
+  storageKey,
 }: {
   title: string
   description?: string
@@ -20,8 +21,21 @@ export function FormSection({
   defaultOpen?: boolean
   action?: ReactNode
   className?: string
+  storageKey?: string
 }) {
-  const [open, setOpen] = useState(defaultOpen)
+  const [open, setOpen] = useState(() => {
+    if (storageKey && typeof window !== "undefined") {
+      const stored = window.localStorage.getItem(storageKey)
+      if (stored === "open") return true
+      if (stored === "closed") return false
+    }
+    return defaultOpen
+  })
+
+  useEffect(() => {
+    if (!storageKey || typeof window === "undefined") return
+    window.localStorage.setItem(storageKey, open ? "open" : "closed")
+  }, [open, storageKey])
 
   return (
     <section className={`rounded-lg border bg-card text-card-foreground ${className}`}>

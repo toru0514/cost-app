@@ -369,6 +369,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
         <FormSection
           title="カテゴリマスタ"
           description="大・中・小カテゴリを事前登録し、商品登録時に選択できるようにします。"
+          storageKey="master-section-categories"
         >
           <div className="space-y-4">
             <form
@@ -521,6 +522,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
         <FormSection
           title="材料マスタ"
           description="名称・単位・サイズ・仕入先まで登録し、材料コスト入力時に再利用します。"
+          storageKey="master-section-materials"
         >
       <div className="space-y-2">
         <form
@@ -641,6 +643,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
         <FormSection
           title="梱包材マスタ"
           description="段ボールやフィルムなどを登録し、商品登録時に選べるようにします。"
+          storageKey="master-section-packaging"
         >
           <div className="space-y-2">
             <form
@@ -749,6 +752,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
         <FormSection
           title="配送方法マスタ"
           description="宅配便・メール便などの配送手段と送料を登録します。"
+          storageKey="master-section-shipping"
         >
           <div className="space-y-2">
             <form
@@ -837,6 +841,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
         <FormSection
           title="オプションプリセット"
           description="S/M/L など定型セットを登録し、商品登録で一括インポートできます。"
+          storageKey="master-section-option-presets"
         >
           <div className="space-y-3">
             <form
@@ -934,6 +939,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
       <FormSection
         title="人件費 / 設備マスタ"
         description="工数と時給、設備投資のベースをまとめて管理します。"
+        storageKey="master-section-labor-equipment"
       >
         <div className="grid gap-6 md:grid-cols-2">
           <form
@@ -1076,6 +1082,7 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
       <FormSection
         title="設備導入シミュレーション"
         description="年間数量と販売価格を仮入力し、配賦単価と投資回収を比較します。"
+        storageKey="master-section-equipment-sim"
       >
         <div className="space-y-4">
           {equipmentSimulationData.length === 0 ? (
