@@ -135,6 +135,7 @@ export function useAppData() {
     if (authState.status === "authenticated") {
       window.localStorage.removeItem(STORAGE_KEY)
       setHasLocalGuestData(false)
+      setData(emptyAppData)
       startTransition(() => setHydrated(true))
       return
     }
