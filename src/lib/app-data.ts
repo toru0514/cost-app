@@ -77,6 +77,7 @@ export function useAppData() {
   const [pendingRemoteData, setPendingRemoteData] = useState<AppData | null>(null)
   const [hasLocalGuestData, setHasLocalGuestData] = useState(false)
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
+  const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
   const previousAuthStatus = authStatusRef.current
   const saveRetryRef = useRef<{ attempts: number; timeoutId: ReturnType<typeof setTimeout> | null }>({ attempts: 0, timeoutId: null })
@@ -164,10 +165,12 @@ export function useAppData() {
     if (authState.status !== "authenticated") {
       setPendingRemoteData(null)
       setRemoteLoadCompleted(true)
+      setRemoteLoadFailed(false)
       return
     }
     let cancelled = false
     setRemoteLoadCompleted(false)
+    setRemoteLoadFailed(false)
     ;(async () => {
       try {
         const remote = await loadUserAppData(authState.user.id)
@@ -180,6 +183,7 @@ export function useAppData() {
             }
             setHasLocalGuestData(false)
           }
+          setRemoteLoadFailed(false)
           setRemoteLoadCompleted(true)
           return
         }
@@ -194,10 +198,12 @@ export function useAppData() {
           clearSaveRetry()
           setPendingRemoteData(remote)
         }
+        setRemoteLoadFailed(false)
         setRemoteLoadCompleted(true)
       } catch (error) {
         console.error("Remote sync failed", error)
         toast.error("Supabase からデータを取得できませんでした。ネットワーク状況を確認してください。")
+        setRemoteLoadFailed(true)
         setRemoteLoadCompleted(true)
       }
     })()
@@ -208,6 +214,7 @@ export function useAppData() {
 
   useEffect(() => {
     if (!hydrated || pendingRemoteData || !remoteLoadCompleted) return
+    if (authState.status === "authenticated" && remoteLoadFailed) return
     if (skipNextSaveRef.current) {
       skipNextSaveRef.current = false
       return
@@ -225,7 +232,16 @@ export function useAppData() {
         window.localStorage.setItem(STORAGE_KEY, JSON.stringify(data))
       }
     }
-  }, [data, hydrated, authState, pendingRemoteData, remoteLoadCompleted, persistSupabaseWithRetry, previousAuthStatus])
+  }, [
+    data,
+    hydrated,
+    authState,
+    pendingRemoteData,
+    remoteLoadCompleted,
+    remoteLoadFailed,
+    persistSupabaseWithRetry,
+    previousAuthStatus,
+  ])
 
   const update = useCallback(
     (updater: Updater<AppData>) => {
