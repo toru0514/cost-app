@@ -247,7 +247,11 @@ begin
          coalesce(nullif(value->>'production_lot_size','')::numeric, 0),
          coalesce(nullif(value->>'expected_production_period_years','')::numeric, 1),
          coalesce(nullif(value->>'expected_production_quantity','')::numeric, 1),
-         coalesce(value->'equipment_ids', '[]'::jsonb)
+         coalesce(
+           (select array_agg(elem)
+              from jsonb_array_elements_text(coalesce(value->'equipment_ids', '[]'::jsonb)) as elem),
+           array[]::text[]
+         )
   from jsonb_array_elements(coalesce(p_payload->'products', '[]'::jsonb)) as value;
 
   v_stage := 'cost_entries_materials';
