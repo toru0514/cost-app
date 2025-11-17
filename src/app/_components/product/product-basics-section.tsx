@@ -108,15 +108,19 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
       />
       <div className="grid gap-2 md:grid-cols-3">
         <Select
-          value={productForm.categoryLargeId}
+          value={productForm.categoryLargeId || undefined}
           onValueChange={(value) =>
             setProductForm((prev) => ({ ...prev, categoryLargeId: value, categoryMediumId: "", categorySmallId: "" }))
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="大カテゴリ">
-              {selectedLargeCategory?.name}
-            </SelectValue>
+            <span
+              className={`truncate text-left text-sm ${
+                selectedLargeCategory ? "text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {selectedLargeCategory?.name || "大カテゴリ"}
+            </span>
           </SelectTrigger>
           <SelectContent>
             {largeOptions.map((category) => (
@@ -127,7 +131,7 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
           </SelectContent>
         </Select>
         <Select
-          value={productForm.categoryMediumId}
+          value={productForm.categoryMediumId || undefined}
           onValueChange={(value) =>
             setProductForm((prev) => {
               const selectedMedium = data.categories.medium.find((category) => category.id === value)
@@ -137,9 +141,13 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="中カテゴリ">
-              {selectedMediumCategory?.name}
-            </SelectValue>
+            <span
+              className={`truncate text-left text-sm ${
+                selectedMediumCategory ? "text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {selectedMediumCategory?.name || "中カテゴリ"}
+            </span>
           </SelectTrigger>
           <SelectContent>
             {mediumOptions.map((category) => (
@@ -150,7 +158,7 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
           </SelectContent>
         </Select>
         <Select
-          value={productForm.categorySmallId}
+          value={productForm.categorySmallId || undefined}
           onValueChange={(value) =>
             setProductForm((prev) => {
               const selectedSmall = data.categories.small.find((category) => category.id === value)
@@ -169,9 +177,13 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
           }
         >
           <SelectTrigger>
-            <SelectValue placeholder="小カテゴリ">
-              {selectedSmallCategory?.name}
-            </SelectValue>
+            <span
+              className={`truncate text-left text-sm ${
+                selectedSmallCategory ? "text-foreground" : "text-muted-foreground"
+              }`}
+            >
+              {selectedSmallCategory?.name || "小カテゴリ"}
+            </span>
           </SelectTrigger>
           <SelectContent>
             {smallOptions.map((category) => (
