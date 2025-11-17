@@ -1797,7 +1797,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
             {data.categories.large.length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
             ) : (
-              <Table>
+              <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>名称</TableHead>
@@ -1848,7 +1849,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     )
                   })}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             )}
           </div>
 
@@ -1857,7 +1859,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
             {data.categories.medium.length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
             ) : (
-              <Table>
+              <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="min-w-[700px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>名称</TableHead>
@@ -1943,7 +1946,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     )
                   })}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             )}
           </div>
 
@@ -1952,7 +1956,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
             {data.categories.small.length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
             ) : (
-              <Table>
+              <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="min-w-[720px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>名称</TableHead>
@@ -2038,7 +2043,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     )
                   })}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             )}
           </div>
         </CardContent>
@@ -2053,7 +2059,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
             {data.materials.length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
             ) : (
-              <Table>
+              <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="min-w-[760px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>名称</TableHead>
@@ -2185,7 +2192,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     )
                   })}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -2198,7 +2206,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
             {data.packagingItems.length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
             ) : (
-              <Table>
+              <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="min-w-[760px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>名称</TableHead>
@@ -2329,7 +2338,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     )
                   })}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -2343,7 +2353,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
             {(data.optionPresets ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
             ) : (
-              <Table>
+              <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>名称</TableHead>
@@ -2447,7 +2458,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     )
                   })}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -2462,7 +2474,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
             {(data.shippingMethods ?? []).length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
             ) : (
-              <Table>
+              <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="min-w-[640px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>名称</TableHead>
@@ -2566,7 +2579,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     )
                   })}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -2579,7 +2593,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
             {data.laborRoles.length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
             ) : (
-              <Table>
+              <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="min-w-[600px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>作業カテゴリ</TableHead>
@@ -2671,7 +2686,8 @@ function MasterListView({ data, actions }: MasterTabProps) {
                     )
                   })}
                 </TableBody>
-              </Table>
+                </Table>
+              </div>
             )}
           </CardContent>
         </Card>
@@ -2682,13 +2698,14 @@ function MasterListView({ data, actions }: MasterTabProps) {
           <CardTitle>設備一覧</CardTitle>
         </CardHeader>
         <CardContent>
-          {data.equipments.length === 0 ? (
-            <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
-          ) : (
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>名称</TableHead>
+            {data.equipments.length === 0 ? (
+              <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
+            ) : (
+              <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="min-w-[640px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>名称</TableHead>
                   <TableHead>取得額</TableHead>
                   <TableHead>償却年数</TableHead>
                   <TableHead>備考</TableHead>
@@ -2696,7 +2713,7 @@ function MasterListView({ data, actions }: MasterTabProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.equipments.map((equipment) => {
+                  {data.equipments.map((equipment) => {
                   const isEditing = editingEquipment.id === equipment.id
                   return (
                     <TableRow key={equipment.id}>
@@ -2791,12 +2808,13 @@ function MasterListView({ data, actions }: MasterTabProps) {
                       </TableCell>
                     </TableRow>
                   )
-                })}
-              </TableBody>
-            </Table>
-          )}
-        </CardContent>
-      </Card>
+                  })}
+                </TableBody>
+                </Table>
+              </div>
+            )}
+          </CardContent>
+        </Card>
     </div>
   )
 }
