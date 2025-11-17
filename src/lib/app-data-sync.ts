@@ -299,275 +299,162 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
   }
 }
 
-async function replaceTable(table: string, rows: any[], userId: string) {
-  const { data: backupRows, error: backupError } = await supabaseClient
-    .from(table)
-    .select("*")
-    .eq("user_id", userId)
-  if (backupError) throw backupError
-
-  const { error: deleteError } = await supabaseClient.from(table).delete().eq("user_id", userId)
-  if (deleteError) throw deleteError
-
-  if (rows.length === 0) return
-
-  const insertPayload = rows.map((row) => ({ ...row, user_id: userId }))
-  const { error: insertError } = await supabaseClient.from(table).insert(insertPayload)
-  if (insertError) {
-    if (backupRows && backupRows.length > 0) {
-      await supabaseClient.from(table).insert(backupRows)
-    }
-    throw insertError
+function buildSyncPayload(data: AppData) {
+  return {
+    categories_large: data.categories.large.map((item) => ({ id: item.id, name: item.name, description: item.description ?? null })),
+    categories_medium: data.categories.medium.map((item) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description ?? null,
+      large_id: item.largeId ?? null,
+    })),
+    categories_small: data.categories.small.map((item) => ({
+      id: item.id,
+      name: item.name,
+      description: item.description ?? null,
+      medium_id: item.mediumId ?? null,
+    })),
+    materials: data.materials.map((item) => ({
+      id: item.id,
+      name: item.name,
+      unit: item.unit,
+      size_description: item.sizeDescription,
+      currency: item.currency,
+      unit_cost: item.unitCost,
+      supplier: item.supplier ?? null,
+      note: item.note ?? null,
+      units_per_batch: item.unitsPerBatch ?? null,
+    })),
+    packaging_items: data.packagingItems.map((item) => ({
+      id: item.id,
+      name: item.name,
+      unit: item.unit,
+      size_description: item.sizeDescription,
+      currency: item.currency,
+      unit_cost: item.unitCost,
+      note: item.note ?? null,
+      units_per_batch: item.unitsPerBatch ?? null,
+    })),
+    shipping_methods: (data.shippingMethods ?? []).map((item) => ({
+      id: item.id,
+      name: item.name,
+      unit_cost: item.unitCost,
+      currency: item.currency,
+      note: item.note ?? null,
+      description: item.description ?? null,
+    })),
+    labor_roles: data.laborRoles.map((item) => ({
+      id: item.id,
+      name: item.name,
+      hourly_rate: item.hourlyRate,
+      currency: item.currency,
+      note: item.note ?? null,
+    })),
+    equipments: data.equipments.map((item) => ({
+      id: item.id,
+      name: item.name,
+      acquisition_cost: item.acquisitionCost,
+      currency: item.currency,
+      amortization_years: item.amortizationYears,
+      note: item.note ?? null,
+    })),
+    option_presets: (data.optionPresets ?? []).map((item) => ({
+      id: item.id,
+      name: item.name,
+      variants: item.variants,
+    })),
+    products: data.products.map((item) => ({
+      id: item.id,
+      name: item.name,
+      category_large_id: item.categoryLargeId ?? null,
+      category_medium_id: item.categoryMediumId ?? null,
+      category_small_id: item.categorySmallId ?? null,
+      size_variants: item.sizeVariants,
+      base_man_hours: item.baseManHours,
+      default_electricity_cost: item.defaultElectricityCost,
+      sale_price: item.salePrice,
+      registered_at: item.registeredAt,
+      notes: item.notes ?? null,
+      production_lot_size: item.productionLotSize,
+      expected_production_period_years: item.expectedProduction.periodYears,
+      expected_production_quantity: item.expectedProduction.quantity,
+      equipment_ids: item.equipmentIds ?? [],
+    })),
+    cost_entries_materials: data.costEntries.materials.map((item) => ({
+      id: item.id,
+      product_id: item.productId,
+      material_id: item.materialId,
+      description: item.description ?? null,
+      usage_ratio: item.usageRatio ?? null,
+      cost_per_unit: item.costPerUnit,
+      currency: item.currency,
+    })),
+    cost_entries_packaging: data.costEntries.packaging.map((item) => ({
+      id: item.id,
+      product_id: item.productId,
+      packaging_item_id: item.packagingItemId,
+      quantity: item.quantity,
+      cost_per_unit: item.costPerUnit,
+      currency: item.currency,
+    })),
+    cost_entries_labor: data.costEntries.labor.map((item) => ({
+      id: item.id,
+      product_id: item.productId,
+      labor_role_id: item.laborRoleId,
+      hours: item.hours,
+      people_count: item.peopleCount,
+      hourly_rate_override: item.hourlyRateOverride ?? null,
+    })),
+    cost_entries_outsourcing: data.costEntries.outsourcing.map((item) => ({
+      id: item.id,
+      product_id: item.productId,
+      cost_per_unit: item.costPerUnit,
+      currency: item.currency,
+      note: item.note ?? null,
+    })),
+    cost_entries_development: data.costEntries.development.map((item) => ({
+      id: item.id,
+      product_id: item.productId,
+      title: item.title ?? null,
+      prototype_labor_cost: item.prototypeLaborCost,
+      prototype_material_cost: item.prototypeMaterialCost,
+      tooling_cost: item.toolingCost,
+      amortization_years: item.amortizationYears,
+    })),
+    cost_entries_equipment: data.costEntries.equipmentAllocations.map((item) => ({
+      id: item.id,
+      product_id: item.productId,
+      equipment_id: item.equipmentId,
+      allocation_ratio: item.allocationRatio,
+      annual_quantity: item.annualQuantity,
+      usage_hours: item.usageHours ?? null,
+    })),
+    cost_entries_logistics: data.costEntries.logistics.map((item) => ({
+      id: item.id,
+      product_id: item.productId,
+      shipping_method_id: item.shippingMethodId,
+      cost_per_unit: item.costPerUnit,
+      currency: item.currency,
+    })),
+    cost_entries_electricity: data.costEntries.electricity.map((item) => ({
+      id: item.id,
+      product_id: item.productId,
+      cost_per_unit: item.costPerUnit,
+      currency: item.currency,
+    })),
   }
 }
 
 export async function saveUserAppData(userId: string, data: AppData) {
   try {
-    await replaceTable(
-      TABLES.categories.large,
-      data.categories.large.map((item) => ({ id: item.id, user_id: userId, name: item.name, description: item.description ?? null })),
-      userId
-    )
-    await replaceTable(
-      TABLES.categories.medium,
-      data.categories.medium.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        name: item.name,
-        description: item.description ?? null,
-        large_id: item.largeId ?? null,
-      })),
-      userId
-    )
-    await replaceTable(
-      TABLES.categories.small,
-      data.categories.small.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        name: item.name,
-        description: item.description ?? null,
-        medium_id: item.mediumId ?? null,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.materials,
-      data.materials.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        name: item.name,
-        unit: item.unit,
-        size_description: item.sizeDescription,
-        currency: item.currency,
-        unit_cost: item.unitCost,
-        supplier: item.supplier ?? null,
-        note: item.note ?? null,
-        units_per_batch: item.unitsPerBatch ?? null,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.packaging,
-      data.packagingItems.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        name: item.name,
-        unit: item.unit,
-        size_description: item.sizeDescription,
-        currency: item.currency,
-        unit_cost: item.unitCost,
-        note: item.note ?? null,
-        units_per_batch: item.unitsPerBatch ?? null,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.shipping,
-      data.shippingMethods.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        name: item.name,
-        unit_cost: item.unitCost,
-        currency: item.currency,
-        note: item.note ?? null,
-        description: item.description ?? null,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.labor,
-      data.laborRoles.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        name: item.name,
-        hourly_rate: item.hourlyRate,
-        currency: item.currency,
-        note: item.note ?? null,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.equipments,
-      data.equipments.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        name: item.name,
-        acquisition_cost: item.acquisitionCost,
-        currency: item.currency,
-        amortization_years: item.amortizationYears,
-        note: item.note ?? null,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.optionPresets,
-      data.optionPresets.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        name: item.name,
-        variants: item.variants,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.products,
-      data.products.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        name: item.name,
-        category_large_id: item.categoryLargeId ?? null,
-        category_medium_id: item.categoryMediumId ?? null,
-        category_small_id: item.categorySmallId ?? null,
-        size_variants: item.sizeVariants,
-        base_man_hours: item.baseManHours,
-        default_electricity_cost: item.defaultElectricityCost,
-        sale_price: item.salePrice,
-        registered_at: item.registeredAt,
-        notes: item.notes ?? null,
-        production_lot_size: item.productionLotSize,
-        expected_production_period_years: item.expectedProduction.periodYears,
-        expected_production_quantity: item.expectedProduction.quantity,
-        equipment_ids: item.equipmentIds ?? [],
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.costEntries.materials,
-      data.costEntries.materials.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        product_id: item.productId,
-        material_id: item.materialId,
-        description: item.description ?? null,
-        usage_ratio: item.usageRatio ?? null,
-        cost_per_unit: item.costPerUnit,
-        currency: item.currency,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.costEntries.packaging,
-      data.costEntries.packaging.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        product_id: item.productId,
-        packaging_item_id: item.packagingItemId,
-        quantity: item.quantity,
-        cost_per_unit: item.costPerUnit,
-        currency: item.currency,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.costEntries.labor,
-      data.costEntries.labor.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        product_id: item.productId,
-        labor_role_id: item.laborRoleId,
-        hours: item.hours,
-        people_count: item.peopleCount,
-        hourly_rate_override: item.hourlyRateOverride ?? null,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.costEntries.outsourcing,
-      data.costEntries.outsourcing.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        product_id: item.productId,
-        cost_per_unit: item.costPerUnit,
-        currency: item.currency,
-        note: item.note ?? null,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.costEntries.development,
-      data.costEntries.development.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        product_id: item.productId,
-        title: item.title ?? null,
-        prototype_labor_cost: item.prototypeLaborCost,
-        prototype_material_cost: item.prototypeMaterialCost,
-        tooling_cost: item.toolingCost,
-        amortization_years: item.amortizationYears,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.costEntries.equipment,
-      data.costEntries.equipmentAllocations.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        product_id: item.productId,
-        equipment_id: item.equipmentId,
-        allocation_ratio: item.allocationRatio,
-        annual_quantity: item.annualQuantity,
-        usage_hours: item.usageHours ?? null,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.costEntries.logistics,
-      data.costEntries.logistics.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        product_id: item.productId,
-        shipping_method_id: item.shippingMethodId,
-        cost_per_unit: item.costPerUnit,
-        currency: item.currency,
-      })),
-      userId
-    )
-
-    await replaceTable(
-      TABLES.costEntries.electricity,
-      data.costEntries.electricity.map((item) => ({
-        id: item.id,
-        user_id: userId,
-        product_id: item.productId,
-        cost_per_unit: item.costPerUnit,
-        currency: item.currency,
-      })),
-      userId
-    )
+    const payload = buildSyncPayload(data)
+    const { error } = await supabaseClient.rpc("sync_app_data", {
+      p_user_id: userId,
+      p_payload: payload,
+    })
+    if (error) {
+      throw error
+    }
   } catch (error) {
     console.error("Failed to save user app data", error)
     throw error
