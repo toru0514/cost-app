@@ -300,6 +300,15 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
 }
 
 function buildSyncPayload(data: AppData) {
+  const serializeDate = (value: string | undefined) => {
+    if (!value) return new Date().toISOString()
+    const date = new Date(value)
+    if (Number.isNaN(date.getTime())) {
+      return new Date().toISOString()
+    }
+    return date.toISOString()
+  }
+
   return {
     categories_large: data.categories.large.map((item) => ({ id: item.id, name: item.name, description: item.description ?? null })),
     categories_medium: data.categories.medium.map((item) => ({
@@ -373,7 +382,7 @@ function buildSyncPayload(data: AppData) {
       base_man_hours: item.baseManHours,
       default_electricity_cost: item.defaultElectricityCost,
       sale_price: item.salePrice,
-      registered_at: item.registeredAt,
+      registered_at: serializeDate(item.registeredAt),
       notes: item.notes ?? null,
       production_lot_size: item.productionLotSize,
       expected_production_period_years: item.expectedProduction.periodYears,

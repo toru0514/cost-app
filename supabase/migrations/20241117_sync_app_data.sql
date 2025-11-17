@@ -102,7 +102,10 @@ set search_path = public
 as $$
 declare
 begin
-  perform pg_advisory_xact_lock(hashtextextended('sync_app_data', p_user_id::text));
+  perform pg_advisory_xact_lock(
+    hashtext('sync_app_data'),
+    hashtext(p_user_id::text)
+  );
 
   delete from categories_large where user_id = p_user_id;
   insert into categories_large (id, user_id, name, description)
@@ -310,3 +313,7 @@ begin
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_electricity', '[]'::jsonb)) as value;
 end;
 $$;
+
+grant execute on function sync_app_data(uuid, jsonb) to anon;
+grant execute on function sync_app_data(uuid, jsonb) to authenticated;
+grant execute on function sync_app_data(uuid, jsonb) to service_role;
