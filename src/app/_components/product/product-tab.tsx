@@ -662,16 +662,16 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
   ])
 
   useEffect(() => {
-    if (!editingProductId || !editingProduct) return
+    if (!editingProductId) return
     hydrateProductFromExisting(editingProductId)
-  }, [editingProductId, editingProduct, hydrateProductFromExisting])
+  }, [editingProductId, data.products, hydrateProductFromExisting])
 
   useEffect(() => {
     if (!copySourceProductId) return
     hydrateProductFromExisting(copySourceProductId, { copy: true })
     onRequestCopyClear?.()
     onRequestEditClear?.()
-  }, [copySourceProductId, hydrateProductFromExisting, onRequestCopyClear, onRequestEditClear])
+  }, [copySourceProductId, data.products, hydrateProductFromExisting, onRequestCopyClear, onRequestEditClear])
 
   const handleCancelEdit = () => {
     resetFormState()
