@@ -369,7 +369,6 @@ function MasterRegisterView({ data, actions }: MasterTabProps) {
         <FormSection
           title="カテゴリマスタ"
           description="大・中・小カテゴリを事前登録し、商品登録時に選択できるようにします。"
-          defaultOpen
         >
           <div className="space-y-4">
             <form
