@@ -20,8 +20,18 @@ interface ProductBasicsSectionProps {
 
 export function ProductBasicsSection({ data, productForm, setProductForm, handleToggleEquipment }: ProductBasicsSectionProps) {
   const largeOptions = data.categories.large
-  const mediumOptions = data.categories.medium.filter((m) => !productForm.categoryLargeId || m.largeId === productForm.categoryLargeId)
-  const smallOptions = data.categories.small.filter((s) => !productForm.categoryMediumId || s.mediumId === productForm.categoryMediumId)
+  const mediumOptions = data.categories.medium.filter((m) => {
+    if (!productForm.categoryLargeId) return true
+    if (m.largeId === productForm.categoryLargeId) return true
+    if (!m.largeId && productForm.categoryMediumId === m.id) return true
+    return false
+  })
+  const smallOptions = data.categories.small.filter((s) => {
+    if (!productForm.categoryMediumId) return true
+    if (s.mediumId === productForm.categoryMediumId) return true
+    if (!s.mediumId && productForm.categorySmallId === s.id) return true
+    return false
+  })
   const optionPresets = data.optionPresets ?? []
   const [selectedPresetId, setSelectedPresetId] = useState<string>(optionPresets[0]?.id ?? "")
 
