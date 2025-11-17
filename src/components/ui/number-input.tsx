@@ -4,13 +4,15 @@ import { Input } from "./input"
 
 export type NumberInputValue = number | ""
 
-type NumberInputProps = Omit<React.ComponentProps<typeof Input>, "type" | "value" | "defaultValue" | "onChange"> & {
+type NumberInputProps = Omit<React.ComponentProps<typeof Input>, "type" | "value" | "defaultValue" | "onChange" | "onFocus"> & {
   value: NumberInputValue
   onValueChange: (value: NumberInputValue) => void
+  selectOnFocus?: boolean
+  onFocus?: React.FocusEventHandler<HTMLInputElement>
 }
 
 const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(function NumberInput(
-  { value, onValueChange, ...props },
+  { value, onValueChange, selectOnFocus = true, onFocus, ...props },
   ref
 ) {
   const handleChange = React.useCallback(
@@ -35,6 +37,12 @@ const NumberInput = React.forwardRef<HTMLInputElement, NumberInputProps>(functio
       inputMode="decimal"
       value={value === "" ? "" : value}
       onChange={handleChange}
+      onFocus={(event) => {
+        if (selectOnFocus) {
+          event.target.select()
+        }
+        onFocus?.(event)
+      }}
     />
   )
 })
