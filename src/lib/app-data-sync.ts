@@ -454,6 +454,63 @@ function buildSyncPayload(data: AppData) {
   }
 }
 
+const buildAuditMetadata = (data: AppData) => {
+  const clientInfo = (() => {
+    if (typeof window === "undefined" || typeof navigator === "undefined") {
+      return {
+        userAgent: "server",
+        platform: typeof process !== "undefined" ? process.platform : "unknown",
+        language: undefined,
+        location: undefined,
+      }
+    }
+    const { userAgent, platform, language } = window.navigator
+    const locationInfo = {
+      host: window.location.host,
+      pathname: window.location.pathname,
+    }
+    return {
+      userAgent,
+      platform,
+      language,
+      location: locationInfo,
+    }
+  })()
+
+  const payloadStats = {
+    categories: {
+      large: data.categories.large.length,
+      medium: data.categories.medium.length,
+      small: data.categories.small.length,
+    },
+    materials: data.materials.length,
+    packaging: data.packagingItems.length,
+    shippingMethods: data.shippingMethods.length,
+    laborRoles: data.laborRoles.length,
+    equipments: data.equipments.length,
+    optionPresets: data.optionPresets?.length ?? 0,
+    products: data.products.length,
+    costEntries: {
+      materials: data.costEntries.materials.length,
+      packaging: data.costEntries.packaging.length,
+      labor: data.costEntries.labor.length,
+      outsourcing: data.costEntries.outsourcing.length,
+      development: data.costEntries.development.length,
+      equipment: data.costEntries.equipmentAllocations.length,
+      logistics: data.costEntries.logistics.length,
+      electricity: data.costEntries.electricity.length,
+    },
+  }
+
+  return {
+    deviceInfo: clientInfo.userAgent,
+    metadata: {
+      client: clientInfo,
+      payloadStats,
+    },
+  }
+}
+
 export async function saveUserAppData(userId: string, data: AppData) {
   try {
     const payload = buildSyncPayload(data)
@@ -463,6 +520,16 @@ export async function saveUserAppData(userId: string, data: AppData) {
     })
     if (error) {
       throw error
+    }
+
+    const audit = buildAuditMetadata(data)
+    const { error: auditError } = await supabaseClient.from("sync_audit_logs").insert({
+      user_id: userId,
+      device_info: audit.deviceInfo,
+      metadata: audit.metadata,
+    })
+    if (auditError) {
+      console.warn("Failed to record sync audit log", auditError)
     }
   } catch (error) {
     console.error("Failed to save user app data", error)
