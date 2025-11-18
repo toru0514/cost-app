@@ -12,11 +12,12 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, Material } from "@/lib/types"
-import { FieldHint, FormSection, RegisteredList } from "../../../shared/ui"
+import { FieldHint, FormSection, RegisteredList, type FormSectionOpenSignal } from "../../../shared/ui"
 
 interface MaterialSectionProps {
   data: AppData
   actions: AppActions
+  openSignal?: FormSectionOpenSignal | null
 }
 
 const INITIAL_FORM: Omit<Material, "id"> = {
@@ -30,7 +31,7 @@ const INITIAL_FORM: Omit<Material, "id"> = {
   note: "",
 }
 
-export function MaterialSection({ data, actions }: MaterialSectionProps) {
+export function MaterialSection({ data, actions, openSignal }: MaterialSectionProps) {
   const [materialForm, setMaterialForm] = useState<Omit<Material, "id">>(INITIAL_FORM)
   const { addMaterial } = actions
 
@@ -39,6 +40,7 @@ export function MaterialSection({ data, actions }: MaterialSectionProps) {
       title="材料マスタ"
       description="名称・単位・サイズ・仕入先まで登録し、材料コスト入力時に再利用します。"
       storageKey="master-section-materials"
+      openSignal={openSignal}
     >
       <div className="space-y-2">
         <form

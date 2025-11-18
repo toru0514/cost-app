@@ -12,11 +12,12 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, PackagingItem } from "@/lib/types"
-import { FieldHint, FormSection, RegisteredList } from "../../../shared/ui"
+import { FieldHint, FormSection, RegisteredList, type FormSectionOpenSignal } from "../../../shared/ui"
 
 interface PackagingSectionProps {
   data: AppData
   actions: AppActions
+  openSignal?: FormSectionOpenSignal | null
 }
 
 const INITIAL_FORM: Omit<PackagingItem, "id"> = {
@@ -29,7 +30,7 @@ const INITIAL_FORM: Omit<PackagingItem, "id"> = {
   note: "",
 }
 
-export function PackagingSection({ data, actions }: PackagingSectionProps) {
+export function PackagingSection({ data, actions, openSignal }: PackagingSectionProps) {
   const [packagingForm, setPackagingForm] = useState<Omit<PackagingItem, "id">>(INITIAL_FORM)
   const { addPackagingItem } = actions
 
@@ -38,6 +39,7 @@ export function PackagingSection({ data, actions }: PackagingSectionProps) {
       title="梱包材マスタ"
       description="段ボールやフィルムなどを登録し、商品登録時に選べるようにします。"
       storageKey="master-section-packaging"
+      openSignal={openSignal}
     >
       <div className="space-y-2">
         <form

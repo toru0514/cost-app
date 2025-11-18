@@ -12,11 +12,12 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, Equipment, LaborRole } from "@/lib/types"
-import { FieldHint, FormSection, RegisteredList } from "../../../shared/ui"
+import { FieldHint, FormSection, RegisteredList, type FormSectionOpenSignal } from "../../../shared/ui"
 
 interface LaborEquipmentSectionProps {
   data: AppData
   actions: AppActions
+  openSignal?: FormSectionOpenSignal | null
 }
 
 const INITIAL_LABOR_FORM: Omit<LaborRole, "id"> = {
@@ -34,7 +35,7 @@ const INITIAL_EQUIPMENT_FORM: Omit<Equipment, "id"> = {
   note: "",
 }
 
-export function LaborEquipmentSection({ data, actions }: LaborEquipmentSectionProps) {
+export function LaborEquipmentSection({ data, actions, openSignal }: LaborEquipmentSectionProps) {
   const [laborForm, setLaborForm] = useState<Omit<LaborRole, "id">>(INITIAL_LABOR_FORM)
   const [equipmentForm, setEquipmentForm] = useState<Omit<Equipment, "id">>(INITIAL_EQUIPMENT_FORM)
   const { addLaborRole, addEquipment } = actions
@@ -44,6 +45,7 @@ export function LaborEquipmentSection({ data, actions }: LaborEquipmentSectionPr
       title="人件費 / 設備マスタ"
       description="工数と時給、設備投資のベースをまとめて管理します。"
       storageKey="master-section-labor-equipment"
+      openSignal={openSignal}
     >
       <div className="grid gap-6 md:grid-cols-2">
         <form

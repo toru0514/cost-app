@@ -9,11 +9,12 @@ import { NumberInput } from "@/components/ui/number-input"
 import type { AppActions } from "@/lib/app-data"
 import type { AppData, ProductSizeVariant } from "@/lib/types"
 import { toast } from "sonner"
-import { FormSection, RegisteredList } from "../../../shared/ui"
+import { FormSection, RegisteredList, type FormSectionOpenSignal } from "../../../shared/ui"
 
 interface OptionPresetSectionProps {
   data: AppData
   actions: AppActions
+  openSignal?: FormSectionOpenSignal | null
 }
 
 interface OptionPresetFormState {
@@ -26,7 +27,7 @@ const INITIAL_FORM: OptionPresetFormState = {
   variants: [{ label: "", quantity: 0 }],
 }
 
-export function OptionPresetSection({ data, actions }: OptionPresetSectionProps) {
+export function OptionPresetSection({ data, actions, openSignal }: OptionPresetSectionProps) {
   const [optionPresetForm, setOptionPresetForm] = useState<OptionPresetFormState>(INITIAL_FORM)
   const { addOptionPreset } = actions
 
@@ -58,6 +59,7 @@ export function OptionPresetSection({ data, actions }: OptionPresetSectionProps)
       title="オプションプリセット"
       description="S/M/L など定型セットを登録し、商品登録で一括インポートできます。"
       storageKey="master-section-option-presets"
+      openSignal={openSignal}
     >
       <div className="space-y-3">
         <form

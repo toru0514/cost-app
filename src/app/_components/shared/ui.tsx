@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
+export type FormSectionOpenSignal = { value: boolean; nonce: number }
+
 export function FormSection({
   title,
   description,
@@ -14,6 +16,7 @@ export function FormSection({
   action,
   className = "",
   storageKey,
+  openSignal,
 }: {
   title: string
   description?: string
@@ -22,6 +25,7 @@ export function FormSection({
   action?: ReactNode
   className?: string
   storageKey?: string
+  openSignal?: FormSectionOpenSignal | null
 }) {
   const [open, setOpen] = useState(() => {
     if (storageKey && typeof window !== "undefined") {
@@ -36,6 +40,11 @@ export function FormSection({
     if (!storageKey || typeof window === "undefined") return
     window.localStorage.setItem(storageKey, open ? "open" : "closed")
   }, [open, storageKey])
+
+  useEffect(() => {
+    if (!openSignal) return
+    setOpen(openSignal.value)
+  }, [openSignal])
 
   return (
     <section className={`rounded-lg border bg-card text-card-foreground ${className}`}>

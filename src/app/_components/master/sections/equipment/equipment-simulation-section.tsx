@@ -6,13 +6,14 @@ import { Label } from "@/components/ui/label"
 import { NumberInput } from "@/components/ui/number-input"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
-import { FormSection } from "../../../shared/ui"
+import { FormSection, type FormSectionOpenSignal } from "../../../shared/ui"
 
 interface EquipmentSimulationSectionProps {
   data: AppData
+  openSignal?: FormSectionOpenSignal | null
 }
 
-export function EquipmentSimulationSection({ data }: EquipmentSimulationSectionProps) {
+export function EquipmentSimulationSection({ data, openSignal }: EquipmentSimulationSectionProps) {
   const [simulationInputs, setSimulationInputs] = useState<
     Record<string, { quantity: number; salePrice: number; utilizationRatio: number }>
   >({})
@@ -62,6 +63,7 @@ export function EquipmentSimulationSection({ data }: EquipmentSimulationSectionP
       title="設備導入シミュレーション"
       description="年間数量と販売価格を仮入力し、配賦単価と投資回収を比較します。"
       storageKey="master-section-equipment-sim"
+      openSignal={openSignal}
     >
       <div className="space-y-4">
         {equipmentSimulationData.length === 0 ? (

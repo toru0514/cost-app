@@ -12,11 +12,12 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, ShippingMethod } from "@/lib/types"
-import { FieldHint, FormSection, RegisteredList } from "../../../shared/ui"
+import { FieldHint, FormSection, RegisteredList, type FormSectionOpenSignal } from "../../../shared/ui"
 
 interface ShippingSectionProps {
   data: AppData
   actions: AppActions
+  openSignal?: FormSectionOpenSignal | null
 }
 
 const INITIAL_FORM: Omit<ShippingMethod, "id"> = {
@@ -27,7 +28,7 @@ const INITIAL_FORM: Omit<ShippingMethod, "id"> = {
   note: "",
 }
 
-export function ShippingSection({ data, actions }: ShippingSectionProps) {
+export function ShippingSection({ data, actions, openSignal }: ShippingSectionProps) {
   const [shippingMethodForm, setShippingMethodForm] = useState<Omit<ShippingMethod, "id">>(INITIAL_FORM)
   const { addShippingMethod } = actions
 
@@ -36,6 +37,7 @@ export function ShippingSection({ data, actions }: ShippingSectionProps) {
       title="配送方法マスタ"
       description="宅配便・メール便などの配送手段と送料を登録します。"
       storageKey="master-section-shipping"
+      openSignal={openSignal}
     >
       <div className="space-y-2">
         <form

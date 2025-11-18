@@ -9,14 +9,15 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea"
 import type { AppActions } from "@/lib/app-data"
 import type { AppData, CategoryLarge, CategoryMedium, CategorySmall } from "@/lib/types"
-import { FormSection, RegisteredList } from "../../../shared/ui"
+import { FormSection, RegisteredList, type FormSectionOpenSignal } from "../../../shared/ui"
 
 interface CategorySectionProps {
   data: AppData
   actions: AppActions
+  openSignal?: FormSectionOpenSignal | null
 }
 
-export function CategorySection({ data, actions }: CategorySectionProps) {
+export function CategorySection({ data, actions, openSignal }: CategorySectionProps) {
   const [largeCategory, setLargeCategory] = useState<Omit<CategoryLarge, "id">>({ name: "", description: "" })
   const [mediumCategory, setMediumCategory] = useState<Omit<CategoryMedium, "id">>({
     name: "",
@@ -37,6 +38,7 @@ export function CategorySection({ data, actions }: CategorySectionProps) {
       title="カテゴリマスタ"
       description="大・中・小カテゴリを事前登録し、商品登録時に選択できるようにします。"
       storageKey="master-section-categories"
+      openSignal={openSignal}
     >
       <div className="space-y-4">
         <form
