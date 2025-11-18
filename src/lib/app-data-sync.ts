@@ -455,7 +455,26 @@ function buildSyncPayload(data: AppData) {
   }
 }
 
-const buildAuditMetadata = (data: AppData) => {
+const diffById = <T extends { id: string }>(
+  prev: T[],
+  next: T[],
+  getLabel: (item: T) => string
+) => {
+  const prevMap = new Map(prev.map((item) => [item.id, item]))
+  const nextMap = new Map(next.map((item) => [item.id, item]))
+  const added = Array.from(nextMap.values())
+    .filter((item) => !prevMap.has(item.id))
+    .map(getLabel)
+  const removed = Array.from(prevMap.values())
+    .filter((item) => !nextMap.has(item.id))
+    .map(getLabel)
+  return {
+    added: added.slice(0, 10),
+    removed: removed.slice(0, 10),
+  }
+}
+
+const buildAuditMetadata = (data: AppData, previousData?: AppData) => {
   const clientInfo = (() => {
     if (typeof window === "undefined" || typeof navigator === "undefined") {
       return {
@@ -533,11 +552,25 @@ const buildAuditMetadata = (data: AppData) => {
         ...payloadStats,
         summary,
       },
+      changes: previousData
+        ? {
+            products: diffById(previousData.products, data.products, (item) => item.name),
+            materials: diffById(previousData.materials, data.materials, (item) => item.name),
+            packaging: diffById(previousData.packagingItems, data.packagingItems, (item) => item.name),
+            shippingMethods: diffById(previousData.shippingMethods, data.shippingMethods, (item) => item.name),
+            laborRoles: diffById(previousData.laborRoles, data.laborRoles, (item) => item.name),
+            equipments: diffById(previousData.equipments, data.equipments, (item) => item.name),
+            optionPresets: diffById(previousData.optionPresets ?? [], data.optionPresets ?? [], (item) => item.name),
+            categoriesLarge: diffById(previousData.categories.large, data.categories.large, (item) => item.name),
+            categoriesMedium: diffById(previousData.categories.medium, data.categories.medium, (item) => item.name),
+            categoriesSmall: diffById(previousData.categories.small, data.categories.small, (item) => item.name),
+          }
+        : undefined,
     },
   }
 }
 
-export async function saveUserAppData(userId: string, data: AppData) {
+export async function saveUserAppData(userId: string, data: AppData, previousData?: AppData) {
   try {
     const payload = buildSyncPayload(data)
     const { error } = await supabaseClient.rpc("sync_app_data", {
@@ -548,7 +581,7 @@ export async function saveUserAppData(userId: string, data: AppData) {
       throw error
     }
 
-    const audit = buildAuditMetadata(data)
+    const audit = buildAuditMetadata(data, previousData)
     const { error: auditError } = await supabaseClient.from("sync_audit_logs").insert({
       user_id: userId,
       device_info: audit.deviceInfo,

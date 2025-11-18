@@ -169,6 +169,18 @@ export type ElectricityCostEntry = {
 }
 
 export type AuditLogMetadata = {
+  changes?: {
+    products?: ChangeSummary
+    materials?: ChangeSummary
+    packaging?: ChangeSummary
+    shippingMethods?: ChangeSummary
+    laborRoles?: ChangeSummary
+    equipments?: ChangeSummary
+    optionPresets?: ChangeSummary
+    categoriesLarge?: ChangeSummary
+    categoriesMedium?: ChangeSummary
+    categoriesSmall?: ChangeSummary
+  }
   client?: {
     userAgent?: string
     platform?: string
@@ -208,6 +220,11 @@ export type AuditLogMetadata = {
       totalRecords: number
     }
   }
+}
+
+export type ChangeSummary = {
+  added: string[]
+  removed: string[]
 }
 
 export type AuditLog = {

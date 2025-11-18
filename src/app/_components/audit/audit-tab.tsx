@@ -3,7 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import type { AuditLog } from "@/lib/types"
+import type { AuditLog, ChangeSummary } from "@/lib/types"
 
 type AuditTabProps = {
   logs: AuditLog[]
@@ -37,6 +37,22 @@ const describeClient = (log: AuditLog) => {
   return summary || log.deviceInfo || client.userAgent || "-"
 }
 
+const renderChangeList = (label: string, summary?: ChangeSummary) => {
+  if (!summary) return null
+  if ((summary.added ?? []).length === 0 && (summary.removed ?? []).length === 0) return null
+  return (
+    <div>
+      <p className="font-medium text-foreground">{label}</p>
+      {summary.added.length > 0 && (
+        <p className="text-xs text-emerald-600">追加: {summary.added.join(", ")}</p>
+      )}
+      {summary.removed.length > 0 && (
+        <p className="text-xs text-rose-600">削除: {summary.removed.join(", ")}</p>
+      )}
+    </div>
+  )
+}
+
 const describePayload = (log: AuditLog) => {
   const stats = log.metadata?.payloadStats
   if (!stats) return "-"
@@ -50,6 +66,18 @@ const describePayload = (log: AuditLog) => {
       <p>{`商品 ${stats.products}・総レコード ${total ?? "-"}`}</p>
       <p>{masterSummary}</p>
       <p>{costSummary}</p>
+      <div className="grid gap-2 pt-1 text-xs">
+        {renderChangeList("商品", log.metadata?.changes?.products)}
+        {renderChangeList("材料", log.metadata?.changes?.materials)}
+        {renderChangeList("梱包材", log.metadata?.changes?.packaging)}
+        {renderChangeList("配送方法", log.metadata?.changes?.shippingMethods)}
+        {renderChangeList("人件費マスタ", log.metadata?.changes?.laborRoles)}
+        {renderChangeList("設備", log.metadata?.changes?.equipments)}
+        {renderChangeList("オプションプリセット", log.metadata?.changes?.optionPresets)}
+        {renderChangeList("大カテゴリ", log.metadata?.changes?.categoriesLarge)}
+        {renderChangeList("中カテゴリ", log.metadata?.changes?.categoriesMedium)}
+        {renderChangeList("小カテゴリ", log.metadata?.changes?.categoriesSmall)}
+      </div>
     </div>
   )
 }

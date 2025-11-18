@@ -38,6 +38,8 @@ const createId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).substring(2, 11)
 
+const cloneAppData = (dataset: AppData): AppData => JSON.parse(JSON.stringify(dataset))
+
 type Updater<T> = (state: T) => T
 
 const apply = <T,>(set: React.Dispatch<React.SetStateAction<T>>, updater: Updater<T>) => {
@@ -75,6 +77,7 @@ export function useAppData() {
   const [hydrated, setHydrated] = useState(false)
   const skipNextSaveRef = useRef(false)
   const dataRef = useRef<AppData>(emptyAppData)
+  const lastSyncedDataRef = useRef<AppData>(emptyAppData)
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [auditLogsLoading, setAuditLogsLoading] = useState(false)
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
@@ -91,6 +94,19 @@ export function useAppData() {
     saveRetryRef.current.attempts = 0
   }, [])
 
+  const refreshAuditLogs = useCallback(async () => {
+    if (authState.status !== "authenticated") return
+    setAuditLogsLoading(true)
+    try {
+      const logs = await loadAuditLogs(authState.user.id)
+      setAuditLogs(logs)
+    } catch (error) {
+      console.error("Failed to load audit logs", error)
+    } finally {
+      setAuditLogsLoading(false)
+    }
+  }, [authState])
+
   const persistSupabaseWithRetry = useCallback(() => {
     if (authState.status !== "authenticated") return
     if (!hasMeaningfulData(dataRef.current)) {
@@ -101,7 +117,9 @@ export function useAppData() {
       if (authState.status !== "authenticated") return
       if (!hasMeaningfulData(dataRef.current)) return
       try {
-        await saveUserAppData(authState.user.id, dataRef.current)
+        await saveUserAppData(authState.user.id, dataRef.current, lastSyncedDataRef.current)
+        lastSyncedDataRef.current = cloneAppData(dataRef.current)
+        await refreshAuditLogs()
         clearSaveRetry()
       } catch (error) {
         console.error("Failed to save data to Supabase", error)
@@ -119,7 +137,7 @@ export function useAppData() {
     }
     clearSaveRetry()
     void attemptSave()
-  }, [authState, clearSaveRetry])
+  }, [authState, clearSaveRetry, refreshAuditLogs])
 
   useEffect(() => {
     return () => {
@@ -130,19 +148,6 @@ export function useAppData() {
   useEffect(() => {
     dataRef.current = data
   }, [data])
-
-  const refreshAuditLogs = useCallback(async () => {
-    if (authState.status !== "authenticated") return
-    setAuditLogsLoading(true)
-    try {
-      const logs = await loadAuditLogs(authState.user.id)
-      setAuditLogs(logs)
-    } catch (error) {
-      console.error("Failed to load audit logs", error)
-    } finally {
-      setAuditLogsLoading(false)
-    }
-  }, [authState])
 
   useEffect(() => {
     if (authState.status !== "authenticated") {
@@ -201,12 +206,14 @@ export function useAppData() {
         if (!remote) {
           setRemoteLoadFailed(false)
           setRemoteLoadCompleted(true)
+          lastSyncedDataRef.current = cloneAppData(emptyAppData)
           await refreshAuditLogs()
           return
         }
         skipNextSaveRef.current = true
         clearSaveRetry()
         setData(remote)
+        lastSyncedDataRef.current = cloneAppData(remote)
         if (typeof window !== "undefined") {
           window.localStorage.removeItem(STORAGE_KEY)
         }
