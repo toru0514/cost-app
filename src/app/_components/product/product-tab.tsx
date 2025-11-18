@@ -498,18 +498,30 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
     totalEquipmentHours,
   ])
 
-  const hydrateProductFromExisting = useCallback((sourceProductId: string, options?: { copy?: boolean }) => {
-    const product = data.products.find((p) => p.id === sourceProductId)
-    if (!product) return
+  const lastHydratedInfoRef = useRef<{ id: string; copyMode: boolean } | null>(null)
+  const needsCategoryRecoveryRef = useRef(false)
 
-    const copyMode = options?.copy ?? false
-    const adjustedName = copyMode ? `${product.name} (コピー)` : product.name
-    const adjustedDate = copyMode ? new Date().toISOString().slice(0, 10) : product.registeredAt
+  const hydrateProductFromExisting = useCallback(
+    (sourceProductId: string, options?: { copy?: boolean; skipCategoryRecovery?: boolean }) => {
+      const product = data.products.find((p) => p.id === sourceProductId)
+      if (!product) return false
 
-    const mapOrFallback = <T,>(entries: T[], fallback: () => T) => (entries.length > 0 ? entries : [fallback()])
+      const copyMode = options?.copy ?? false
+      const adjustedName = copyMode ? `${product.name} (コピー)` : product.name
+      const adjustedDate = copyMode ? new Date().toISOString().slice(0, 10) : product.registeredAt
 
-    const resolvedMediumId =
-      product.categoryMediumId ??
+      const mapOrFallback = <T,>(entries: T[], fallback: () => T) => (entries.length > 0 ? entries : [fallback()])
+
+      const expectCategories = Boolean(
+        product.categoryLargeId || product.categoryMediumId || product.categorySmallId
+      )
+      lastHydratedInfoRef.current = { id: sourceProductId, copyMode }
+      if (!options?.skipCategoryRecovery) {
+        needsCategoryRecoveryRef.current = expectCategories
+      }
+
+      const resolvedMediumId =
+        product.categoryMediumId ??
       (product.categorySmallId
         ? data.categories.small.find((category) => category.id === product.categorySmallId)?.mediumId
         : undefined)
@@ -525,11 +537,11 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
         ? product.sizeVariants.map((variant) => ({ label: variant.label, quantity: variant.quantity }))
         : [{ label: "", quantity: 0 }]
 
-    setProductForm({
-      name: adjustedName,
-      categoryLargeId: resolvedLargeId ?? "",
-      categoryMediumId: resolvedMediumId ?? "",
-      categorySmallId: product.categorySmallId ?? "",
+      setProductForm({
+        name: adjustedName,
+        categoryLargeId: resolvedLargeId ?? "",
+        categoryMediumId: resolvedMediumId ?? "",
+        categorySmallId: product.categorySmallId ?? "",
       sizeVariants: clonedVariants,
       baseManHours: product.baseManHours,
       defaultElectricityCost: product.defaultElectricityCost,
@@ -640,40 +652,41 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
       )
     )
 
-    setElectricityDrafts(
-      mapOrFallback(
-        data.costEntries.electricity
-          .filter((entry) => entry.productId === sourceProductId)
-          .map((entry) => ({
+      setElectricityDrafts(
+        mapOrFallback(
+          data.costEntries.electricity
+            .filter((entry) => entry.productId === sourceProductId)
+            .map((entry) => ({
             id: createTempId(),
             costPerUnit: entry.costPerUnit,
             currency: entry.currency,
           })),
         createElectricityDraft
       )
-    )
+      )
 
-    autoLaborHoursRef.current = product.baseManHours
-  }, [
-    createDevelopmentDraft,
-    createElectricityDraft,
-    createLaborDraft,
-    createLogisticsDraft,
-    createMaterialDraft,
-    createOutsourcingDraft,
-    createPackagingDraft,
-    data.categories.medium,
-    data.categories.small,
-    data.costEntries.development,
-    data.costEntries.electricity,
-    data.costEntries.equipmentAllocations,
-    data.costEntries.labor,
-    data.costEntries.logistics,
-    data.costEntries.materials,
-    data.costEntries.outsourcing,
-    data.costEntries.packaging,
-    data.products,
-  ])
+      autoLaborHoursRef.current = product.baseManHours
+      return true
+    }, [
+      createDevelopmentDraft,
+      createElectricityDraft,
+      createLaborDraft,
+      createLogisticsDraft,
+      createMaterialDraft,
+      createOutsourcingDraft,
+      createPackagingDraft,
+      data.categories.medium,
+      data.categories.small,
+      data.costEntries.development,
+      data.costEntries.electricity,
+      data.costEntries.equipmentAllocations,
+      data.costEntries.labor,
+      data.costEntries.logistics,
+      data.costEntries.materials,
+      data.costEntries.outsourcing,
+      data.costEntries.packaging,
+      data.products,
+    ])
 
   useEffect(() => {
     if (!editingProductId) return
@@ -682,10 +695,37 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
   useEffect(() => {
     if (!copySourceProductId) return
-    hydrateProductFromExisting(copySourceProductId, { copy: true })
-    onRequestCopyClear?.()
-    onRequestEditClear?.()
+    const success = hydrateProductFromExisting(copySourceProductId, { copy: true })
+    if (success) {
+      onRequestCopyClear?.()
+      onRequestEditClear?.()
+    }
   }, [copySourceProductId, data.products, hydrateProductFromExisting, onRequestCopyClear, onRequestEditClear])
+
+  useEffect(() => {
+    if (!needsCategoryRecoveryRef.current) return
+    if (productForm.categoryLargeId || productForm.categoryMediumId || productForm.categorySmallId) {
+      needsCategoryRecoveryRef.current = false
+      return
+    }
+    const info = lastHydratedInfoRef.current
+    if (!info) {
+      needsCategoryRecoveryRef.current = false
+      return
+    }
+    const success = hydrateProductFromExisting(info.id, {
+      copy: info.copyMode,
+      skipCategoryRecovery: true,
+    })
+    if (!success) {
+      needsCategoryRecoveryRef.current = false
+    }
+  }, [
+    productForm.categoryLargeId,
+    productForm.categoryMediumId,
+    productForm.categorySmallId,
+    hydrateProductFromExisting,
+  ])
 
   const handleCancelEdit = () => {
     resetFormState()
