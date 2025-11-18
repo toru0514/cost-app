@@ -227,6 +227,11 @@ export type ChangeSummary = {
   removed: string[]
 }
 
+export type AuditFilters = {
+  from?: string
+  to?: string
+}
+
 export type AuditLog = {
   id: string
   userId: string

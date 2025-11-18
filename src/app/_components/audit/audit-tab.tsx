@@ -2,13 +2,19 @@
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import type { AuditLog, ChangeSummary } from "@/lib/types"
+import type { AuditFilters, AuditLog, ChangeSummary } from "@/lib/types"
+import { toast } from "sonner"
 
 type AuditTabProps = {
   logs: AuditLog[]
   loading: boolean
   onRefresh: () => void
+  onLoadMore: () => void
+  hasMore?: boolean
+  filters: AuditFilters
+  onFiltersChange: (next: AuditFilters) => void
 }
 
 const formatDate = (value: string) => {
@@ -85,7 +91,31 @@ const describePayload = (log: AuditLog) => {
   )
 }
 
-export function AuditTab({ logs, loading, onRefresh }: AuditTabProps) {
+export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filters, onFiltersChange }: AuditTabProps) {
+  const handleExportCsv = async () => {
+    try {
+      const params = new URLSearchParams()
+      if (filters.from) params.set("from", filters.from)
+      if (filters.to) params.set("to", filters.to)
+      const response = await fetch(`/api/audit/export${params.toString() ? `?${params.toString()}` : ""}`)
+      if (!response.ok) {
+        throw new Error(await response.text())
+      }
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const link = document.createElement("a")
+      link.href = url
+      link.download = `audit-logs-${new Date().toISOString().slice(0, 10)}.csv`
+      document.body.appendChild(link)
+      link.click()
+      document.body.removeChild(link)
+      URL.revokeObjectURL(url)
+    } catch (error) {
+      console.error("Failed to export audit logs", error)
+      toast.error("監査ログのエクスポートに失敗しました")
+    }
+  }
+
   return (
     <div className="space-y-4">
       <Card>
@@ -94,9 +124,38 @@ export function AuditTab({ logs, loading, onRefresh }: AuditTabProps) {
             <CardTitle>保存操作の監査ログ</CardTitle>
             <CardDescription>直近 {logs.length} 件の保存履歴を表示します。</CardDescription>
           </div>
-          <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={loading}>
-            {loading ? "読込中" : "最新を取得"}
-          </Button>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">開始日</p>
+              <Input
+                type="date"
+                value={filters.from ?? ""}
+                onChange={(event) => onFiltersChange({ ...filters, from: event.target.value || undefined })}
+              />
+            </div>
+            <div className="space-y-1">
+              <p className="text-xs text-muted-foreground">終了日</p>
+              <Input
+                type="date"
+                value={filters.to ?? ""}
+                onChange={(event) => onFiltersChange({ ...filters, to: event.target.value || undefined })}
+              />
+            </div>
+            <Button type="button" variant="ghost" size="sm" onClick={() => onFiltersChange({})}>
+              フィルター解除
+            </Button>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={loading}>
+              {loading ? "読込中" : "最新を取得"}
+            </Button>
+            <Button type="button" size="sm" variant="secondary" onClick={onLoadMore} disabled={loading || !hasMore}>
+              {hasMore ? "さらに読み込む" : "末尾まで表示"}
+            </Button>
+            <Button type="button" size="sm" variant="ghost" onClick={handleExportCsv}>
+              CSVエクスポート
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {logs.length === 0 ? (

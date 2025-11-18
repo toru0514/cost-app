@@ -604,13 +604,26 @@ const mapAuditLog = (row: any): AuditLog => ({
   metadata: row.metadata ?? undefined,
 })
 
-export async function loadAuditLogs(userId: string, limit = 50): Promise<AuditLog[]> {
-  const { data, error } = await supabaseClient
+export async function loadAuditLogs(
+  userId: string,
+  limit = 50,
+  offset = 0,
+  filters?: { from?: string; to?: string }
+): Promise<AuditLog[]> {
+  let query = supabaseClient
     .from("sync_audit_logs")
     .select("*")
     .eq("user_id", userId)
     .order("created_at", { ascending: false })
-    .limit(limit)
+
+  if (filters?.from) {
+    query = query.gte("created_at", filters.from)
+  }
+  if (filters?.to) {
+    query = query.lte("created_at", filters.to)
+  }
+
+  const { data, error } = await query.range(offset, offset + limit - 1)
 
   if (error) throw error
   return (data ?? []).map(mapAuditLog)

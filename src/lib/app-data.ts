@@ -5,6 +5,7 @@ import { toast } from "sonner"
 
 import {
   AppData,
+  AuditFilters,
   AuditLog,
   CategoryLarge,
   CategoryMedium,
@@ -80,6 +81,9 @@ export function useAppData() {
   const lastSyncedDataRef = useRef<AppData>(emptyAppData)
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
   const [auditLogsLoading, setAuditLogsLoading] = useState(false)
+  const [auditFilters, setAuditFilters] = useState<AuditFilters>({})
+  const [auditHasMore, setAuditHasMore] = useState(true)
+  const auditLogsIndexRef = useRef(0)
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
@@ -98,14 +102,31 @@ export function useAppData() {
     if (authState.status !== "authenticated") return
     setAuditLogsLoading(true)
     try {
-      const logs = await loadAuditLogs(authState.user.id)
+      const logs = await loadAuditLogs(authState.user.id, 50, 0, auditFilters)
+      auditLogsIndexRef.current = logs.length
       setAuditLogs(logs)
+      setAuditHasMore(logs.length === 50)
     } catch (error) {
       console.error("Failed to load audit logs", error)
     } finally {
       setAuditLogsLoading(false)
     }
-  }, [authState])
+  }, [authState, auditFilters])
+
+  const loadMoreAuditLogs = useCallback(async () => {
+    if (authState.status !== "authenticated") return
+    setAuditLogsLoading(true)
+    try {
+      const logs = await loadAuditLogs(authState.user.id, 50, auditLogsIndexRef.current, auditFilters)
+      auditLogsIndexRef.current += logs.length
+      setAuditLogs((prev) => [...prev, ...logs])
+      setAuditHasMore(logs.length === 50)
+    } catch (error) {
+      console.error("Failed to load more audit logs", error)
+    } finally {
+      setAuditLogsLoading(false)
+    }
+  }, [authState, auditFilters])
 
   const persistSupabaseWithRetry = useCallback(() => {
     if (authState.status !== "authenticated") return
@@ -153,8 +174,14 @@ export function useAppData() {
     if (authState.status !== "authenticated") {
       setAuditLogs([])
       setAuditLogsLoading(false)
+      auditLogsIndexRef.current = 0
+      setAuditHasMore(true)
     }
   }, [authState.status])
+
+  const updateAuditFilters = useCallback((next: AuditFilters) => {
+    setAuditFilters(next)
+  }, [])
 
   useEffect(() => {
     authStatusRef.current = authState.status
@@ -729,7 +756,11 @@ export function useAppData() {
     hydrated,
     auditLogs,
     auditLogsLoading,
+    auditHasMore,
+    auditFilters,
     refreshAuditLogs,
+    loadMoreAuditLogs,
+    updateAuditFilters,
     actions: {
       addLargeCategory,
       updateLargeCategory,

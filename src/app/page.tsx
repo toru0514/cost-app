@@ -11,7 +11,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppData } from "@/lib/app-data"
 import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
-import type { Product } from "@/lib/types"
+import type { AuditFilters, Product } from "@/lib/types"
 import { MasterTab } from "./_components/master/master-tab"
 import { ProductTab } from "./_components/product/product-tab"
 import { CostTab } from "./_components/cost/cost-tab"
@@ -32,7 +32,24 @@ const tabOptions = [
 
 
 export default function Home() {
-  const { data, hydrated, actions, auditLogs, auditLogsLoading, refreshAuditLogs } = useAppData()
+  const {
+    data,
+    hydrated,
+    actions,
+    auditLogs,
+    auditLogsLoading,
+    auditHasMore,
+    auditFilters,
+    refreshAuditLogs,
+    loadMoreAuditLogs,
+    updateAuditFilters,
+  } = useAppData()
+  const handleAuditFiltersChange = useCallback(
+    (next: AuditFilters) => {
+      updateAuditFilters(next)
+    },
+    [updateAuditFilters]
+  )
   const [activeTab, setActiveTabState] = useState(() => {
     if (typeof window === "undefined") return "cost"
     return window.localStorage.getItem("cost-app-active-tab") ?? "cost"
@@ -691,7 +708,15 @@ export default function Home() {
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-6">
-          <AuditTab logs={auditLogs} loading={auditLogsLoading} onRefresh={refreshAuditLogs} />
+          <AuditTab
+            logs={auditLogs}
+            loading={auditLogsLoading}
+            onRefresh={refreshAuditLogs}
+            onLoadMore={loadMoreAuditLogs}
+            hasMore={auditHasMore}
+            filters={auditFilters}
+            onFiltersChange={handleAuditFiltersChange}
+          />
         </TabsContent>
       </Tabs>
 
