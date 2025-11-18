@@ -305,6 +305,34 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
   const [productForm, setProductForm] = useState<Omit<Product, "id">>(createEmptyProductForm)
 
+  useEffect(() => {
+    if (!productForm.categorySmallId || productForm.categoryMediumId) return
+    const parentMediumId = data.categories.small.find((category) => category.id === productForm.categorySmallId)?.mediumId
+    if (!parentMediumId) return
+    setProductForm((prev) =>
+      prev.categoryMediumId === parentMediumId
+        ? prev
+        : {
+            ...prev,
+            categoryMediumId: parentMediumId,
+          }
+    )
+  }, [productForm.categorySmallId, productForm.categoryMediumId, data.categories.small])
+
+  useEffect(() => {
+    if (!productForm.categoryMediumId || productForm.categoryLargeId) return
+    const parentLargeId = data.categories.medium.find((category) => category.id === productForm.categoryMediumId)?.largeId
+    if (!parentLargeId) return
+    setProductForm((prev) =>
+      prev.categoryLargeId === parentLargeId
+        ? prev
+        : {
+            ...prev,
+            categoryLargeId: parentLargeId,
+          }
+    )
+  }, [productForm.categoryMediumId, productForm.categoryLargeId, data.categories.medium])
+
   const handleToggleEquipment = (equipmentId: string, checked: boolean) => {
     setProductForm((prev) => {
       const nextIds = checked
