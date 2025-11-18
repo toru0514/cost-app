@@ -383,9 +383,9 @@ export default function Home() {
   return (
     <main className="mx-auto min-h-screen max-w-6xl space-y-8 px-4 py-10">
       <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold">Cost App ローカルプロトタイプ</h1>
+        <h1 className="text-3xl font-semibold">コスト設計ダッシュボード</h1>
         <p className="text-muted-foreground">
-          ローカルストレージに保存しながら、マスタ登録→商品登録→原価入力→サマリ確認まで体験できる Next.js + shadcn UI の試作です。
+          マスタ登録から商品原価の入力、分析カードの確認までを一元管理できるダッシュボードです。
         </p>
         <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
           <Badge variant="outline">マスタ {data.materials.length + data.packagingItems.length + data.laborRoles.length + data.equipments.length} 件</Badge>
@@ -403,7 +403,11 @@ export default function Home() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={actions.resetAll}
+            onClick={() => {
+              if (window.confirm("ローカル保存を完全にクリアします。よろしいですか？")) {
+                actions.resetAll()
+              }
+            }}
             disabled={isAuthenticated}
             title={isAuthenticated ? "ログイン中は利用できません" : undefined}
           >
