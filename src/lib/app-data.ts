@@ -5,6 +5,7 @@ import { toast } from "sonner"
 
 import {
   AppData,
+  AuditLog,
   CategoryLarge,
   CategoryMedium,
   CategorySmall,
@@ -28,7 +29,7 @@ import {
 } from "./types"
 import { useAuth } from "./auth"
 import type { AuthState } from "./auth"
-import { loadUserAppData, saveUserAppData } from "./app-data-sync"
+import { loadAuditLogs, loadUserAppData, saveUserAppData } from "./app-data-sync"
 
 const STORAGE_KEY = "cost-app-data-v1"
 
@@ -74,6 +75,8 @@ export function useAppData() {
   const [hydrated, setHydrated] = useState(false)
   const skipNextSaveRef = useRef(false)
   const dataRef = useRef<AppData>(emptyAppData)
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
+  const [auditLogsLoading, setAuditLogsLoading] = useState(false)
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
@@ -128,6 +131,26 @@ export function useAppData() {
     dataRef.current = data
   }, [data])
 
+  const refreshAuditLogs = useCallback(async () => {
+    if (authState.status !== "authenticated") return
+    setAuditLogsLoading(true)
+    try {
+      const logs = await loadAuditLogs(authState.user.id)
+      setAuditLogs(logs)
+    } catch (error) {
+      console.error("Failed to load audit logs", error)
+    } finally {
+      setAuditLogsLoading(false)
+    }
+  }, [authState])
+
+  useEffect(() => {
+    if (authState.status !== "authenticated") {
+      setAuditLogs([])
+      setAuditLogsLoading(false)
+    }
+  }, [authState.status])
+
   useEffect(() => {
     authStatusRef.current = authState.status
   }, [authState.status])
@@ -178,6 +201,7 @@ export function useAppData() {
         if (!remote) {
           setRemoteLoadFailed(false)
           setRemoteLoadCompleted(true)
+          await refreshAuditLogs()
           return
         }
         skipNextSaveRef.current = true
@@ -188,6 +212,7 @@ export function useAppData() {
         }
         setRemoteLoadFailed(false)
         setRemoteLoadCompleted(true)
+        await refreshAuditLogs()
       } catch (error) {
         console.error("Remote sync failed", error)
         toast.error("Supabase からデータを取得できませんでした。ネットワーク状況を確認してください。")
@@ -198,7 +223,7 @@ export function useAppData() {
     return () => {
       cancelled = true
     }
-  }, [authState, hydrated, clearSaveRetry])
+  }, [authState, hydrated, clearSaveRetry, refreshAuditLogs])
 
   useEffect(() => {
     if (!hydrated || !remoteLoadCompleted) return
@@ -695,6 +720,9 @@ export function useAppData() {
   return {
     data,
     hydrated,
+    auditLogs,
+    auditLogsLoading,
+    refreshAuditLogs,
     actions: {
       addLargeCategory,
       updateLargeCategory,

@@ -168,6 +168,50 @@ export type ElectricityCostEntry = {
   currency: string
 }
 
+export type AuditLogMetadata = {
+  client?: {
+    userAgent?: string
+    platform?: string
+    language?: string
+    location?: {
+      host?: string
+      pathname?: string
+    }
+  }
+  payloadStats?: {
+    categories: {
+      large: number
+      medium: number
+      small: number
+    }
+    materials: number
+    packaging: number
+    shippingMethods: number
+    laborRoles: number
+    equipments: number
+    optionPresets: number
+    products: number
+    costEntries: {
+      materials: number
+      packaging: number
+      labor: number
+      outsourcing: number
+      development: number
+      equipment: number
+      logistics: number
+      electricity: number
+    }
+  }
+}
+
+export type AuditLog = {
+  id: string
+  userId: string
+  createdAt: string
+  deviceInfo?: string
+  metadata?: AuditLogMetadata
+}
+
 export type AppData = {
   categories: {
     large: CategoryLarge[]

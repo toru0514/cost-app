@@ -1,6 +1,7 @@
 import { supabaseClient } from "./supabase-client"
 import type {
   AppData,
+  AuditLog,
   CategoryLarge,
   CategoryMedium,
   CategorySmall,
@@ -535,4 +536,24 @@ export async function saveUserAppData(userId: string, data: AppData) {
     console.error("Failed to save user app data", error)
     throw error
   }
+}
+
+const mapAuditLog = (row: any): AuditLog => ({
+  id: row.id,
+  userId: row.user_id,
+  createdAt: row.created_at,
+  deviceInfo: row.device_info ?? undefined,
+  metadata: row.metadata ?? undefined,
+})
+
+export async function loadAuditLogs(userId: string, limit = 50): Promise<AuditLog[]> {
+  const { data, error } = await supabaseClient
+    .from("sync_audit_logs")
+    .select("*")
+    .eq("user_id", userId)
+    .order("created_at", { ascending: false })
+    .limit(limit)
+
+  if (error) throw error
+  return (data ?? []).map(mapAuditLog)
 }

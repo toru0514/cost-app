@@ -16,6 +16,7 @@ import { MasterTab } from "./_components/master/master-tab"
 import { ProductTab } from "./_components/product/product-tab"
 import { CostTab } from "./_components/cost/cost-tab"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
+import { AuditTab } from "./_components/audit/audit-tab"
 import { Copy, Edit3, FileDown, Menu, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
@@ -26,11 +27,12 @@ const tabOptions = [
   { value: "product", label: "商品登録" },
   { value: "master", label: "マスタ登録" },
   { value: "list", label: "商品一覧" },
+  { value: "audit", label: "監査ログ" },
 ]
 
 
 export default function Home() {
-  const { data, hydrated, actions } = useAppData()
+  const { data, hydrated, actions, auditLogs, auditLogsLoading, refreshAuditLogs } = useAppData()
   const [activeTab, setActiveTabState] = useState(() => {
     if (typeof window === "undefined") return "cost"
     return window.localStorage.getItem("cost-app-active-tab") ?? "cost"
@@ -510,6 +512,7 @@ export default function Home() {
           <TabsTrigger value="product">商品登録</TabsTrigger>
           <TabsTrigger value="master">マスタ登録</TabsTrigger>
           <TabsTrigger value="list">商品一覧</TabsTrigger>
+          <TabsTrigger value="audit">監査ログ</TabsTrigger>
         </TabsList>
 
         <TabsContent value="cost" className="space-y-6">
@@ -685,6 +688,10 @@ export default function Home() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="audit" className="space-y-6">
+          <AuditTab logs={auditLogs} loading={auditLogsLoading} onRefresh={refreshAuditLogs} />
         </TabsContent>
       </Tabs>
 
