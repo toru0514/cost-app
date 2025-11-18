@@ -518,7 +518,8 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
       const adjustedName = copyMode ? `${product.name} (コピー)` : product.name
       const adjustedDate = copyMode ? new Date().toISOString().slice(0, 10) : product.registeredAt
 
-      const mapOrFallback = <T,>(entries: T[], fallback: () => T) => (entries.length > 0 ? entries : [fallback()])
+    const mapOrFallback = <T,>(entries: T[], fallback: () => T, allowEmpty = false) =>
+      entries.length > 0 ? entries : allowEmpty ? [] : [fallback()]
 
       const expectCategories = Boolean(
         product.categoryLargeId || product.categoryMediumId || product.categorySmallId
@@ -574,7 +575,8 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
             usageRatio: entry.usageRatio ?? 0,
             description: entry.description ?? "",
           })),
-        createMaterialDraft
+        createMaterialDraft,
+        copyMode
       )
     )
 
@@ -587,7 +589,8 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
             packagingItemId: entry.packagingItemId,
             quantity: entry.quantity,
           })),
-        createPackagingDraft
+        createPackagingDraft,
+        copyMode
       )
     )
 
@@ -602,7 +605,8 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
             peopleCount: entry.peopleCount,
             hourlyRateOverride: entry.hourlyRateOverride,
           })),
-        () => createLaborDraft(product.baseManHours)
+        () => createLaborDraft(product.baseManHours),
+        copyMode
       )
     )
 
@@ -616,7 +620,8 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
             costPerUnit: entry.costPerUnit,
             currency: entry.currency,
           })),
-        createOutsourcingDraft
+        createOutsourcingDraft,
+        copyMode
       )
     )
 
@@ -632,7 +637,8 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
             toolingCost: entry.toolingCost,
             amortizationYears: entry.amortizationYears,
           })),
-        createDevelopmentDraft
+        createDevelopmentDraft,
+        copyMode
       )
     )
 
@@ -656,22 +662,24 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
             id: createTempId(),
             shippingMethodId: entry.shippingMethodId,
           })),
-        createLogisticsDraft
+        createLogisticsDraft,
+        copyMode
       )
     )
 
-      setElectricityDrafts(
-        mapOrFallback(
-          data.costEntries.electricity
-            .filter((entry) => entry.productId === sourceProductId)
-            .map((entry) => ({
+    setElectricityDrafts(
+      mapOrFallback(
+        data.costEntries.electricity
+          .filter((entry) => entry.productId === sourceProductId)
+          .map((entry) => ({
             id: createTempId(),
             costPerUnit: entry.costPerUnit,
             currency: entry.currency,
           })),
-        createElectricityDraft
+        createElectricityDraft,
+        copyMode
       )
-      )
+    )
 
       autoLaborHoursRef.current = product.baseManHours
       return true
