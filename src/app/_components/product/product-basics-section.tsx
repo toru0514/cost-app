@@ -108,9 +108,14 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
       />
       <div className="grid gap-2 md:grid-cols-3">
         <Select
-          value={productForm.categoryLargeId || undefined}
+          value={productForm.categoryLargeId ?? undefined}
           onValueChange={(value) =>
-            setProductForm((prev) => ({ ...prev, categoryLargeId: value, categoryMediumId: "", categorySmallId: "" }))
+            setProductForm((prev) => ({
+              ...prev,
+              categoryLargeId: value,
+              categoryMediumId: undefined,
+              categorySmallId: undefined,
+            }))
           }
         >
           <SelectTrigger>
@@ -131,12 +136,17 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
           </SelectContent>
         </Select>
         <Select
-          value={productForm.categoryMediumId || undefined}
+          value={productForm.categoryMediumId ?? undefined}
           onValueChange={(value) =>
             setProductForm((prev) => {
               const selectedMedium = data.categories.medium.find((category) => category.id === value)
-              const derivedLargeId = selectedMedium?.largeId ?? prev.categoryLargeId ?? ""
-              return { ...prev, categoryLargeId: derivedLargeId, categoryMediumId: value, categorySmallId: "" }
+              const derivedLargeId = selectedMedium?.largeId ?? prev.categoryLargeId
+              return {
+                ...prev,
+                categoryLargeId: derivedLargeId,
+                categoryMediumId: value,
+                categorySmallId: undefined,
+              }
             })
           }
         >
@@ -158,15 +168,15 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
           </SelectContent>
         </Select>
         <Select
-          value={productForm.categorySmallId || undefined}
+          value={productForm.categorySmallId ?? undefined}
           onValueChange={(value) =>
             setProductForm((prev) => {
               const selectedSmall = data.categories.small.find((category) => category.id === value)
               const parentMedium = selectedSmall?.mediumId
                 ? data.categories.medium.find((category) => category.id === selectedSmall.mediumId)
                 : undefined
-              const derivedMediumId = selectedSmall?.mediumId ?? prev.categoryMediumId ?? ""
-              const derivedLargeId = parentMedium?.largeId ?? prev.categoryLargeId ?? ""
+              const derivedMediumId = selectedSmall?.mediumId ?? prev.categoryMediumId
+              const derivedLargeId = parentMedium?.largeId ?? prev.categoryLargeId
               return {
                 ...prev,
                 categoryLargeId: derivedLargeId,

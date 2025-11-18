@@ -286,9 +286,9 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
   const createEmptyProductForm = (): Omit<Product, "id"> => ({
     name: "",
-    categoryLargeId: "",
-    categoryMediumId: "",
-    categorySmallId: "",
+    categoryLargeId: undefined,
+    categoryMediumId: undefined,
+    categorySmallId: undefined,
     sizeVariants: [{ label: "", quantity: 0 }],
     baseManHours: 0,
     defaultElectricityCost: 0,
@@ -575,9 +575,9 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
       setProductForm({
         name: adjustedName,
-        categoryLargeId: resolvedLargeId ?? "",
-        categoryMediumId: resolvedMediumId ?? "",
-        categorySmallId: product.categorySmallId ?? "",
+        categoryLargeId: resolvedLargeId ?? undefined,
+        categoryMediumId: resolvedMediumId ?? undefined,
+        categorySmallId: product.categorySmallId ?? undefined,
       sizeVariants: clonedVariants,
       baseManHours: product.baseManHours,
       defaultElectricityCost: product.defaultElectricityCost,
