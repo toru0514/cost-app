@@ -306,6 +306,14 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
   const [productForm, setProductForm] = useState<Omit<Product, "id">>(createEmptyProductForm)
 
   useEffect(() => {
+    console.log("[productForm] categories", {
+      large: productForm.categoryLargeId,
+      medium: productForm.categoryMediumId,
+      small: productForm.categorySmallId,
+    })
+  }, [productForm.categoryLargeId, productForm.categoryMediumId, productForm.categorySmallId])
+
+  useEffect(() => {
     if (!productForm.categorySmallId || productForm.categoryMediumId) return
     const parentMediumId = data.categories.small.find((category) => category.id === productForm.categorySmallId)?.mediumId
     if (!parentMediumId) return
