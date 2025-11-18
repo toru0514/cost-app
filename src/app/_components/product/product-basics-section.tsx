@@ -1,6 +1,6 @@
 "use client"
 
-import { Dispatch, SetStateAction, useEffect, useState } from "react"
+import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -19,26 +19,52 @@ interface ProductBasicsSectionProps {
 }
 
 export function ProductBasicsSection({ data, productForm, setProductForm, handleToggleEquipment }: ProductBasicsSectionProps) {
-  const largeOptions = data.categories.large
-  const selectedLargeCategory = productForm.categoryLargeId
-    ? largeOptions.find((category) => category.id === productForm.categoryLargeId)
-    : undefined
-  const mediumOptions = data.categories.medium.filter((m) => {
-    if (productForm.categoryMediumId && m.id === productForm.categoryMediumId) return true
-    if (!productForm.categoryLargeId) return true
-    return m.largeId === productForm.categoryLargeId
-  })
-  const selectedMediumCategory = productForm.categoryMediumId
-    ? data.categories.medium.find((category) => category.id === productForm.categoryMediumId)
-    : undefined
-  const smallOptions = data.categories.small.filter((s) => {
-    if (productForm.categorySmallId && s.id === productForm.categorySmallId) return true
-    if (!productForm.categoryMediumId) return true
-    return s.mediumId === productForm.categoryMediumId
-  })
-  const selectedSmallCategory = productForm.categorySmallId
-    ? data.categories.small.find((category) => category.id === productForm.categorySmallId)
-    : undefined
+  const CATEGORY_NONE_VALUE = "__category-none__"
+  const categoryOptions = useMemo(() => {
+    const options: { label: string; value: string }[] = []
+    const mediumsByLarge = data.categories.medium.reduce<Record<string, typeof data.categories.medium>>((acc, medium) => {
+      acc[medium.largeId] = acc[medium.largeId] ? [...acc[medium.largeId], medium] : [medium]
+      return acc
+    }, {})
+    const smallsByMedium = data.categories.small.reduce<Record<string, typeof data.categories.small>>((acc, small) => {
+      acc[small.mediumId] = acc[small.mediumId] ? [...acc[small.mediumId], small] : [small]
+      return acc
+    }, {})
+
+    data.categories.large.forEach((large) => {
+      options.push({ label: large.name, value: JSON.stringify({ largeId: large.id }) })
+      const mediums = mediumsByLarge[large.id] ?? []
+      mediums.forEach((medium) => {
+        options.push({
+          label: `${large.name} / ${medium.name}`,
+          value: JSON.stringify({ largeId: large.id, mediumId: medium.id }),
+        })
+        const smalls = smallsByMedium[medium.id] ?? []
+        smalls.forEach((small) => {
+          options.push({
+            label: `${large.name} / ${medium.name} / ${small.name}`,
+            value: JSON.stringify({ largeId: large.id, mediumId: medium.id, smallId: small.id }),
+          })
+        })
+      })
+    })
+
+    return options
+  }, [data.categories.large, data.categories.medium, data.categories.small])
+
+  const currentCategoryLabel = useMemo(() => {
+    const largeName = productForm.categoryLargeId
+      ? data.categories.large.find((large) => large.id === productForm.categoryLargeId)?.name
+      : undefined
+    const mediumName = productForm.categoryMediumId
+      ? data.categories.medium.find((medium) => medium.id === productForm.categoryMediumId)?.name
+      : undefined
+    const smallName = productForm.categorySmallId
+      ? data.categories.small.find((small) => small.id === productForm.categorySmallId)?.name
+      : undefined
+    const parts = [largeName, mediumName, smallName].filter(Boolean)
+    return parts.length ? parts.join(" / ") : undefined
+  }, [data.categories.large, data.categories.medium, data.categories.small, productForm.categoryLargeId, productForm.categoryMediumId, productForm.categorySmallId])
   const optionPresets = data.optionPresets ?? []
   const [selectedPresetId, setSelectedPresetId] = useState<string>(optionPresets[0]?.id ?? "")
 
@@ -106,103 +132,58 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
         value={productForm.name}
         onChange={(event) => setProductForm((prev) => ({ ...prev, name: event.target.value }))}
       />
-      <div className="grid gap-2 md:grid-cols-3">
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">カテゴリ（大 / 中 / 小）</Label>
         <Select
-          value={productForm.categoryLargeId ?? undefined}
-          onValueChange={(value) =>
-            setProductForm((prev) => ({
-              ...prev,
-              categoryLargeId: value,
-              categoryMediumId: undefined,
-              categorySmallId: undefined,
-            }))
-          }
-        >
-          <SelectTrigger>
-            <span
-              className={`truncate text-left text-sm ${
-                selectedLargeCategory ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              {selectedLargeCategory?.name || "大カテゴリ"}
-            </span>
-          </SelectTrigger>
-          <SelectContent>
-            {largeOptions.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={productForm.categoryMediumId ?? undefined}
-          onValueChange={(value) =>
-            setProductForm((prev) => {
-              const selectedMedium = data.categories.medium.find((category) => category.id === value)
-              const derivedLargeId = selectedMedium?.largeId ?? prev.categoryLargeId
-              return {
+          value={currentCategoryLabel
+            ? JSON.stringify({
+                largeId: productForm.categoryLargeId,
+                mediumId: productForm.categoryMediumId,
+                smallId: productForm.categorySmallId,
+              })
+            : CATEGORY_NONE_VALUE}
+          onValueChange={(value) => {
+            if (value === CATEGORY_NONE_VALUE) {
+              setProductForm((prev) => ({
                 ...prev,
-                categoryLargeId: derivedLargeId,
-                categoryMediumId: value,
+                categoryLargeId: undefined,
+                categoryMediumId: undefined,
                 categorySmallId: undefined,
+              }))
+              return
+            }
+            try {
+              const parsed = JSON.parse(value) as {
+                largeId?: string
+                mediumId?: string
+                smallId?: string
               }
-            })
-          }
-        >
-          <SelectTrigger>
-            <span
-              className={`truncate text-left text-sm ${
-                selectedMediumCategory ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              {selectedMediumCategory?.name || "中カテゴリ"}
-            </span>
-          </SelectTrigger>
-          <SelectContent>
-            {mediumOptions.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select
-          value={productForm.categorySmallId ?? undefined}
-          onValueChange={(value) =>
-            setProductForm((prev) => {
-              const selectedSmall = data.categories.small.find((category) => category.id === value)
-              const parentMedium = selectedSmall?.mediumId
-                ? data.categories.medium.find((category) => category.id === selectedSmall.mediumId)
-                : undefined
-              const derivedMediumId = selectedSmall?.mediumId ?? prev.categoryMediumId
-              const derivedLargeId = parentMedium?.largeId ?? prev.categoryLargeId
-              return {
+              setProductForm((prev) => ({
                 ...prev,
-                categoryLargeId: derivedLargeId,
-                categoryMediumId: derivedMediumId,
-                categorySmallId: value,
-              }
-            })
-          }
+                categoryLargeId: parsed.largeId,
+                categoryMediumId: parsed.mediumId,
+                categorySmallId: parsed.smallId,
+              }))
+            } catch (error) {
+              console.warn("Failed to parse category option", error)
+            }
+          }}
         >
-          <SelectTrigger>
-            <span
-              className={`truncate text-left text-sm ${
-                selectedSmallCategory ? "text-foreground" : "text-muted-foreground"
-              }`}
-            >
-              {selectedSmallCategory?.name || "小カテゴリ"}
-            </span>
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder="カテゴリを選択" />
           </SelectTrigger>
           <SelectContent>
-            {smallOptions.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
+            <SelectItem value={CATEGORY_NONE_VALUE}>未選択</SelectItem>
+            {categoryOptions.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
               </SelectItem>
             ))}
           </SelectContent>
         </Select>
+        {currentCategoryLabel && (
+          <p className="text-xs text-muted-foreground">現在: {currentCategoryLabel}</p>
+        )}
       </div>
       <div className="space-y-2">
         <div className="flex items-center justify-between">

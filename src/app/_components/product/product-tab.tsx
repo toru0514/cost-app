@@ -89,10 +89,10 @@ interface ProductTabProps {
   editingProductId?: string | null
   onRequestEditClear?: () => void
   copySourceProductId?: string | null
-  onRequestCopyClear?: () => void
+  copyRequestNonce?: number
 }
 
-export function ProductTab({ data, actions, editingProductId, onRequestEditClear, copySourceProductId, onRequestCopyClear }: ProductTabProps) {
+export function ProductTab({ data, actions, editingProductId, onRequestEditClear, copySourceProductId, copyRequestNonce }: ProductTabProps) {
   const shippingMethods = useMemo(() => data.shippingMethods ?? [], [data.shippingMethods])
   const editingProduct = editingProductId
     ? data.products.find((product) => product.id === editingProductId)
@@ -312,34 +312,6 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
       small: productForm.categorySmallId,
     })
   }, [productForm.categoryLargeId, productForm.categoryMediumId, productForm.categorySmallId])
-
-  useEffect(() => {
-    if (!productForm.categorySmallId || productForm.categoryMediumId) return
-    const parentMediumId = data.categories.small.find((category) => category.id === productForm.categorySmallId)?.mediumId
-    if (!parentMediumId) return
-    setProductForm((prev) =>
-      prev.categoryMediumId === parentMediumId
-        ? prev
-        : {
-            ...prev,
-            categoryMediumId: parentMediumId,
-          }
-    )
-  }, [productForm.categorySmallId, productForm.categoryMediumId, data.categories.small])
-
-  useEffect(() => {
-    if (!productForm.categoryMediumId || productForm.categoryLargeId) return
-    const parentLargeId = data.categories.medium.find((category) => category.id === productForm.categoryMediumId)?.largeId
-    if (!parentLargeId) return
-    setProductForm((prev) =>
-      prev.categoryLargeId === parentLargeId
-        ? prev
-        : {
-            ...prev,
-            categoryLargeId: parentLargeId,
-          }
-    )
-  }, [productForm.categoryMediumId, productForm.categoryLargeId, data.categories.medium])
 
   const handleToggleEquipment = (equipmentId: string, checked: boolean) => {
     setProductForm((prev) => {
@@ -731,12 +703,9 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
   useEffect(() => {
     if (!copySourceProductId) return
-    const success = hydrateProductFromExisting(copySourceProductId, { copy: true })
-    if (success) {
-      onRequestCopyClear?.()
-      onRequestEditClear?.()
-    }
-  }, [copySourceProductId, data.products, hydrateProductFromExisting, onRequestCopyClear, onRequestEditClear])
+    hydrateProductFromExisting(copySourceProductId, { copy: true })
+    onRequestEditClear?.()
+  }, [copySourceProductId, copyRequestNonce, data.products, hydrateProductFromExisting, onRequestEditClear])
 
   useEffect(() => {
     if (!needsCategoryRecoveryRef.current) return

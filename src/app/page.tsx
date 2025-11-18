@@ -37,6 +37,7 @@ export default function Home() {
   })
   const [editingProductId, setEditingProductId] = useState<string | null>(null)
   const [copyProductId, setCopyProductId] = useState<string | null>(null)
+  const [copyProductNonce, setCopyProductNonce] = useState(0)
   const [productSearchQuery, setProductSearchQuery] = useState("")
   const [productCategoryFilter, setProductCategoryFilter] = useState<string | null>(null)
   const [productSortKey, setProductSortKey] = useState("registered-desc")
@@ -210,6 +211,7 @@ export default function Home() {
   const handleCopyProduct = useCallback(
     (productId: string) => {
       setCopyProductId(productId)
+      setCopyProductNonce((nonce) => nonce + 1)
       setEditingProductId(null)
       handleTabChange("product")
     },
@@ -276,9 +278,9 @@ export default function Home() {
         const unitCost = productCostMap.get(product.id)?.total ?? 0
         const salePrice = Number(product.salePrice ?? 0)
         const profit = salePrice - unitCost
-        const categoryLargeName = categoryLargeNameMap.get(product.categoryLargeId) ?? ""
-        const categoryMediumName = categoryMediumNameMap.get(product.categoryMediumId) ?? ""
-        const categorySmallName = categorySmallNameMap.get(product.categorySmallId) ?? ""
+        const categoryLargeName = categoryLargeNameMap.get(product.categoryLargeId ?? undefined) ?? ""
+        const categoryMediumName = categoryMediumNameMap.get(product.categoryMediumId ?? undefined) ?? ""
+        const categorySmallName = categorySmallNameMap.get(product.categorySmallId ?? undefined) ?? ""
         const categoryPath = [categoryLargeName, categoryMediumName, categorySmallName].filter(Boolean).join(" / ") || "-"
         const shippingText = getShippingText(product.id)
         const equipmentText = getEquipmentText(product)
@@ -525,7 +527,7 @@ export default function Home() {
             editingProductId={editingProductId}
             onRequestEditClear={() => setEditingProductId(null)}
             copySourceProductId={copyProductId}
-            onRequestCopyClear={() => setCopyProductId(null)}
+            copyRequestNonce={copyProductNonce}
           />
         </TabsContent>
 

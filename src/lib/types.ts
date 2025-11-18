@@ -75,9 +75,9 @@ export type ProductSizeVariant = {
 export type Product = {
   id: string
   name: string
-  categoryLargeId?: string
-  categoryMediumId?: string
-  categorySmallId?: string
+  categoryLargeId?: string | null
+  categoryMediumId?: string | null
+  categorySmallId?: string | null
   sizeVariants: ProductSizeVariant[]
   baseManHours: number
   defaultElectricityCost: number
