@@ -201,6 +201,12 @@ export type AuditLogMetadata = {
       logistics: number
       electricity: number
     }
+    summary?: {
+      totalCategories: number
+      totalMasters: number
+      totalCostEntries: number
+      totalRecords: number
+    }
   }
 }
 

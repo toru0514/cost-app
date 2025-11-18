@@ -503,11 +503,36 @@ const buildAuditMetadata = (data: AppData) => {
     },
   }
 
+  const summary = {
+    totalCategories: payloadStats.categories.large + payloadStats.categories.medium + payloadStats.categories.small,
+    totalMasters:
+      payloadStats.materials +
+      payloadStats.packaging +
+      payloadStats.shippingMethods +
+      payloadStats.laborRoles +
+      payloadStats.equipments +
+      payloadStats.optionPresets,
+    totalCostEntries:
+      payloadStats.costEntries.materials +
+      payloadStats.costEntries.packaging +
+      payloadStats.costEntries.labor +
+      payloadStats.costEntries.outsourcing +
+      payloadStats.costEntries.development +
+      payloadStats.costEntries.equipment +
+      payloadStats.costEntries.logistics +
+      payloadStats.costEntries.electricity,
+    totalRecords: 0,
+  }
+  summary.totalRecords = summary.totalCategories + summary.totalMasters + summary.totalCostEntries + payloadStats.products
+
   return {
     deviceInfo: clientInfo.userAgent,
     metadata: {
       client: clientInfo,
-      payloadStats,
+      payloadStats: {
+        ...payloadStats,
+        summary,
+      },
     },
   }
 }

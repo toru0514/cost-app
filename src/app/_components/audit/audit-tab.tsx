@@ -40,7 +40,18 @@ const describeClient = (log: AuditLog) => {
 const describePayload = (log: AuditLog) => {
   const stats = log.metadata?.payloadStats
   if (!stats) return "-"
-  return `カテゴリ ${stats.categories.large}/${stats.categories.medium}/${stats.categories.small} ・ 商品 ${stats.products}`
+  const masterSummary = `マスタ 材料${stats.materials}・梱包${stats.packaging}・配送${stats.shippingMethods}・人件${stats.laborRoles}・設備${stats.equipments}・オプション${stats.optionPresets}`
+  const costSummary = `コスト 材${stats.costEntries.materials}・梱${stats.costEntries.packaging}・人件${stats.costEntries.labor}・外注${stats.costEntries.outsourcing}・開発${stats.costEntries.development}・設備${stats.costEntries.equipment}・物流${stats.costEntries.logistics}・電力${stats.costEntries.electricity}`
+  const categorySummary = `カテゴリ 大${stats.categories.large} / 中${stats.categories.medium} / 小${stats.categories.small}`
+  const total = stats.summary?.totalRecords
+  return (
+    <div className="space-y-1 text-sm text-muted-foreground">
+      <p className="text-foreground">{categorySummary}</p>
+      <p>{`商品 ${stats.products}・総レコード ${total ?? "-"}`}</p>
+      <p>{masterSummary}</p>
+      <p>{costSummary}</p>
+    </div>
+  )
 }
 
 export function AuditTab({ logs, loading, onRefresh }: AuditTabProps) {
@@ -64,14 +75,15 @@ export function AuditTab({ logs, loading, onRefresh }: AuditTabProps) {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead>記録概要</TableHead>
                     <TableHead>日時</TableHead>
                     <TableHead>端末</TableHead>
-                    <TableHead>記録概要</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
                   {logs.map((log) => (
                     <TableRow key={log.id}>
+                      <TableCell>{describePayload(log)}</TableCell>
                       <TableCell className="whitespace-nowrap text-sm">{formatDate(log.createdAt)}</TableCell>
                       <TableCell className="text-sm">
                         <div className="flex flex-col">
