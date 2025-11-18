@@ -60,23 +60,26 @@ const describePayload = (log: AuditLog) => {
   const costSummary = `コスト 材${stats.costEntries.materials}・梱${stats.costEntries.packaging}・人件${stats.costEntries.labor}・外注${stats.costEntries.outsourcing}・開発${stats.costEntries.development}・設備${stats.costEntries.equipment}・物流${stats.costEntries.logistics}・電力${stats.costEntries.electricity}`
   const categorySummary = `カテゴリ 大${stats.categories.large} / 中${stats.categories.medium} / 小${stats.categories.small}`
   const total = stats.summary?.totalRecords
+  const payloadChanges = log.metadata?.changes
   return (
-    <div className="space-y-1 text-sm text-muted-foreground">
-      <p className="text-foreground">{categorySummary}</p>
-      <p>{`商品 ${stats.products}・総レコード ${total ?? "-"}`}</p>
-      <p>{masterSummary}</p>
-      <p>{costSummary}</p>
-      <div className="grid gap-2 pt-1 text-xs">
-        {renderChangeList("商品", log.metadata?.changes?.products)}
-        {renderChangeList("材料", log.metadata?.changes?.materials)}
-        {renderChangeList("梱包材", log.metadata?.changes?.packaging)}
-        {renderChangeList("配送方法", log.metadata?.changes?.shippingMethods)}
-        {renderChangeList("人件費マスタ", log.metadata?.changes?.laborRoles)}
-        {renderChangeList("設備", log.metadata?.changes?.equipments)}
-        {renderChangeList("オプションプリセット", log.metadata?.changes?.optionPresets)}
-        {renderChangeList("大カテゴリ", log.metadata?.changes?.categoriesLarge)}
-        {renderChangeList("中カテゴリ", log.metadata?.changes?.categoriesMedium)}
-        {renderChangeList("小カテゴリ", log.metadata?.changes?.categoriesSmall)}
+    <div className="space-y-2 text-sm">
+      <div className="grid gap-2 rounded-md border border-dashed p-2 text-xs">
+        {renderChangeList("商品", payloadChanges?.products)}
+        {renderChangeList("材料", payloadChanges?.materials)}
+        {renderChangeList("梱包材", payloadChanges?.packaging)}
+        {renderChangeList("配送方法", payloadChanges?.shippingMethods)}
+        {renderChangeList("人件費マスタ", payloadChanges?.laborRoles)}
+        {renderChangeList("設備", payloadChanges?.equipments)}
+        {renderChangeList("オプションプリセット", payloadChanges?.optionPresets)}
+        {renderChangeList("大カテゴリ", payloadChanges?.categoriesLarge)}
+        {renderChangeList("中カテゴリ", payloadChanges?.categoriesMedium)}
+        {renderChangeList("小カテゴリ", payloadChanges?.categoriesSmall)}
+      </div>
+      <div className="space-y-1 text-muted-foreground">
+        <p className="text-foreground">{categorySummary}</p>
+        <p>{`商品 ${stats.products}・総レコード ${total ?? "-"}`}</p>
+        <p>{masterSummary}</p>
+        <p>{costSummary}</p>
       </div>
     </div>
   )
@@ -121,7 +124,6 @@ export function AuditTab({ logs, loading, onRefresh }: AuditTabProps) {
                           )}
                         </div>
                       </TableCell>
-                      <TableCell className="text-sm text-muted-foreground">{describePayload(log)}</TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
