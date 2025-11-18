@@ -1,0 +1,433 @@
+"use client"
+
+import { useState } from "react"
+
+import { Button } from "@/components/ui/button"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Textarea } from "@/components/ui/textarea"
+import type { AppActions } from "@/lib/app-data"
+import type { AppData, CategoryLarge, CategoryMedium, CategorySmall } from "@/lib/types"
+import { toast } from "sonner"
+
+interface CategoryListSectionProps {
+  data: AppData
+  actions: AppActions
+  createTempId: () => string
+}
+
+export function CategoryListSection({ data, actions, createTempId }: CategoryListSectionProps) {
+  const [editingLarge, setEditingLarge] = useState({ id: null as string | null, name: "", description: "" })
+  const [editingMedium, setEditingMedium] = useState({
+    id: null as string | null,
+    name: "",
+    description: "",
+    largeId: "",
+  })
+  const [editingSmall, setEditingSmall] = useState({
+    id: null as string | null,
+    name: "",
+    description: "",
+    mediumId: "",
+  })
+
+  const {
+    addLargeCategory,
+    updateLargeCategory,
+    removeLargeCategory,
+    addMediumCategory,
+    updateMediumCategory,
+    removeMediumCategory,
+    addSmallCategory,
+    updateSmallCategory,
+    removeSmallCategory,
+  } = actions
+
+  const resetLarge = () => setEditingLarge({ id: null, name: "", description: "" })
+  const resetMedium = () =>
+    setEditingMedium({ id: null, name: "", description: "", largeId: data.categories.large[0]?.id ?? "" })
+  const resetSmall = () => setEditingSmall({ id: null, name: "", description: "", mediumId: "" })
+
+  const renderActionButtons = (onSave: () => void, onCancel: () => void, onDelete?: () => void) => (
+    <div className="flex gap-2">
+      <Button type="button" size="sm" onClick={onSave}>
+        保存
+      </Button>
+      {onDelete && (
+        <Button type="button" size="sm" variant="destructive" onClick={onDelete}>
+          削除
+        </Button>
+      )}
+      <Button type="button" size="sm" variant="ghost" onClick={onCancel}>
+        キャンセル
+      </Button>
+    </div>
+  )
+
+  const handleLargeSave = () => {
+    if (!editingLarge.id) return
+    const name = editingLarge.name.trim()
+    if (!name) return
+    updateLargeCategory({ id: editingLarge.id, name, description: editingLarge.description || undefined })
+    toast.success("大カテゴリを更新しました", { description: `「${name}」を更新しました。` })
+    resetLarge()
+  }
+
+  const handleLargeDelete = () => {
+    if (!editingLarge.id) return
+    const name = editingLarge.name.trim() || "大カテゴリ"
+    removeLargeCategory(editingLarge.id)
+    toast.success("大カテゴリを削除しました", { description: `「${name}」を削除しました。` })
+    resetLarge()
+  }
+
+  const handleLargeCopy = (category: CategoryLarge) => {
+    const newId = createTempId()
+    const name = `${category.name} (コピー)`
+    addLargeCategory({ id: newId, name, description: category.description })
+    toast.success("大カテゴリをコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingLarge({ id: newId, name, description: category.description ?? "" })
+  }
+
+  const handleMediumSave = () => {
+    if (!editingMedium.id || !editingMedium.largeId) return
+    const name = editingMedium.name.trim()
+    if (!name) return
+    updateMediumCategory({
+      id: editingMedium.id,
+      name,
+      description: editingMedium.description || undefined,
+      largeId: editingMedium.largeId,
+    })
+    toast.success("中カテゴリを更新しました", { description: `「${name}」を更新しました。` })
+    resetMedium()
+  }
+
+  const handleMediumDelete = () => {
+    if (!editingMedium.id) return
+    const name = editingMedium.name.trim() || "中カテゴリ"
+    removeMediumCategory(editingMedium.id)
+    toast.success("中カテゴリを削除しました", { description: `「${name}」を削除しました。` })
+    resetMedium()
+  }
+
+  const handleMediumCopy = (category: CategoryMedium) => {
+    const newId = createTempId()
+    const name = `${category.name} (コピー)`
+    addMediumCategory({ id: newId, name, description: category.description, largeId: category.largeId })
+    toast.success("中カテゴリをコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingMedium({ id: newId, name, description: category.description ?? "", largeId: category.largeId })
+  }
+
+  const handleSmallSave = () => {
+    if (!editingSmall.id || !editingSmall.mediumId) return
+    const name = editingSmall.name.trim()
+    if (!name) return
+    updateSmallCategory({
+      id: editingSmall.id,
+      name,
+      description: editingSmall.description || undefined,
+      mediumId: editingSmall.mediumId,
+    })
+    toast.success("小カテゴリを更新しました", { description: `「${name}」を更新しました。` })
+    resetSmall()
+  }
+
+  const handleSmallDelete = () => {
+    if (!editingSmall.id) return
+    const name = editingSmall.name.trim() || "小カテゴリ"
+    removeSmallCategory(editingSmall.id)
+    toast.success("小カテゴリを削除しました", { description: `「${name}」を削除しました。` })
+    resetSmall()
+  }
+
+  const handleSmallCopy = (category: CategorySmall) => {
+    const newId = createTempId()
+    const name = `${category.name} (コピー)`
+    addSmallCategory({ id: newId, name, description: category.description, mediumId: category.mediumId })
+    toast.success("小カテゴリをコピーしました", { description: `「${name}」を作成しました。` })
+    setEditingSmall({ id: newId, name, description: category.description ?? "", mediumId: category.mediumId })
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>カテゴリ一覧</CardTitle>
+        <CardDescription>既存カテゴリをその場で編集できます。</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        <div>
+          <p className="mb-2 font-semibold">大カテゴリ</p>
+          {data.categories.large.length === 0 ? (
+            <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
+          ) : (
+            <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+              <Table className="min-w-[640px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>名称</TableHead>
+                    <TableHead>概要</TableHead>
+                    <TableHead className="w-36 text-right">
+                      <span className="sr-only">操作</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.categories.large.map((category) => {
+                    const isEditing = editingLarge.id === category.id
+                    return (
+                      <TableRow key={category.id}>
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              value={editingLarge.name}
+                              onChange={(event) => setEditingLarge((prev) => ({ ...prev, name: event.target.value }))}
+                            />
+                          ) : (
+                            category.name
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Textarea
+                              value={editingLarge.description}
+                              onChange={(event) => setEditingLarge((prev) => ({ ...prev, description: event.target.value }))}
+                            />
+                          ) : (
+                            category.description || "-"
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isEditing ? (
+                            renderActionButtons(handleLargeSave, resetLarge, handleLargeDelete)
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  setEditingLarge({ id: category.id, name: category.name, description: category.description ?? "" })
+                                }
+                              >
+                                編集
+                              </Button>
+                              <Button type="button" size="sm" variant="secondary" onClick={() => handleLargeCopy(category)}>
+                                コピー
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="mb-2 font-semibold">中カテゴリ</p>
+          {data.categories.medium.length === 0 ? (
+            <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
+          ) : (
+            <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+              <Table className="min-w-[700px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>名称</TableHead>
+                    <TableHead>親カテゴリ</TableHead>
+                    <TableHead>概要</TableHead>
+                    <TableHead className="w-36 text-right">
+                      <span className="sr-only">操作</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.categories.medium.map((category) => {
+                    const isEditing = editingMedium.id === category.id
+                    const parentName = data.categories.large.find((c) => c.id === category.largeId)?.name ?? "-"
+                    return (
+                      <TableRow key={category.id}>
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              value={editingMedium.name}
+                              onChange={(event) => setEditingMedium((prev) => ({ ...prev, name: event.target.value }))}
+                            />
+                          ) : (
+                            category.name
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Select
+                              value={editingMedium.largeId}
+                              onValueChange={(value) => setEditingMedium((prev) => ({ ...prev, largeId: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="親カテゴリ" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {data.categories.large.map((large) => (
+                                  <SelectItem key={large.id} value={large.id}>
+                                    {large.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            parentName
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Textarea
+                              value={editingMedium.description}
+                              onChange={(event) => setEditingMedium((prev) => ({ ...prev, description: event.target.value }))}
+                            />
+                          ) : (
+                            category.description || "-"
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isEditing ? (
+                            renderActionButtons(handleMediumSave, resetMedium, handleMediumDelete)
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  setEditingMedium({
+                                    id: category.id,
+                                    name: category.name,
+                                    description: category.description ?? "",
+                                    largeId: category.largeId,
+                                  })
+                                }
+                              >
+                                編集
+                              </Button>
+                              <Button type="button" size="sm" variant="secondary" onClick={() => handleMediumCopy(category)}>
+                                コピー
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+
+        <div>
+          <p className="mb-2 font-semibold">小カテゴリ</p>
+          {data.categories.small.length === 0 ? (
+            <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
+          ) : (
+            <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+              <Table className="min-w-[720px]">
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>名称</TableHead>
+                    <TableHead>親カテゴリ</TableHead>
+                    <TableHead>概要</TableHead>
+                    <TableHead className="w-36 text-right">
+                      <span className="sr-only">操作</span>
+                    </TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {data.categories.small.map((category) => {
+                    const isEditing = editingSmall.id === category.id
+                    const parent = data.categories.medium.find((c) => c.id === category.mediumId)?.name ?? "-"
+                    return (
+                      <TableRow key={category.id}>
+                        <TableCell>
+                          {isEditing ? (
+                            <Input
+                              value={editingSmall.name}
+                              onChange={(event) => setEditingSmall((prev) => ({ ...prev, name: event.target.value }))}
+                            />
+                          ) : (
+                            category.name
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Select
+                              value={editingSmall.mediumId}
+                              onValueChange={(value) => setEditingSmall((prev) => ({ ...prev, mediumId: value }))}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="親カテゴリ" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {data.categories.medium.map((medium) => (
+                                  <SelectItem key={medium.id} value={medium.id}>
+                                    {medium.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          ) : (
+                            parent
+                          )}
+                        </TableCell>
+                        <TableCell>
+                          {isEditing ? (
+                            <Textarea
+                              value={editingSmall.description}
+                              onChange={(event) => setEditingSmall((prev) => ({ ...prev, description: event.target.value }))}
+                            />
+                          ) : (
+                            category.description || "-"
+                          )}
+                        </TableCell>
+                        <TableCell className="text-right">
+                          {isEditing ? (
+                            renderActionButtons(handleSmallSave, resetSmall, handleSmallDelete)
+                          ) : (
+                            <div className="flex justify-end gap-2">
+                              <Button
+                                type="button"
+                                size="sm"
+                                variant="outline"
+                                onClick={() =>
+                                  setEditingSmall({
+                                    id: category.id,
+                                    name: category.name,
+                                    description: category.description ?? "",
+                                    mediumId: category.mediumId,
+                                  })
+                                }
+                              >
+                                編集
+                              </Button>
+                              <Button type="button" size="sm" variant="secondary" onClick={() => handleSmallCopy(category)}>
+                                コピー
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    )
+                  })}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
