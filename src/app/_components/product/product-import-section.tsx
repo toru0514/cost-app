@@ -14,6 +14,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import type { AppActions } from "@/lib/app-data"
 import { supabaseClient } from "@/lib/supabase-client"
 import type { AppData, Product } from "@/lib/types"
+import { useAuth } from "@/lib/auth"
 
 type ImportRowStatus = "ready" | "needs_mapping" | "invalid"
 
@@ -106,6 +107,7 @@ interface ProductImportSectionProps {
 }
 
 export function ProductImportSection({ data, actions }: ProductImportSectionProps) {
+  const { state: authState } = useAuth()
   const [templateDownloaded, setTemplateDownloaded] = useState(false)
   const [importRows, setImportRows] = useState<ProductImportRow[]>([])
   const [stagedRows, setStagedRows] = useState<ProductImportRow[]>([])
@@ -131,6 +133,21 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   }, [importRows])
 
   const stagedSummary = useMemo(() => ({ ready: stagedRows.length }), [stagedRows])
+
+  const adminEmailSet = useMemo(() => {
+    return new Set(
+      (process.env.NEXT_PUBLIC_SHEET_SETTINGS_ADMIN_EMAILS ?? "")
+        .split(",")
+        .map((email) => email.trim().toLowerCase())
+        .filter(Boolean)
+    )
+  }, [])
+
+  const isSheetAdmin = useMemo(() => {
+    if (authState.status !== "authenticated") return false
+    const email = authState.user.email.toLowerCase()
+    return adminEmailSet.has(email)
+  }, [authState, adminEmailSet])
 
   const resolveUserIdByEmail = useCallback(async () => {
     const email = sheetEmailInput.trim().toLowerCase()
@@ -594,67 +611,69 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
                     </a>
                   </Button>
                 </div>
-                <div className="rounded-md border border-dashed bg-background/70 p-3 space-y-3">
-                  <div>
-                    <p className="text-sm font-medium">シート割り当て（管理者用）</p>
-                    <p className="text-xs text-muted-foreground">
-                      メールアドレスを入力して対象ユーザーのシートID / タブ名を登録します。
-                    </p>
-                  </div>
-                  <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
-                    <Input
-                      value={sheetEmailInput}
-                      onChange={(event) => setSheetEmailInput(event.target.value)}
-                      placeholder="user@example.com"
-                    />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      onClick={handleLookupSheetSettings}
-                      disabled={lookupLoading}
-                    >
-                      {lookupLoading ? "検索中..." : "ユーザーを検索"}
-                    </Button>
-                  </div>
-                  {targetUserId ? (
-                    <p className="text-xs text-muted-foreground break-all">対象ユーザーID: {targetUserId}</p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">検索すると該当ユーザーのシート情報が表示されます。</p>
-                  )}
-                  <div className="grid gap-2 md:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">スプレッドシートID</Label>
-                      <Input
-                        value={sheetIdInput}
-                        onChange={(event) => setSheetIdInput(event.target.value)}
-                        placeholder="例: 1Bx8LW..."
-                      />
+                {isSheetAdmin && (
+                  <div className="rounded-md border border-dashed bg-background/70 p-3 space-y-3">
+                    <div>
+                      <p className="text-sm font-medium">シート割り当て（管理者用）</p>
+                      <p className="text-xs text-muted-foreground">
+                        メールアドレスを入力して対象ユーザーのシートID / タブ名を登録します。
+                      </p>
                     </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">タブ名</Label>
+                    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
                       <Input
-                        value={sheetTitleInput}
-                        onChange={(event) => setSheetTitleInput(event.target.value)}
-                        placeholder="例: シート1"
+                        value={sheetEmailInput}
+                        onChange={(event) => setSheetEmailInput(event.target.value)}
+                        placeholder="user@example.com"
                       />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" size="sm" variant="default" onClick={handleSaveSheetSettings} disabled={savingSheetSettings || !targetUserId}>
-                      {savingSheetSettings ? "保存中..." : "シート設定を保存"}
-                    </Button>
-                    <Button type="button" size="sm" variant="outline" disabled={!adminSheetSettings} asChild>
-                      <a
-                        href={adminSheetSettings ? `https://docs.google.com/spreadsheets/d/${adminSheetSettings.spreadsheetId}/edit` : undefined}
-                        target="_blank"
-                        rel="noreferrer"
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant="secondary"
+                        onClick={handleLookupSheetSettings}
+                        disabled={lookupLoading}
                       >
-                        対象シートを開く
-                      </a>
-                    </Button>
+                        {lookupLoading ? "検索中..." : "ユーザーを検索"}
+                      </Button>
+                    </div>
+                    {targetUserId ? (
+                      <p className="text-xs text-muted-foreground break-all">対象ユーザーID: {targetUserId}</p>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">検索すると該当ユーザーのシート情報が表示されます。</p>
+                    )}
+                    <div className="grid gap-2 md:grid-cols-2">
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">スプレッドシートID</Label>
+                        <Input
+                          value={sheetIdInput}
+                          onChange={(event) => setSheetIdInput(event.target.value)}
+                          placeholder="例: 1Bx8LW..."
+                        />
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs text-muted-foreground">タブ名</Label>
+                        <Input
+                          value={sheetTitleInput}
+                          onChange={(event) => setSheetTitleInput(event.target.value)}
+                          placeholder="例: シート1"
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="button" size="sm" variant="default" onClick={handleSaveSheetSettings} disabled={savingSheetSettings || !targetUserId}>
+                        {savingSheetSettings ? "保存中..." : "シート設定を保存"}
+                      </Button>
+                      <Button type="button" size="sm" variant="outline" disabled={!adminSheetSettings} asChild>
+                        <a
+                          href={adminSheetSettings ? `https://docs.google.com/spreadsheets/d/${adminSheetSettings.spreadsheetId}/edit` : undefined}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          対象シートを開く
+                        </a>
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
               </div>
               {importRows.length > 0 ? (
                 <div className="rounded-md border bg-muted/50 p-3 text-xs">

@@ -264,7 +264,8 @@ UI → Application Ports → Domain Services → Repository Adapters という�
   - [x] シート未設定ユーザーには管理者（または本人）が画面上でシートID/タブ名を入力して登録できるフォームを追加済み。テンプレートをコピーした後、ID とタブ名を貼り付けて保存する。
   - [x] 管理者専用 API ルート `/api/admin/sheet-settings` を追加し、サービスロールキー経由で任意ユーザーのシート設定を upsert できるようにする。
     - `SUPABASE_SERVICE_ROLE_KEY` に Supabase の Service role キーを設定。
-    - `SHEET_SETTINGS_ADMIN_EMAILS` に操作を許可するメールアドレスをカンマ区切りで登録（画面の「シート割り当て（管理者用）」はこのリストに含まれるユーザーのみ利用可能）。
+    - `SHEET_SETTINGS_ADMIN_EMAILS` に操作を許可するメールアドレスをカンマ区切りで登録。
+    - `NEXT_PUBLIC_SHEET_SETTINGS_ADMIN_EMAILS` に同じメールアドレス一覧を設定し、クライアント側の UI 表示を制御する（管理者以外には「シート割り当て」フォームを表示しない）。
 
 ## 材料費モジュール（第一弾）
 - **目的**: 製品を構成する主要素材のコストを正確に積み上げる。歩留まりや為替差も考慮可能な器を用意。
