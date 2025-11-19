@@ -255,9 +255,13 @@ UI → Application Ports → Domain Services → Repository Adapters という�
          - ボタン押下→API を呼んで値を受け取り、既存のパーサ/検証フローに渡す。
          - エラー時は Sheets API のレスポンスをユーザーに提示（共有設定未完・ヘッダー不足など）。
 
-      - [x] **監査 / セキュリティ**
-         - 読み込み成功時に監査ログへ「Google Sheets 読み込み」を記録。
-         - Sheets ID / 範囲などをユーザーごとに保存する場合は Supabase DB に `sheet_settings` テーブルを追加し、認可チェックを徹底する。
+  - [x] **監査 / セキュリティ**
+        - 読み込み成功時に監査ログへ「Google Sheets 読み込み」を記録。
+        - Sheets ID / 範囲などをユーザーごとに保存する場合は Supabase DB に `sheet_settings` テーブルを追加し、認可チェックを徹底する。
+  - [x] シート設定マスタ `sheet_settings` を Supabase に作成し、`user_id` ごとに Spreadsheet ID / タブ名を保持する。
+  - [x] 既存ユーザー（管理者）のシートID/タブ名を `sheet_settings` に初期投入する。
+  - [x] `/api/import/product-sheet` でログイン中ユーザーの `sheet_settings` を参照し、シートID/タブ名を動的に切り替えられるようにする。
+  - [ ] 新規ユーザー登録時にテンプレートを複製し、サービスアカウントへ共有した上で `sheet_settings` にレコードを作成するフローを追加する（将来的には自動化）。
 
 ## 材料費モジュール（第一弾）
 - **目的**: 製品を構成する主要素材のコストを正確に積み上げる。歩留まりや為替差も考慮可能な器を用意。

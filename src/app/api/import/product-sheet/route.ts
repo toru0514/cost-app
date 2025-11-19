@@ -67,10 +67,31 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  let spreadsheetId: string | undefined
+  let worksheetTitle: string | undefined
+
+  const { data: sheetSetting, error: sheetError } = await supabase
+    .from("sheet_settings")
+    .select("spreadsheet_id, worksheet_title")
+    .eq("user_id", user.id)
+    .maybeSingle()
+
+  if (sheetError && sheetError.code !== "PGRST116") {
+    console.error("Failed to load sheet_settings", sheetError)
+    return NextResponse.json({ error: "Failed to load sheet settings" }, { status: 500 })
+  }
+
+  spreadsheetId = sheetSetting?.spreadsheet_id ?? process.env.GOOGLE_SHEETS_SPREADSHEET_ID
+  worksheetTitle = sheetSetting?.worksheet_title ?? process.env.GOOGLE_SHEETS_WORKSHEET_TITLE
+
+  if (!spreadsheetId || !worksheetTitle) {
+    return NextResponse.json({ error: "Sheet settings not found" }, { status: 400 })
+  }
+
   try {
     const url = new URL(request.url)
     const range = url.searchParams.get("range") ?? undefined
-    const result = await fetchGoogleSheetRows({ range })
+    const result = await fetchGoogleSheetRows({ range, spreadsheetId, worksheetTitle })
     const deviceInfo = request.headers.get("user-agent") ?? undefined
     const metadata = {
       action: "google_sheets_import",

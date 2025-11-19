@@ -7,6 +7,8 @@ type SheetRow = {
 
 type FetchOptions = {
   range?: string
+  spreadsheetId?: string
+  worksheetTitle?: string
 }
 
 const SHEETS_SCOPE = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
@@ -31,8 +33,8 @@ const loadServiceAccount = () => {
 
 export async function fetchGoogleSheetRows(options: FetchOptions = {}) {
   const creds = loadServiceAccount()
-  const spreadsheetId = ensureEnv("GOOGLE_SHEETS_SPREADSHEET_ID")
-  const worksheetTitle = ensureEnv("GOOGLE_SHEETS_WORKSHEET_TITLE")
+  const spreadsheetId = options.spreadsheetId ?? ensureEnv("GOOGLE_SHEETS_SPREADSHEET_ID")
+  const worksheetTitle = options.worksheetTitle ?? ensureEnv("GOOGLE_SHEETS_WORKSHEET_TITLE")
   const range = options.range ?? `${worksheetTitle}!A1:Z`
 
   const auth = new google.auth.JWT({
