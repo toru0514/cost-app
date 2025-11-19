@@ -13,7 +13,7 @@ type FetchOptions = {
 
 const SHEETS_SCOPE = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
 
-const ensureEnv = (key: string) => {
+export const ensureEnv = (key: string) => {
   const value = process.env[key]
   if (!value) {
     throw new Error(`${key} is not defined`)
@@ -21,7 +21,7 @@ const ensureEnv = (key: string) => {
   return value
 }
 
-const loadServiceAccount = () => {
+export const loadServiceAccount = () => {
   const base64 = ensureEnv("GOOGLE_SERVICE_ACCOUNT_BASE64")
   try {
     const json = Buffer.from(base64, "base64").toString("utf-8")

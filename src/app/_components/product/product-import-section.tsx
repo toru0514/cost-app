@@ -114,6 +114,7 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   const [fetchingSheet, setFetchingSheet] = useState(false)
   const [sheetSettings, setSheetSettings] = useState<{ spreadsheetId: string; worksheetTitle: string } | null>(null)
   const [sheetSettingsLoading, setSheetSettingsLoading] = useState(true)
+  const [creatingSheet, setCreatingSheet] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const summary = useMemo(() => {
@@ -265,6 +266,42 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
       })
     } finally {
       setFetchingSheet(false)
+    }
+  }
+
+  const handleCreateSheet = async () => {
+    setCreatingSheet(true)
+    try {
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession()
+      if (!session?.access_token) {
+        toast.error("ログインするとシートを作成できます。")
+        return
+      }
+      const response = await fetch("/api/import/create-sheet", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      })
+      const payload = await response.json().catch(() => ({}))
+      if (!response.ok) {
+        throw new Error(payload.error ?? "シートの作成に失敗しました")
+      }
+      setSheetSettings({ spreadsheetId: payload.spreadsheetId, worksheetTitle: payload.worksheetTitle })
+      toast.success("スプレッドシートを作成しました", {
+        description: "ボタンから編集画面を開けます。",
+      })
+    } catch (error) {
+      console.error(error)
+      toast.error("スプレッドシートの作成に失敗しました", {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setCreatingSheet(false)
+      setSheetSettingsLoading(false)
     }
   }
 
@@ -427,17 +464,23 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
                     ? "シート情報を読み込み中..."
                     : sheetSettings
                         ? `連携シート: ${sheetSettings.worksheetTitle}`
-                        : "連携シートが未設定です。管理者に依頼してください。"}
+                        : "連携シートが未設定です。ボタンから作成してください。"}
                 </p>
-                <Button type="button" size="sm" variant="outline" disabled={!sheetSettings} asChild>
-                  <a
-                    href={sheetSettings ? `https://docs.google.com/spreadsheets/d/${sheetSettings.spreadsheetId}/edit` : undefined}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    スプレッドシートを開く
-                  </a>
-                </Button>
+                {sheetSettings ? (
+                  <Button type="button" size="sm" variant="outline" asChild>
+                    <a
+                      href={`https://docs.google.com/spreadsheets/d/${sheetSettings.spreadsheetId}/edit`}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      スプレッドシートを開く
+                    </a>
+                  </Button>
+                ) : (
+                  <Button type="button" size="sm" variant="outline" onClick={handleCreateSheet} disabled={creatingSheet || sheetSettingsLoading}>
+                    {creatingSheet ? "作成中..." : "スプレッドシートを作成"}
+                  </Button>
+                )}
               </div>
             </div>
             {importRows.length > 0 ? (
