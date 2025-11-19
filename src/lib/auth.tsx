@@ -45,6 +45,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [])
 
+  const ensureSheetSettings = useCallback(async (userId: string) => {
+    const { data, error } = await supabaseClient
+      .from("sheet_settings")
+      .select("spreadsheet_id")
+      .eq("user_id", userId)
+      .maybeSingle()
+    if (error && error.code !== "PGRST116") {
+      console.error("Failed to load sheet settings", error)
+      return
+    }
+    if (data?.spreadsheet_id) {
+      return
+    }
+    const {
+      data: { session },
+    } = await supabaseClient.auth.getSession()
+    const token = session?.access_token
+    if (!token) {
+      return
+    }
+    try {
+      const response = await fetch("/api/import/create-sheet", {
+        method: "POST",
+        credentials: "include",
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      })
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        console.error("Failed to auto-create sheet", payload.error)
+      }
+    } catch (error) {
+      console.error("Failed to auto-create sheet", error)
+    }
+  }, [])
+
   const fetchProfile = useCallback(async (userId: string, email: string) => {
     const { data, error } = await supabaseClient.from("profiles").select("*").eq("user_id", userId).single()
     if (error && error.code !== "PGRST116") {
@@ -52,7 +89,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
     const name = data?.name ?? email
     commitState({ status: "authenticated", user: { id: userId, email, name } })
-  }, [commitState])
+    await ensureSheetSettings(userId)
+  }, [commitState, ensureSheetSettings])
 
   useEffect(() => {
     let mounted = true

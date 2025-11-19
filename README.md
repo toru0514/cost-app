@@ -263,7 +263,7 @@ UI → Application Ports → Domain Services → Repository Adapters という�
   - [x] 既存ユーザー（管理者）のシートID/タブ名を `sheet_settings` に初期投入する。
   - [x] `/api/import/product-sheet` でログイン中ユーザーの `sheet_settings` を参照し、シートID/タブ名を動的に切り替えられるようにする。
   - [x] シート未設定ユーザーがテンプレートからシートを複製・共有し、`sheet_settings` に登録できるボタン（`/api/import/create-sheet`）を実装する。
-  - [ ] 新規ユーザー登録時にテンプレートを自動複製し、`sheet_settings` にレコードを作成するフローを追加する（将来的に自動化）。
+  - [x] 新規ユーザー登録時（初回ログイン時）にテンプレートを自動複製し、`sheet_settings` にレコードを作成するフローを追加する。
 
 ## 材料費モジュール（第一弾）
 - **目的**: 製品を構成する主要素材のコストを正確に積み上げる。歩留まりや為替差も考慮可能な器を用意。
