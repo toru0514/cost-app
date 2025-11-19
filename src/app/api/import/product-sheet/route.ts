@@ -15,8 +15,13 @@ export async function GET(request: Request) {
 
   const cookieStore = await cookies()
   const projectRef = extractProjectRef(supabaseUrl)
-  const tokenCookie = projectRef ? cookieStore.get(`sb-${projectRef}-auth-token`) : undefined
+  const cookieName = projectRef ? `sb-${projectRef}-auth-token` : undefined
+  const tokenCookie = cookieName ? cookieStore.get(cookieName) : undefined
   if (!tokenCookie?.value) {
+    console.warn("Supabase auth cookie missing", {
+      cookieName,
+      present: cookieStore.getAll().map((cookie) => cookie.name),
+    })
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
@@ -25,11 +30,12 @@ export async function GET(request: Request) {
     const [access] = JSON.parse(tokenCookie.value)
     accessToken = access
   } catch (error) {
-    console.error("Failed to parse Supabase auth cookie", error)
+    console.error("Failed to parse Supabase auth cookie", { cookieName, error })
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
   if (!accessToken) {
+    console.warn("Supabase auth access token is empty", { cookieName })
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
