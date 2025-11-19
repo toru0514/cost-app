@@ -185,7 +185,9 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   const handleFetchFromSheet = async () => {
     setFetchingSheet(true)
     try {
-      const response = await fetch("/api/import/product-sheet")
+      const response = await fetch("/api/import/product-sheet", {
+        credentials: "include",
+      })
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}))
         throw new Error(payload.error ?? "Google シートの取得に失敗しました")
