@@ -12,6 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { AppActions } from "@/lib/app-data"
+import { supabaseClient } from "@/lib/supabase-client"
 import type { AppData, Product } from "@/lib/types"
 
 type ImportRowStatus = "ready" | "needs_mapping" | "invalid"
@@ -185,8 +186,19 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   const handleFetchFromSheet = async () => {
     setFetchingSheet(true)
     try {
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession()
+      if (!session?.access_token) {
+        toast.error("ログインするとシートを読み込めます。")
+        setFetchingSheet(false)
+        return
+      }
       const response = await fetch("/api/import/product-sheet", {
         credentials: "include",
+        headers: {
+          Authorization: `Bearer ${session.access_token}`,
+        },
       })
       if (!response.ok) {
         const payload = await response.json().catch(() => ({}))

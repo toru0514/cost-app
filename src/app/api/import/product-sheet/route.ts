@@ -13,30 +13,38 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 })
   }
 
-  const cookieStore = await cookies()
-  const projectRef = extractProjectRef(supabaseUrl)
-  const cookieName = projectRef ? `sb-${projectRef}-auth-token` : undefined
-  const tokenCookie = cookieName ? cookieStore.get(cookieName) : undefined
-  if (!tokenCookie?.value) {
-    console.warn("Supabase auth cookie missing", {
-      cookieName,
-      present: cookieStore.getAll().map((cookie) => cookie.name),
-    })
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-
   let accessToken: string | undefined
-  try {
-    const [access] = JSON.parse(tokenCookie.value)
-    accessToken = access
-  } catch (error) {
-    console.error("Failed to parse Supabase auth cookie", { cookieName, error })
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+
+  const authHeader = request.headers.get("authorization")
+  if (authHeader?.toLowerCase().startsWith("bearer ")) {
+    accessToken = authHeader.slice(7)
   }
 
+  const cookieStore = await cookies()
   if (!accessToken) {
-    console.warn("Supabase auth access token is empty", { cookieName })
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const projectRef = extractProjectRef(supabaseUrl)
+    const cookieName = projectRef ? `sb-${projectRef}-auth-token` : undefined
+    const tokenCookie = cookieName ? cookieStore.get(cookieName) : undefined
+    if (!tokenCookie?.value) {
+      console.warn("Supabase auth cookie missing", {
+        cookieName,
+        present: cookieStore.getAll().map((cookie) => cookie.name),
+      })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    try {
+      const [access] = JSON.parse(tokenCookie.value)
+      accessToken = access
+    } catch (error) {
+      console.error("Failed to parse Supabase auth cookie", { cookieName, error })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    if (!accessToken) {
+      console.warn("Supabase auth access token is empty", { cookieName })
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
   }
 
   const supabase = createClient(supabaseUrl, supabaseAnonKey, {
