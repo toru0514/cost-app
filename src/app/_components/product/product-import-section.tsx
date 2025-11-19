@@ -381,13 +381,18 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
       }
       const trimmedId = sheetIdInput.trim()
       const trimmedTitle = sheetTitleInput.trim()
-      const { error } = await supabaseClient.from("sheet_settings").upsert({
-        user_id: targetUserId,
-        spreadsheet_id: trimmedId,
-        worksheet_title: trimmedTitle,
+      const response = await fetch("/api/admin/sheet-settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          userId: targetUserId,
+          spreadsheetId: trimmedId,
+          worksheetTitle: trimmedTitle,
+        }),
       })
-      if (error) {
-        throw error
+      if (!response.ok) {
+        const payload = await response.json().catch(() => null)
+        throw new Error(payload?.error ?? "シート設定の保存に失敗しました")
       }
       const updated = { spreadsheetId: trimmedId, worksheetTitle: trimmedTitle }
       setAdminSheetSettings(updated)
