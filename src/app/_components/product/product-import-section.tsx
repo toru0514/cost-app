@@ -449,7 +449,7 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
             <div className="rounded-md border bg-muted/40 p-3 text-xs">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <p className="font-medium">Google シートから読み込む</p>
+                  <p className="font-medium">Google シートから読み込む (構築中)</p>
                   <p className="text-muted-foreground">
                     共有済みのスプレッドシートから直接データを取得します。
                   </p>
@@ -478,7 +478,7 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
                   </Button>
                 ) : (
                   <Button type="button" size="sm" variant="outline" onClick={handleCreateSheet} disabled={creatingSheet || sheetSettingsLoading}>
-                    {creatingSheet ? "作成中..." : "スプレッドシートを作成"}
+                    {creatingSheet ? "作成中..." : "スプレッドシートを作成 (構築中)"}
                   </Button>
                 )}
               </div>
