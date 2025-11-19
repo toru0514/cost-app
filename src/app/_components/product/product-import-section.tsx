@@ -1,6 +1,6 @@
 "use client"
 
-import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react"
+import { type ChangeEvent, useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import Papa from "papaparse"
 import { toast } from "sonner"
@@ -112,11 +112,15 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   const [history, setHistory] = useState<ImportHistoryEntry[]>([])
   const [syncing, setSyncing] = useState(false)
   const [fetchingSheet, setFetchingSheet] = useState(false)
-  const [sheetSettings, setSheetSettings] = useState<{ spreadsheetId: string; worksheetTitle: string } | null>(null)
+  const [mySheetSettings, setMySheetSettings] = useState<{ spreadsheetId: string; worksheetTitle: string } | null>(null)
+  const [adminSheetSettings, setAdminSheetSettings] = useState<{ spreadsheetId: string; worksheetTitle: string } | null>(null)
   const [sheetSettingsLoading, setSheetSettingsLoading] = useState(true)
   const [sheetIdInput, setSheetIdInput] = useState("")
   const [sheetTitleInput, setSheetTitleInput] = useState("")
+  const [sheetEmailInput, setSheetEmailInput] = useState("")
+  const [targetUserId, setTargetUserId] = useState<string | null>(null)
   const [savingSheetSettings, setSavingSheetSettings] = useState(false)
+  const [lookupLoading, setLookupLoading] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const summary = useMemo(() => {
@@ -128,42 +132,122 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
 
   const stagedSummary = useMemo(() => ({ ready: stagedRows.length }), [stagedRows])
 
-  useEffect(() => {
-    let mounted = true
-    const loadSheetSettings = async () => {
-      setSheetSettingsLoading(true)
-      const {
-        data: { session },
-      } = await supabaseClient.auth.getSession()
-      if (!mounted) return
-      if (!session?.user) {
-        setSheetSettings(null)
-        setSheetSettingsLoading(false)
-        return
+  const resolveUserIdByEmail = useCallback(async () => {
+    const email = sheetEmailInput.trim().toLowerCase()
+    if (!email) {
+      toast.error("メールアドレスを入力してください。")
+      return null
+    }
+    try {
+      const { data, error } = await supabaseClient
+        .from("profiles")
+        .select("user_id")
+        .eq("email", email)
+        .maybeSingle()
+      if (error && error.code !== "PGRST116") {
+        throw error
       }
+      if (!data?.user_id) {
+        toast.error("該当するユーザーが見つかりません。")
+        setTargetUserId(null)
+        setAdminSheetSettings(null)
+        setSheetIdInput("")
+        setSheetTitleInput("")
+        return null
+      }
+      setTargetUserId(data.user_id)
+      return data.user_id
+    } catch (error) {
+      console.error(error)
+      toast.error("ユーザー検索に失敗しました。", {
+        description: error instanceof Error ? error.message : undefined,
+      })
+      return null
+    }
+  }, [sheetEmailInput])
+
+  const handleLookupSheetSettings = useCallback(async () => {
+    setLookupLoading(true)
+    try {
+      const userId = await resolveUserIdByEmail()
+      if (!userId) return
       const { data, error } = await supabaseClient
         .from("sheet_settings")
         .select("spreadsheet_id, worksheet_title")
-        .eq("user_id", session.user.id)
+        .eq("user_id", userId)
         .maybeSingle()
-      if (!mounted) return
       if (error && error.code !== "PGRST116") {
-        console.error("Failed to load sheet settings", error)
-        setSheetSettings(null)
-      } else if (data?.spreadsheet_id && data?.worksheet_title) {
-        setSheetSettings({ spreadsheetId: data.spreadsheet_id, worksheetTitle: data.worksheet_title })
+        throw error
+      }
+      if (data?.spreadsheet_id && data?.worksheet_title) {
+        const next = { spreadsheetId: data.spreadsheet_id, worksheetTitle: data.worksheet_title }
+        setAdminSheetSettings(next)
         setSheetIdInput(data.spreadsheet_id)
         setSheetTitleInput(data.worksheet_title)
       } else {
-        setSheetSettings(null)
+        setAdminSheetSettings(null)
         setSheetIdInput("")
         setSheetTitleInput("")
+        toast.message("シート設定はまだ登録されていません。")
       }
-      setSheetSettingsLoading(false)
+    } catch (error) {
+      console.error(error)
+      toast.error("シート情報の取得に失敗しました", {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setLookupLoading(false)
     }
-    void loadSheetSettings()
+  }, [resolveUserIdByEmail])
+
+  useEffect(() => {
+    let isCancelled = false
+
+    const loadMySheetSettings = async () => {
+      setSheetSettingsLoading(true)
+      try {
+        const {
+          data: { session },
+        } = await supabaseClient.auth.getSession()
+        if (!session?.user) {
+          if (!isCancelled) {
+            setMySheetSettings(null)
+          }
+          return
+        }
+        const { data, error } = await supabaseClient
+          .from("sheet_settings")
+          .select("spreadsheet_id, worksheet_title")
+          .eq("user_id", session.user.id)
+          .maybeSingle()
+        if (error && error.code !== "PGRST116") {
+          throw error
+        }
+        if (!isCancelled) {
+          if (data?.spreadsheet_id && data?.worksheet_title) {
+            setMySheetSettings({ spreadsheetId: data.spreadsheet_id, worksheetTitle: data.worksheet_title })
+          } else {
+            setMySheetSettings(null)
+          }
+        }
+      } catch (error) {
+        console.error(error)
+        if (!isCancelled) {
+          toast.error("シート情報の取得に失敗しました", {
+            description: error instanceof Error ? error.message : undefined,
+          })
+        }
+      } finally {
+        if (!isCancelled) {
+          setSheetSettingsLoading(false)
+        }
+      }
+    }
+
+    void loadMySheetSettings()
+
     return () => {
-      mounted = false
+      isCancelled = true
     }
   }, [])
 
@@ -230,9 +314,12 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   const handleFetchFromSheet = async () => {
     setFetchingSheet(true)
     try {
-      if (!sheetSettings && !sheetSettingsLoading) {
+      if (sheetSettingsLoading) {
+        toast.message("シート情報を読み込み中です。少し待ってからお試しください。")
+        return
+      }
+      if (!mySheetSettings) {
         toast.error("スプレッドシートの連携設定が見つかりません。")
-        setFetchingSheet(false)
         return
       }
       const {
@@ -240,7 +327,6 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
       } = await supabaseClient.auth.getSession()
       if (!session?.access_token) {
         toast.error("ログインするとシートを読み込めます。")
-        setFetchingSheet(false)
         return
       }
       const response = await fetch("/api/import/product-sheet", {
@@ -276,6 +362,10 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   }
 
   const handleSaveSheetSettings = async () => {
+    if (!targetUserId) {
+      toast.error("先にメールアドレスからユーザーを検索してください。")
+      return
+    }
     if (!sheetIdInput.trim() || !sheetTitleInput.trim()) {
       toast.error("シートIDとタブ名を入力してください。")
       return
@@ -289,16 +379,24 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
         toast.error("ログインしてください")
         return
       }
+      const trimmedId = sheetIdInput.trim()
+      const trimmedTitle = sheetTitleInput.trim()
       const { error } = await supabaseClient.from("sheet_settings").upsert({
-        user_id: session.user.id,
-        spreadsheet_id: sheetIdInput.trim(),
-        worksheet_title: sheetTitleInput.trim(),
+        user_id: targetUserId,
+        spreadsheet_id: trimmedId,
+        worksheet_title: trimmedTitle,
       })
       if (error) {
         throw error
       }
-      setSheetSettings({ spreadsheetId: sheetIdInput.trim(), worksheetTitle: sheetTitleInput.trim() })
-      toast.success("シート設定を保存しました")
+      const updated = { spreadsheetId: trimmedId, worksheetTitle: trimmedTitle }
+      setAdminSheetSettings(updated)
+      if (targetUserId === session.user.id) {
+        setMySheetSettings(updated)
+      }
+      toast.success("シート設定を保存しました", {
+        description: sheetEmailInput ? `${sheetEmailInput} 向け` : undefined,
+      })
     } catch (error) {
       console.error(error)
       toast.error("シート設定の保存に失敗しました", {
@@ -445,66 +543,110 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
             </div>
 
             <div className="space-y-3 rounded-md border p-4">
-            <div>
-              <p className="text-sm font-medium">2. CSV を選択</p>
-              <p className="text-xs text-muted-foreground">UTF-8 / ヘッダー行付きの CSV を想定しています。</p>
-            </div>
-            <Input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} />
-            <div className="rounded-md border bg-muted/40 p-3 text-xs">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <p className="font-medium">Google シートから読み込む (構築中)</p>
-                  <p className="text-muted-foreground">
-                    共有済みのスプレッドシートから直接データを取得します。
-                  </p>
-                </div>
-                <Button type="button" size="sm" variant="secondary" onClick={handleFetchFromSheet} disabled={fetchingSheet}>
-                  {fetchingSheet ? "取得中..." : "シートを読み込む"}
-                </Button>
+              <div>
+                <p className="text-sm font-medium">2. CSV を選択</p>
+                <p className="text-xs text-muted-foreground">UTF-8 / ヘッダー行付きの CSV を想定しています。</p>
               </div>
-              <div className="mt-2 space-y-3">
+              <Input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} />
+              <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-3">
+                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                  <div>
+                    <p className="font-medium">Google シートから読み込む (構築中)</p>
+                    <p className="text-muted-foreground">
+                      共有済みのスプレッドシートから直接データを取得します。
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={handleFetchFromSheet}
+                    disabled={fetchingSheet || sheetSettingsLoading || !mySheetSettings}
+                  >
+                    {fetchingSheet ? "取得中..." : "シートを読み込む"}
+                  </Button>
+                </div>
                 <p className="text-muted-foreground text-sm">
                   {sheetSettingsLoading
-                    ? "シート情報を読み込み中..."
-                    : sheetSettings
-                        ? `連携シート: ${sheetSettings.worksheetTitle}`
-                        : "シートIDとタブ名を入力して保存してください（テンプレートをコピーした後にIDを貼り付けます）。"}
+                    ? "シート情報を読み込み中です..."
+                    : mySheetSettings
+                        ? `連携シート: ${mySheetSettings.worksheetTitle}`
+                        : "連携設定が未登録です。管理者がシートID/タブ名を登録してください。"}
                 </p>
-                <div className="grid gap-2 md:grid-cols-2">
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">スプレッドシートID</Label>
-                    <Input
-                      value={sheetIdInput}
-                      onChange={(event) => setSheetIdInput(event.target.value)}
-                      placeholder="例: 1Bx8LW..."
-                    />
-                  </div>
-                  <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">タブ名</Label>
-                    <Input
-                      value={sheetTitleInput}
-                      onChange={(event) => setSheetTitleInput(event.target.value)}
-                      placeholder="例: シート1"
-                    />
-                  </div>
-                </div>
                 <div className="flex flex-wrap gap-2">
-                  <Button type="button" size="sm" variant="default" onClick={handleSaveSheetSettings} disabled={savingSheetSettings || sheetSettingsLoading}>
-                    {savingSheetSettings ? "保存中..." : "シート設定を保存"}
-                  </Button>
-                  <Button type="button" size="sm" variant="outline" disabled={!sheetSettings} asChild>
+                  <Button type="button" size="sm" variant="outline" disabled={!mySheetSettings} asChild>
                     <a
-                      href={sheetSettings ? `https://docs.google.com/spreadsheets/d/${sheetSettings.spreadsheetId}/edit` : undefined}
+                      href={mySheetSettings ? `https://docs.google.com/spreadsheets/d/${mySheetSettings.spreadsheetId}/edit` : undefined}
                       target="_blank"
                       rel="noreferrer"
                     >
-                      スプレッドシートを開く
+                      連携シートを開く
                     </a>
                   </Button>
                 </div>
+                <div className="rounded-md border border-dashed bg-background/70 p-3 space-y-3">
+                  <div>
+                    <p className="text-sm font-medium">シート割り当て（管理者用）</p>
+                    <p className="text-xs text-muted-foreground">
+                      メールアドレスを入力して対象ユーザーのシートID / タブ名を登録します。
+                    </p>
+                  </div>
+                  <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+                    <Input
+                      value={sheetEmailInput}
+                      onChange={(event) => setSheetEmailInput(event.target.value)}
+                      placeholder="user@example.com"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={handleLookupSheetSettings}
+                      disabled={lookupLoading}
+                    >
+                      {lookupLoading ? "検索中..." : "ユーザーを検索"}
+                    </Button>
+                  </div>
+                  {targetUserId ? (
+                    <p className="text-xs text-muted-foreground break-all">対象ユーザーID: {targetUserId}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">検索すると該当ユーザーのシート情報が表示されます。</p>
+                  )}
+                  <div className="grid gap-2 md:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">スプレッドシートID</Label>
+                      <Input
+                        value={sheetIdInput}
+                        onChange={(event) => setSheetIdInput(event.target.value)}
+                        placeholder="例: 1Bx8LW..."
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">タブ名</Label>
+                      <Input
+                        value={sheetTitleInput}
+                        onChange={(event) => setSheetTitleInput(event.target.value)}
+                        placeholder="例: シート1"
+                      />
+                    </div>
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm" variant="default" onClick={handleSaveSheetSettings} disabled={savingSheetSettings || !targetUserId}>
+                      {savingSheetSettings ? "保存中..." : "シート設定を保存"}
+                    </Button>
+                    <Button type="button" size="sm" variant="outline" disabled={!adminSheetSettings} asChild>
+                      <a
+                        href={adminSheetSettings ? `https://docs.google.com/spreadsheets/d/${adminSheetSettings.spreadsheetId}/edit` : undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        対象シートを開く
+                      </a>
+                    </Button>
+                  </div>
+                </div>
               </div>
-            </div>
-            {importRows.length > 0 ? (
+              {importRows.length > 0 ? (
                 <div className="rounded-md border bg-muted/50 p-3 text-xs">
                   <p className="font-medium">解析結果</p>
                   <p>総行数: {importRows.length}</p>
