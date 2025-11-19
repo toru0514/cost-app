@@ -1,6 +1,6 @@
 "use client"
 
-import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { type Dispatch, type FormEvent, type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import { toast } from "sonner"
 
@@ -778,6 +778,173 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
     onRequestEditClear?.()
   }
 
+  const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault()
+    const missingFields = validateProductForm()
+    if (missingFields.length > 0) {
+      toast.error("必須項目が未入力です", {
+        description: `${missingFields.join("、")}を入力してください。`,
+      })
+      return
+    }
+
+    const isEditing = Boolean(editingProductId)
+    const targetProductId = editingProductId ?? createTempId()
+    const electricityUnitCost = electricityDrafts.find((draft) => Number(draft.costPerUnit) > 0)?.costPerUnit ?? 0
+
+    const normalizedSizeVariants = productForm.sizeVariants
+      .map((variant) => ({
+        label: variant.label.trim(),
+        quantity: Number(variant.quantity) || 0,
+      }))
+      .filter((variant) => variant.label.length > 0)
+    const normalizedNotes = productForm.notes?.trim() ?? ""
+    const normalizedProduct = {
+      ...productForm,
+      sizeVariants: normalizedSizeVariants,
+      notes: normalizedNotes,
+      baseManHours: Number(productForm.baseManHours) || 0,
+      productionLotSize: Number(productForm.productionLotSize) || 1,
+      expectedProduction: {
+        periodYears: Number(productForm.expectedProduction.periodYears) || 1,
+        quantity: Number(productForm.expectedProduction.quantity) || 1,
+      },
+      defaultElectricityCost: Number(electricityUnitCost) || 0,
+      salePrice: Number(productForm.salePrice) || 0,
+    }
+
+    if (isEditing && editingProductId) {
+      updateProduct({ id: targetProductId, ...normalizedProduct })
+      removeCostEntriesByProduct(editingProductId)
+    } else {
+      addProduct({ id: targetProductId, ...normalizedProduct })
+    }
+
+    materialDrafts
+      .filter((draft) => draft.materialId)
+      .forEach((draft) => {
+        const material = data.materials.find((item) => item.id === draft.materialId)
+        if (!material) return
+        const usageRatio = Math.max(Number(draft.usageRatio) || 0, 0)
+        const batchSize = Math.max(material.unitsPerBatch ?? 1, 1)
+        const baseUnitCost = (material.unitCost || 0) / batchSize
+        const costPerUnit = baseUnitCost * (usageRatio / 100)
+        addMaterialCostEntry({
+          productId: targetProductId,
+          materialId: draft.materialId,
+          description: draft.description,
+          usageRatio,
+          costPerUnit,
+          currency: material.currency,
+        })
+      })
+
+    packagingDrafts
+      .filter((draft) => draft.packagingItemId)
+      .forEach((draft) => {
+        const packagingItem = data.packagingItems.find((item) => item.id === draft.packagingItemId)
+        if (!packagingItem) return
+        const batchSize = Math.max(packagingItem.unitsPerBatch ?? 1, 1)
+        const baseUnitCost = (packagingItem.unitCost || 0) / batchSize
+        addPackagingCostEntry({
+          productId: targetProductId,
+          packagingItemId: draft.packagingItemId,
+          quantity: Number(draft.quantity) || 0,
+          costPerUnit: baseUnitCost,
+          currency: packagingItem.currency,
+        })
+      })
+
+    laborDrafts
+      .filter((draft) => draft.laborRoleId)
+      .forEach((draft) =>
+        addLaborCostEntry({
+          productId: targetProductId,
+          laborRoleId: draft.laborRoleId,
+          hours: Number(draft.hours) || 0,
+          peopleCount: Number(draft.peopleCount) || 0,
+          hourlyRateOverride: draft.hourlyRateOverride,
+        })
+      )
+
+    outsourcingDrafts
+      .filter((draft) => draft.note.trim() || Number(draft.costPerUnit) > 0)
+      .forEach((draft) =>
+        addOutsourcingCostEntry({
+          productId: targetProductId,
+          costPerUnit: Number(draft.costPerUnit) || 0,
+          currency: draft.currency,
+          note: draft.note,
+        })
+      )
+
+    developmentDrafts
+      .filter(
+        (draft) =>
+          Number(draft.prototypeLaborCost) > 0 ||
+          Number(draft.prototypeMaterialCost) > 0 ||
+          Number(draft.toolingCost) > 0
+      )
+      .forEach((draft) =>
+        addDevelopmentCostEntry({
+          productId: targetProductId,
+          title: draft.title.trim() || "開発コスト",
+          prototypeLaborCost: Number(draft.prototypeLaborCost) || 0,
+          prototypeMaterialCost: Number(draft.prototypeMaterialCost) || 0,
+          toolingCost: Number(draft.toolingCost) || 0,
+          amortizationYears: Number(draft.amortizationYears) || 1,
+        })
+      )
+
+    const totalEquipmentHoursForSubmit = equipmentAllocDrafts.reduce((sum, draft) => sum + (draft.usageHours || 0), 0)
+
+    equipmentAllocDrafts
+      .filter((draft) => draft.equipmentId)
+      .forEach((draft) => {
+        const usageHours = draft.usageHours || 0
+        const ratio =
+          totalEquipmentHoursForSubmit > 0 ? usageHours / totalEquipmentHoursForSubmit : Number(draft.allocationRatio) || 0
+        addEquipmentAllocation({
+          productId: targetProductId,
+          equipmentId: draft.equipmentId,
+          allocationRatio: ratio,
+          annualQuantity: Number(draft.annualQuantity) || normalizedProduct.expectedProduction.quantity,
+          usageHours,
+        })
+      })
+
+    logisticsDrafts
+      .filter((draft) => draft.shippingMethodId)
+      .forEach((draft) => {
+        const method = shippingMethods.find((item) => item.id === draft.shippingMethodId)
+        if (!method) return
+        addLogisticsCostEntry({
+          productId: targetProductId,
+          shippingMethodId: draft.shippingMethodId,
+          costPerUnit: method.unitCost || 0,
+          currency: method.currency,
+        })
+      })
+
+    electricityDrafts
+      .filter((draft) => Number(draft.costPerUnit) > 0)
+      .forEach((draft) =>
+        addElectricityCostEntry({
+          productId: targetProductId,
+          costPerUnit: Number(draft.costPerUnit) || 0,
+          currency: draft.currency,
+        })
+      )
+
+    const resultLabel = normalizedProduct.name || "商品"
+    toast.success(isEditing ? "商品を更新しました" : "商品を登録しました", {
+      description: `「${resultLabel}」の原価情報を保存しました。`,
+    })
+
+    resetFormState()
+    onRequestEditClear?.()
+  }
+
   return (
     <div className="space-y-6">
       {editingProductId && (
@@ -788,8 +955,107 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
           </Button>
         </div>
       )}
-      <RegisteredProductsSection data={data} />
 
+      <Card>
+        <CardHeader>
+          <CardTitle>商品登録フォーム</CardTitle>
+          <CardDescription>カテゴリ・想定生産量・制作工数・オプション（名称＋個数）・備考を設定します。</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,2.6fr)_minmax(280px,1fr)]">
+            <form className="order-2 space-y-6 lg:order-1" onSubmit={handleSubmit}>
+              <FormSection title="商品基本情報" description="カテゴリ・生産計画・販売価格・備考を設定" defaultOpen>
+                <ProductBasicsSection
+                  data={data}
+                  productForm={productForm}
+                  setProductForm={setProductForm}
+                  handleToggleEquipment={handleToggleEquipment}
+                />
+              </FormSection>
+
+              <div className="space-y-4">
+                <div>
+                  <p className="text-lg font-semibold">原価入力 (商品登録内)</p>
+                  <p className="text-sm text-muted-foreground">
+                    材料・梱包・人件費などをここで入力すると、原価確認タブには参照専用で反映されます。
+                  </p>
+                </div>
+
+                <MaterialCostSection
+                  materials={data.materials}
+                  drafts={materialDrafts}
+                  onAdd={handleAddMaterialDraft}
+                  onUpdate={handleUpdateMaterialDraft}
+                  onRemove={handleRemoveMaterialDraft}
+                />
+
+                <PackagingCostSection
+                  items={data.packagingItems}
+                  drafts={packagingDrafts}
+                  onAdd={handleAddPackagingDraft}
+                  onUpdate={handleUpdatePackagingDraft}
+                  onRemove={handleRemovePackagingDraft}
+                />
+
+                <LaborCostSection
+                  laborRoles={data.laborRoles}
+                  drafts={laborDrafts}
+                  onAdd={handleAddLaborDraft}
+                  onUpdate={handleUpdateLaborDraft}
+                  onRemove={handleRemoveLaborDraft}
+                />
+
+                <OutsourcingCostSection
+                  drafts={outsourcingDrafts}
+                  onAdd={handleAddOutsourcingDraft}
+                  onUpdate={handleUpdateOutsourcingDraft}
+                  onRemove={handleRemoveOutsourcingDraft}
+                />
+
+                <DevelopmentCostSection
+                  drafts={developmentDrafts}
+                  onAdd={handleAddDevelopmentDraft}
+                  onUpdate={handleUpdateDevelopmentDraft}
+                  onRemove={handleRemoveDevelopmentDraft}
+                />
+
+                <EquipmentAllocationSection
+                  equipments={data.equipments}
+                  drafts={equipmentAllocDrafts}
+                  totalUsageHours={totalEquipmentHours}
+                  hasSelectedEquipment={productForm.equipmentIds.length > 0}
+                  onUpdate={handleUpdateEquipmentDraft}
+                />
+
+                <LogisticsCostSection
+                  shippingMethods={shippingMethods}
+                  drafts={logisticsDrafts}
+                  onAdd={handleAddLogisticsDraft}
+                  onUpdate={handleUpdateLogisticsDraft}
+                  onRemove={handleRemoveLogisticsDraft}
+                />
+
+                <ElectricityCostSection
+                  drafts={electricityDrafts}
+                  onAdd={handleAddElectricityDraft}
+                  onUpdate={handleUpdateElectricityDraft}
+                  onRemove={handleRemoveElectricityDraft}
+                />
+              </div>
+
+              <Button type="submit" className="w-fit">
+                {editingProductId ? "商品を更新" : "商品を登録"}
+              </Button>
+            </form>
+
+            <div className="order-1 lg:order-2">
+              <ProductRealtimeSummary summary={costSummary} />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <RegisteredProductsSection data={data} />
     </div>
   )
 }
