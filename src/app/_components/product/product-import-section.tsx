@@ -114,6 +114,9 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   const [fetchingSheet, setFetchingSheet] = useState(false)
   const [sheetSettings, setSheetSettings] = useState<{ spreadsheetId: string; worksheetTitle: string } | null>(null)
   const [sheetSettingsLoading, setSheetSettingsLoading] = useState(true)
+  const [sheetIdInput, setSheetIdInput] = useState("")
+  const [sheetTitleInput, setSheetTitleInput] = useState("")
+  const [savingSheetSettings, setSavingSheetSettings] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const summary = useMemo(() => {
@@ -149,8 +152,12 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
         setSheetSettings(null)
       } else if (data?.spreadsheet_id && data?.worksheet_title) {
         setSheetSettings({ spreadsheetId: data.spreadsheet_id, worksheetTitle: data.worksheet_title })
+        setSheetIdInput(data.spreadsheet_id)
+        setSheetTitleInput(data.worksheet_title)
       } else {
         setSheetSettings(null)
+        setSheetIdInput("")
+        setSheetTitleInput("")
       }
       setSheetSettingsLoading(false)
     }
@@ -265,6 +272,40 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
       })
     } finally {
       setFetchingSheet(false)
+    }
+  }
+
+  const handleSaveSheetSettings = async () => {
+    if (!sheetIdInput.trim() || !sheetTitleInput.trim()) {
+      toast.error("シートIDとタブ名を入力してください。")
+      return
+    }
+    setSavingSheetSettings(true)
+    try {
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession()
+      if (!session?.user) {
+        toast.error("ログインしてください")
+        return
+      }
+      const { error } = await supabaseClient.from("sheet_settings").upsert({
+        user_id: session.user.id,
+        spreadsheet_id: sheetIdInput.trim(),
+        worksheet_title: sheetTitleInput.trim(),
+      })
+      if (error) {
+        throw error
+      }
+      setSheetSettings({ spreadsheetId: sheetIdInput.trim(), worksheetTitle: sheetTitleInput.trim() })
+      toast.success("シート設定を保存しました")
+    } catch (error) {
+      console.error(error)
+      toast.error("シート設定の保存に失敗しました", {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setSavingSheetSettings(false)
     }
   }
 
@@ -421,23 +462,46 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
                   {fetchingSheet ? "取得中..." : "シートを読み込む"}
                 </Button>
               </div>
-              <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <p className="text-muted-foreground">
+              <div className="mt-2 space-y-3">
+                <p className="text-muted-foreground text-sm">
                   {sheetSettingsLoading
                     ? "シート情報を読み込み中..."
                     : sheetSettings
                         ? `連携シート: ${sheetSettings.worksheetTitle}`
-                        : "連携シートは管理者が設定します。設定完了までお待ちください。"}
+                        : "シートIDとタブ名を入力して保存してください（テンプレートをコピーした後にIDを貼り付けます）。"}
                 </p>
-                <Button type="button" size="sm" variant="outline" disabled={!sheetSettings} asChild>
-                  <a
-                    href={sheetSettings ? `https://docs.google.com/spreadsheets/d/${sheetSettings.spreadsheetId}/edit` : undefined}
-                    target="_blank"
-                    rel="noreferrer"
-                  >
-                    スプレッドシートを開く
-                  </a>
-                </Button>
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">スプレッドシートID</Label>
+                    <Input
+                      value={sheetIdInput}
+                      onChange={(event) => setSheetIdInput(event.target.value)}
+                      placeholder="例: 1Bx8LW..."
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">タブ名</Label>
+                    <Input
+                      value={sheetTitleInput}
+                      onChange={(event) => setSheetTitleInput(event.target.value)}
+                      placeholder="例: シート1"
+                    />
+                  </div>
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="default" onClick={handleSaveSheetSettings} disabled={savingSheetSettings || sheetSettingsLoading}>
+                    {savingSheetSettings ? "保存中..." : "シート設定を保存"}
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" disabled={!sheetSettings} asChild>
+                    <a
+                      href={sheetSettings ? `https://docs.google.com/spreadsheets/d/${sheetSettings.spreadsheetId}/edit` : undefined}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      スプレッドシートを開く
+                    </a>
+                  </Button>
+                </div>
               </div>
             </div>
             {importRows.length > 0 ? (

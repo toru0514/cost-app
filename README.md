@@ -261,7 +261,7 @@ UI → Application Ports → Domain Services → Repository Adapters という�
   - [x] シート設定マスタ `sheet_settings` を Supabase に作成し、`user_id` ごとに Spreadsheet ID / タブ名を保持する。
   - [x] 既存ユーザー（管理者）のシートID/タブ名を `sheet_settings` に初期投入する。
   - [x] `/api/import/product-sheet` でログイン中ユーザーの `sheet_settings` を参照し、シートID/タブ名を動的に切り替えられるようにする。
-  - [x] シート未設定ユーザーには管理者が手動でシートID/タブ名を割り当てる運用にし、UI 上では未設定時に案内を表示する。
+  - [x] シート未設定ユーザーには管理者（または本人）が画面上でシートID/タブ名を入力して登録できるフォームを追加済み。テンプレートをコピーした後、ID とタブ名を貼り付けて保存する。
 
 ## 材料費モジュール（第一弾）
 - **目的**: 製品を構成する主要素材のコストを正確に積み上げる。歩留まりや為替差も考慮可能な器を用意。
