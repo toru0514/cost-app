@@ -5,8 +5,7 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { fetchGoogleSheetRows } from "@/lib/google-sheets"
 
 export async function GET(request: Request) {
-  const cookieStore = await cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+  const supabase = createRouteHandlerClient({ cookies })
   const {
     data: { session },
     error: sessionError,
