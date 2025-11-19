@@ -1,0 +1,4 @@
+product_name,category_large,category_medium,category_small,sale_price,base_man_hours,expected_period_years,expected_quantity,size_variants,notes
+ハンドバッグA,バッグ,トート,ビジネス,19800,2,1,1000,"[{""label"":""M"",""quantity"":600}]",定番色
+ショルダーバッグB,バッグ,ショルダー,,14800,1.5,1,800,"S:400|L:400",秋冬限定カラー
+工房限定ウォレット,財布,,,,1,0,1500,,革の質感重視
