@@ -381,9 +381,14 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
       }
       const trimmedId = sheetIdInput.trim()
       const trimmedTitle = sheetTitleInput.trim()
+      const accessToken = session.access_token ?? session.provider_token
       const response = await fetch("/api/admin/sheet-settings", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        headers: {
+          "Content-Type": "application/json",
+          ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+        },
         body: JSON.stringify({
           userId: targetUserId,
           spreadsheetId: trimmedId,
