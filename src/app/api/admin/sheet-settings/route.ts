@@ -4,7 +4,6 @@ import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
 import { createClient } from "@supabase/supabase-js"
 
 export async function POST(request: Request) {
-  const cookieStore = cookies()
   const adminEmails = (process.env.SHEET_SETTINGS_ADMIN_EMAILS ?? "")
     .split(",")
     .map((email) => email.trim().toLowerCase())
@@ -14,7 +13,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "管理者メールアドレスが設定されていません" }, { status: 500 })
   }
 
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
+  const supabase = createRouteHandlerClient({ cookies })
   const {
     data: { session },
     error: sessionError,
