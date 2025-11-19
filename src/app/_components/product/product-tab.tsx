@@ -11,7 +11,6 @@ import { formatCurrency } from "@/lib/calculations"
 import type { AppData, Product } from "@/lib/types"
 import { FormSection } from "../shared/ui"
 import { ProductBasicsSection } from "./product-basics-section"
-import { ProductImportSection } from "./product-import-section"
 import { ProductRealtimeSummary, type ProductCostSummary } from "./product-summary-panel"
 import { ElectricityCostSection } from "./sections/electricity-cost-section"
 import { EquipmentAllocationSection } from "./sections/equipment-allocation-section"
@@ -1058,7 +1057,6 @@ export function ProductTab({ data, actions, editingProductId, onRequestEditClear
 
       <RegisteredProductsSection data={data} />
 
-      <ProductImportSection data={data} actions={actions} />
     </div>
   )
 }

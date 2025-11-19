@@ -17,6 +17,7 @@ import { ProductTab } from "./_components/product/product-tab"
 import { CostTab } from "./_components/cost/cost-tab"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
 import { AuditTab } from "./_components/audit/audit-tab"
+import { BulkTab } from "./_components/bulk/bulk-tab"
 import { Copy, Edit3, FileDown, Menu, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
@@ -27,6 +28,7 @@ const tabOptions = [
   { value: "product", label: "商品登録" },
   { value: "master", label: "マスタ登録" },
   { value: "list", label: "商品一覧" },
+  { value: "bulk", label: "一括処理" },
   { value: "audit", label: "監査ログ" },
 ]
 
@@ -533,6 +535,7 @@ export default function Home() {
           <TabsTrigger value="product">商品登録</TabsTrigger>
           <TabsTrigger value="master">マスタ登録</TabsTrigger>
           <TabsTrigger value="list">商品一覧</TabsTrigger>
+          <TabsTrigger value="bulk">一括処理</TabsTrigger>
           <TabsTrigger value="audit">監査ログ</TabsTrigger>
         </TabsList>
 
@@ -709,6 +712,10 @@ export default function Home() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="bulk" className="space-y-6">
+          <BulkTab data={data} actions={actions} />
         </TabsContent>
 
         <TabsContent value="audit" className="space-y-6">
