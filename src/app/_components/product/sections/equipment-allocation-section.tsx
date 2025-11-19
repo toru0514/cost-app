@@ -23,7 +23,7 @@ export function EquipmentAllocationSection({
   onUpdate,
 }: EquipmentAllocationSectionProps) {
   return (
-    <FormSection title="設備配賦" description="商品で利用する設備の配賦設定">
+    <FormSection title="設備配賦" description="商品で利用する設備の配賦設定" defaultOpen>
       <HintList
         items={[
           "利用率: 設備稼働のうち当該商品の占める割合 (0〜1)",

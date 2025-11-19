@@ -21,6 +21,7 @@ export function ElectricityCostSection({ drafts, onAdd, onUpdate, onRemove }: El
     <FormSection
       title="電気代"
       description="1個あたりの電力コスト"
+      defaultOpen
       action={
         <Button type="button" variant="outline" size="sm" onClick={onAdd}>
           行を追加

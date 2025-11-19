@@ -20,6 +20,7 @@ export function DevelopmentCostSection({ drafts, onAdd, onUpdate, onRemove }: De
     <FormSection
       title="開発コスト"
       description="試作工数・材料費・道具費を入力"
+      defaultOpen
       action={
         <Button type="button" variant="outline" size="sm" onClick={onAdd}>
           行を追加

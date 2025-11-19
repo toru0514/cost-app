@@ -23,6 +23,7 @@ export function LaborCostSection({ laborRoles, drafts, onAdd, onUpdate, onRemove
     <FormSection
       title="人件費"
       description="作業カテゴリごとに工数と人数を設定"
+      defaultOpen
       action={
         <Button type="button" variant="outline" size="sm" onClick={onAdd} disabled={laborRoles.length === 0}>
           行を追加

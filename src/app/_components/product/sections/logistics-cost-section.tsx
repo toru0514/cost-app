@@ -22,6 +22,7 @@ export function LogisticsCostSection({ shippingMethods, drafts, onAdd, onUpdate,
     <FormSection
       title="物流・配送費"
       description="配送方法マスタから選択し、単価は自動適用"
+      defaultOpen
       action={
         <Button type="button" variant="outline" size="sm" onClick={onAdd} disabled={shippingMethods.length === 0}>
           行を追加

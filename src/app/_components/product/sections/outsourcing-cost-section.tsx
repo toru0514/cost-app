@@ -22,6 +22,7 @@ export function OutsourcingCostSection({ drafts, onAdd, onUpdate, onRemove }: Ou
     <FormSection
       title="外注費"
       description="商品1つあたりの外注コストを登録"
+      defaultOpen
       action={
         <Button type="button" variant="outline" size="sm" onClick={onAdd}>
           行を追加

@@ -23,6 +23,7 @@ export function PackagingCostSection({ items, drafts, onAdd, onUpdate, onRemove 
     <FormSection
       title="梱包材費"
       description="梱包材マスタから選択し、数量を設定"
+      defaultOpen
       action={
         <Button type="button" variant="outline" size="sm" onClick={onAdd} disabled={items.length === 0}>
           行を追加
