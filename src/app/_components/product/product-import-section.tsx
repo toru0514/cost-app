@@ -546,11 +546,11 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>商品CSVインポート（β）</CardTitle>
-          <CardDescription>テンプレートの配布からステージングまでをワンストップで実行</CardDescription>
+          <CardTitle>商品一括インポート</CardTitle>
+          <CardDescription>テンプレートから CSV を作成するか、共有スプレッドシートで編集して取り込めます</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid gap-4 lg:grid-cols-2">
+          <div className="grid gap-4 lg:grid-cols-3">
             <div className="space-y-3 rounded-md border p-4">
               <div>
                 <p className="text-sm font-medium">1. テンプレートをダウンロード</p>
@@ -575,125 +575,126 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
                 <p className="text-xs text-muted-foreground">UTF-8 / ヘッダー行付きの CSV を想定しています。</p>
               </div>
               <Input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} />
-              <div className="rounded-md border bg-muted/40 p-3 text-xs space-y-3">
-                <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            </div>
+            <div className="space-y-3 rounded-md border p-4 text-xs">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="text-sm font-medium">Google シートから読み込む</p>
+                  <p className="text-muted-foreground text-xs">
+                    共有済みのスプレッドシートから直接データを取得します。
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="secondary"
+                  onClick={handleFetchFromSheet}
+                  disabled={fetchingSheet || sheetSettingsLoading || !mySheetSettings}
+                >
+                  {fetchingSheet ? "取得中..." : "シートを読み込む"}
+                </Button>
+              </div>
+              <p className="text-muted-foreground text-sm">
+                {sheetSettingsLoading
+                  ? "シート情報を読み込み中です..."
+                  : mySheetSettings
+                      ? `連携シート: ${mySheetSettings.worksheetTitle}`
+                      : "連携設定が未登録です。管理者がシートID/タブ名を登録してください。"}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button type="button" size="sm" variant="outline" disabled={!mySheetSettings} asChild>
+                  <a
+                    href={mySheetSettings ? `https://docs.google.com/spreadsheets/d/${mySheetSettings.spreadsheetId}/edit` : undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    連携シートを開く
+                  </a>
+                </Button>
+              </div>
+              {isSheetAdmin && (
+                <div className="rounded-md border border-dashed bg-background/70 p-3 space-y-3">
                   <div>
-                    <p className="font-medium">Google シートから読み込む (構築中)</p>
-                    <p className="text-muted-foreground">
-                      共有済みのスプレッドシートから直接データを取得します。
+                    <p className="text-sm font-medium">シート割り当て（管理者用）</p>
+                    <p className="text-xs text-muted-foreground">
+                      メールアドレスを入力して対象ユーザーのシートID / タブ名を登録します。
                     </p>
                   </div>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    onClick={handleFetchFromSheet}
-                    disabled={fetchingSheet || sheetSettingsLoading || !mySheetSettings}
-                  >
-                    {fetchingSheet ? "取得中..." : "シートを読み込む"}
-                  </Button>
-                </div>
-                <p className="text-muted-foreground text-sm">
-                  {sheetSettingsLoading
-                    ? "シート情報を読み込み中です..."
-                    : mySheetSettings
-                        ? `連携シート: ${mySheetSettings.worksheetTitle}`
-                        : "連携設定が未登録です。管理者がシートID/タブ名を登録してください。"}
-                </p>
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" size="sm" variant="outline" disabled={!mySheetSettings} asChild>
-                    <a
-                      href={mySheetSettings ? `https://docs.google.com/spreadsheets/d/${mySheetSettings.spreadsheetId}/edit` : undefined}
-                      target="_blank"
-                      rel="noreferrer"
+                  <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+                    <Input
+                      value={sheetEmailInput}
+                      onChange={(event) => setSheetEmailInput(event.target.value)}
+                      placeholder="user@example.com"
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      onClick={handleLookupSheetSettings}
+                      disabled={lookupLoading}
                     >
-                      連携シートを開く
-                    </a>
-                  </Button>
-                </div>
-                {isSheetAdmin && (
-                  <div className="rounded-md border border-dashed bg-background/70 p-3 space-y-3">
-                    <div>
-                      <p className="text-sm font-medium">シート割り当て（管理者用）</p>
-                      <p className="text-xs text-muted-foreground">
-                        メールアドレスを入力して対象ユーザーのシートID / タブ名を登録します。
-                      </p>
-                    </div>
-                    <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+                      {lookupLoading ? "検索中..." : "ユーザーを検索"}
+                    </Button>
+                  </div>
+                  {targetUserId ? (
+                    <p className="text-xs text-muted-foreground break-all">対象ユーザーID: {targetUserId}</p>
+                  ) : (
+                    <p className="text-xs text-muted-foreground">検索すると該当ユーザーのシート情報が表示されます。</p>
+                  )}
+                  <div className="grid gap-2 md:grid-cols-2">
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">スプレッドシートID</Label>
                       <Input
-                        value={sheetEmailInput}
-                        onChange={(event) => setSheetEmailInput(event.target.value)}
-                        placeholder="user@example.com"
+                        value={sheetIdInput}
+                        onChange={(event) => setSheetIdInput(event.target.value)}
+                        placeholder="例: 1Bx8LW..."
                       />
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant="secondary"
-                        onClick={handleLookupSheetSettings}
-                        disabled={lookupLoading}
-                      >
-                        {lookupLoading ? "検索中..." : "ユーザーを検索"}
-                      </Button>
                     </div>
-                    {targetUserId ? (
-                      <p className="text-xs text-muted-foreground break-all">対象ユーザーID: {targetUserId}</p>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">検索すると該当ユーザーのシート情報が表示されます。</p>
-                    )}
-                    <div className="grid gap-2 md:grid-cols-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">スプレッドシートID</Label>
-                        <Input
-                          value={sheetIdInput}
-                          onChange={(event) => setSheetIdInput(event.target.value)}
-                          placeholder="例: 1Bx8LW..."
-                        />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">タブ名</Label>
-                        <Input
-                          value={sheetTitleInput}
-                          onChange={(event) => setSheetTitleInput(event.target.value)}
-                          placeholder="例: シート1"
-                        />
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap gap-2">
-                      <Button type="button" size="sm" variant="default" onClick={handleSaveSheetSettings} disabled={savingSheetSettings || !targetUserId}>
-                        {savingSheetSettings ? "保存中..." : "シート設定を保存"}
-                      </Button>
-                      <Button type="button" size="sm" variant="outline" disabled={!adminSheetSettings} asChild>
-                        <a
-                          href={adminSheetSettings ? `https://docs.google.com/spreadsheets/d/${adminSheetSettings.spreadsheetId}/edit` : undefined}
-                          target="_blank"
-                          rel="noreferrer"
-                        >
-                          対象シートを開く
-                        </a>
-                      </Button>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">タブ名</Label>
+                      <Input
+                        value={sheetTitleInput}
+                        onChange={(event) => setSheetTitleInput(event.target.value)}
+                        placeholder="例: シート1"
+                      />
                     </div>
                   </div>
-                )}
-              </div>
-              {importRows.length > 0 ? (
-                <div className="rounded-md border bg-muted/50 p-3 text-xs">
-                  <p className="font-medium">解析結果</p>
-                  <p>総行数: {importRows.length}</p>
-                  <p>検証OK: {summary.ready} / 要カテゴリ確認: {summary.needsMapping} / 取込不可: {summary.invalid}</p>
-                  <div className="mt-2 flex gap-2">
-                    <Button type="button" size="sm" variant="secondary" onClick={handleStageRows}>
-                      ステージングに送る
+                  <div className="flex flex-wrap gap-2">
+                    <Button type="button" size="sm" variant="default" onClick={handleSaveSheetSettings} disabled={savingSheetSettings || !targetUserId}>
+                      {savingSheetSettings ? "保存中..." : "シート設定を保存"}
                     </Button>
-                    <Button type="button" size="sm" variant="ghost" onClick={handleClearUpload}>
-                      クリア
+                    <Button type="button" size="sm" variant="outline" disabled={!adminSheetSettings} asChild>
+                      <a
+                        href={adminSheetSettings ? `https://docs.google.com/spreadsheets/d/${adminSheetSettings.spreadsheetId}/edit` : undefined}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        対象シートを開く
+                      </a>
                     </Button>
                   </div>
                 </div>
-              ) : (
-                <p className="text-xs text-muted-foreground">まだファイルは読み込まれていません。</p>
               )}
             </div>
           </div>
+
+          {importRows.length > 0 ? (
+            <div className="rounded-md border bg-muted/50 p-3 text-xs">
+              <p className="font-medium">解析結果</p>
+              <p>総行数: {importRows.length}</p>
+              <p>検証OK: {summary.ready} / 要カテゴリ確認: {summary.needsMapping} / 取込不可: {summary.invalid}</p>
+              <div className="mt-2 flex gap-2">
+                <Button type="button" size="sm" variant="secondary" onClick={handleStageRows}>
+                  ステージングに送る
+                </Button>
+                <Button type="button" size="sm" variant="ghost" onClick={handleClearUpload}>
+                  クリア
+                </Button>
+              </div>
+            </div>
+          ) : (
+            <p className="text-xs text-muted-foreground">まだファイルは読み込まれていません。</p>
+          )}
 
           {importRows.length > 0 && (
             <div className="space-y-3">
