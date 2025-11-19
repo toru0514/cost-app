@@ -233,6 +233,31 @@ UI → Application Ports → Domain Services → Repository Adapters という�
   - [x] 検証済みデータをステージングし、「新規/上書き/スキップ」を行単位で選べるようにした上で、Supabase へ一括登録するトランザクション処理を実装する。
   - [x] 直近のインポート履歴（実行者・時刻・件数・失敗行）および CSV エクスポート機能を追加し、監査ログにも記録する。
   - [ ] Google スプレッドシートとの直接連携（API/OAuth）を実装し、CSV への書き出しを経由せずシートからデータを同期できるようにする。
+    - 想定ステップ:
+
+      - [x] **Google Cloud プロジェクトを準備**
+        - Sheets API / Drive API を有効化。
+        - サービスアカウント（または OAuth クライアント）を作成し、`service-account@project.iam.gserviceaccount.com` を取得。
+        - JSON キーを `GOOGLE_SERVICE_ACCOUNT_BASE64` として Base64 で `.env.local` / Vercel Env に登録。
+
+      - [x] **スプレッドシート側の共有設定**
+          - インポート対象のシートを 1 ファイルにまとめ、1 行目に CSV と同じヘッダーを配置。
+          - サービスアカウントのメールアドレスに「閲覧」権限で共有。
+          - シートID（URL の `/spreadsheets/d/◯◯` 部分）を `GOOGLE_SHEETS_SPREADSHEET_ID`、タブ名を `GOOGLE_SHEETS_WORKSHEET_TITLE` に設定。
+
+      - [x] **Next.js 側の API ルートを実装**
+         - `@googleapis/sheets` などを使い、`/api/import/product-sheet` で `spreadsheets.values.get` を呼び出すサーバーサイド処理を追加。
+         - 取得データを既存の `ProductImportSection` で利用できる JSON 形式に整形（列名→キー変換、空行除外）。
+         - 認証済みユーザーのみ叩けるよう、Supabase Auth のセッションチェックを組み合わせる。
+
+      - [x] **UI 連携フロー**
+         - 商品タブの CSV アップロード欄に「Google シートから読み込む」ボタンを追加。
+         - ボタン押下→API を呼んで値を受け取り、既存のパーサ/検証フローに渡す。
+         - エラー時は Sheets API のレスポンスをユーザーに提示（共有設定未完・ヘッダー不足など）。
+
+      - [x] **監査 / セキュリティ**
+         - 読み込み成功時に監査ログへ「Google Sheets 読み込み」を記録。
+         - Sheets ID / 範囲などをユーザーごとに保存する場合は Supabase DB に `sheet_settings` テーブルを追加し、認可チェックを徹底する。
 
 ## 材料費モジュール（第一弾）
 - **目的**: 製品を構成する主要素材のコストを正確に積み上げる。歩留まりや為替差も考慮可能な器を用意。

@@ -110,6 +110,7 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   const [stagedRows, setStagedRows] = useState<ProductImportRow[]>([])
   const [history, setHistory] = useState<ImportHistoryEntry[]>([])
   const [syncing, setSyncing] = useState(false)
+  const [fetchingSheet, setFetchingSheet] = useState(false)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const summary = useMemo(() => {
@@ -159,12 +160,56 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
       return
     }
 
-    const nextRows = meaningfulRows.map((row, index) =>
-      buildImportRow({ row, lineNumber: index + 2, data })
+    const rows = meaningfulRows.map((row, index) => ({ row, lineNumber: index + 2 }))
+    hydrateFromRows(rows, "CSV")
+  }
+
+  const hydrateFromRows = (
+    rows: { row: Record<string, string>; lineNumber: number }[],
+    sourceLabel: string
+  ) => {
+    if (rows.length === 0) {
+      toast.message(`${sourceLabel}から読み込めるデータがありません`)
+      return
+    }
+    const nextRows = rows.map((entry) =>
+      buildImportRow({ row: entry.row, lineNumber: entry.lineNumber, data })
     )
     setImportRows(nextRows)
     setStagedRows([])
-    toast.success("CSV を読み込みました", { description: `${nextRows.length} 行を解析しました` })
+    toast.success(`${sourceLabel}を読み込みました`, {
+      description: `${nextRows.length} 行を解析しました`,
+    })
+  }
+
+  const handleFetchFromSheet = async () => {
+    setFetchingSheet(true)
+    try {
+      const response = await fetch("/api/import/product-sheet")
+      if (!response.ok) {
+        const payload = await response.json().catch(() => ({}))
+        throw new Error(payload.error ?? "Google シートの取得に失敗しました")
+      }
+      const payload: {
+        rows: { rowNumber: number; values: Record<string, string> }[]
+      } = await response.json()
+      if (!payload.rows || payload.rows.length === 0) {
+        toast.message("シートに取り込める行がありません")
+        return
+      }
+      const rows = payload.rows.map((entry, index) => ({
+        row: entry.values,
+        lineNumber: entry.rowNumber ?? index + 2,
+      }))
+      hydrateFromRows(rows, "Google シート")
+    } catch (error) {
+      console.error(error)
+      toast.error("Google シートの読み込みに失敗しました", {
+        description: error instanceof Error ? error.message : undefined,
+      })
+    } finally {
+      setFetchingSheet(false)
+    }
   }
 
   const handleClearUpload = () => {
@@ -303,12 +348,25 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
             </div>
 
             <div className="space-y-3 rounded-md border p-4">
-              <div>
-                <p className="text-sm font-medium">2. CSV を選択</p>
-                <p className="text-xs text-muted-foreground">UTF-8 / ヘッダー行付きの CSV を想定しています。</p>
+            <div>
+              <p className="text-sm font-medium">2. CSV を選択</p>
+              <p className="text-xs text-muted-foreground">UTF-8 / ヘッダー行付きの CSV を想定しています。</p>
+            </div>
+            <Input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} />
+            <div className="rounded-md border bg-muted/40 p-3 text-xs">
+              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <div>
+                  <p className="font-medium">Google シートから読み込む</p>
+                  <p className="text-muted-foreground">
+                    共有済みのスプレッドシートから直接データを取得します。
+                  </p>
+                </div>
+                <Button type="button" size="sm" variant="secondary" onClick={handleFetchFromSheet} disabled={fetchingSheet}>
+                  {fetchingSheet ? "取得中..." : "シートを読み込む"}
+                </Button>
               </div>
-              <Input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} />
-              {importRows.length > 0 ? (
+            </div>
+            {importRows.length > 0 ? (
                 <div className="rounded-md border bg-muted/50 p-3 text-xs">
                   <p className="font-medium">解析結果</p>
                   <p>総行数: {importRows.length}</p>
