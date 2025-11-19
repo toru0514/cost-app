@@ -550,131 +550,135 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
           <CardDescription>テンプレートから CSV を作成するか、共有スプレッドシートで編集して取り込めます</CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
-          <div className="grid gap-4 lg:grid-cols-3">
-            <div className="space-y-3 rounded-md border p-4">
+          <div className="space-y-3 rounded-md border p-4 text-xs">
+            <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
               <div>
-                <p className="text-sm font-medium">1. テンプレートをダウンロード</p>
-                <p className="text-xs text-muted-foreground">
-                  列構成と入力例を含む CSV をダウンロードし、スプレッドシートで編集してください。
+                <p className="text-sm font-medium">商品インポート（スプレッドシート）</p>
+                <p className="text-muted-foreground text-xs">
+                  共有済みのスプレッドシートから直接データを取得します。
                 </p>
               </div>
-              <Button type="button" onClick={handleTemplateDownload}>テンプレートをダウンロード</Button>
-              <ul className="text-xs text-muted-foreground list-disc space-y-1 pl-4">
-                {CSV_COLUMNS.map((column) => (
-                  <li key={column.key}>
-                    <span className="font-medium">{column.label}</span>
-                    {column.required ? " (必須)" : ""}
-                  </li>
-                ))}
-              </ul>
+              <Button
+                type="button"
+                size="sm"
+                variant="secondary"
+                onClick={handleFetchFromSheet}
+                disabled={fetchingSheet || sheetSettingsLoading || !mySheetSettings}
+              >
+                {fetchingSheet ? "取得中..." : "シートを読み込む"}
+              </Button>
             </div>
-
-            <div className="space-y-3 rounded-md border p-4">
-              <div>
-                <p className="text-sm font-medium">2. CSV を選択</p>
-                <p className="text-xs text-muted-foreground">UTF-8 / ヘッダー行付きの CSV を想定しています。</p>
-              </div>
-              <Input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} />
+            <p className="text-muted-foreground text-sm">
+              {sheetSettingsLoading
+                ? "シート情報を読み込み中です..."
+                : mySheetSettings
+                    ? `連携シート: ${mySheetSettings.worksheetTitle}`
+                    : "連携設定が未登録です。管理者がシートID/タブ名を登録してください。"}
+            </p>
+            <div className="flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" disabled={!mySheetSettings} asChild>
+                <a
+                  href={mySheetSettings ? `https://docs.google.com/spreadsheets/d/${mySheetSettings.spreadsheetId}/edit` : undefined}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  連携シートを開く
+                </a>
+              </Button>
             </div>
-            <div className="space-y-3 rounded-md border p-4 text-xs">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+            {isSheetAdmin && (
+              <div className="rounded-md border border-dashed bg-background/70 p-3 space-y-3">
                 <div>
-                  <p className="text-sm font-medium">Google シートから読み込む</p>
-                  <p className="text-muted-foreground text-xs">
-                    共有済みのスプレッドシートから直接データを取得します。
+                  <p className="text-sm font-medium">シート割り当て（管理者用）</p>
+                  <p className="text-xs text-muted-foreground">
+                    メールアドレスを入力して対象ユーザーのシートID / タブ名を登録します。
                   </p>
                 </div>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="secondary"
-                  onClick={handleFetchFromSheet}
-                  disabled={fetchingSheet || sheetSettingsLoading || !mySheetSettings}
-                >
-                  {fetchingSheet ? "取得中..." : "シートを読み込む"}
-                </Button>
-              </div>
-              <p className="text-muted-foreground text-sm">
-                {sheetSettingsLoading
-                  ? "シート情報を読み込み中です..."
-                  : mySheetSettings
-                      ? `連携シート: ${mySheetSettings.worksheetTitle}`
-                      : "連携設定が未登録です。管理者がシートID/タブ名を登録してください。"}
-              </p>
-              <div className="flex flex-wrap gap-2">
-                <Button type="button" size="sm" variant="outline" disabled={!mySheetSettings} asChild>
-                  <a
-                    href={mySheetSettings ? `https://docs.google.com/spreadsheets/d/${mySheetSettings.spreadsheetId}/edit` : undefined}
-                    target="_blank"
-                    rel="noreferrer"
+                <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+                  <Input
+                    value={sheetEmailInput}
+                    onChange={(event) => setSheetEmailInput(event.target.value)}
+                    placeholder="user@example.com"
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    onClick={handleLookupSheetSettings}
+                    disabled={lookupLoading}
                   >
-                    連携シートを開く
-                  </a>
-                </Button>
-              </div>
-              {isSheetAdmin && (
-                <div className="rounded-md border border-dashed bg-background/70 p-3 space-y-3">
-                  <div>
-                    <p className="text-sm font-medium">シート割り当て（管理者用）</p>
-                    <p className="text-xs text-muted-foreground">
-                      メールアドレスを入力して対象ユーザーのシートID / タブ名を登録します。
-                    </p>
-                  </div>
-                  <div className="grid gap-2 md:grid-cols-[minmax(0,1fr)_auto]">
+                    {lookupLoading ? "検索中..." : "ユーザーを検索"}
+                  </Button>
+                </div>
+                {targetUserId ? (
+                  <p className="text-xs text-muted-foreground break-all">対象ユーザーID: {targetUserId}</p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">検索すると該当ユーザーのシート情報が表示されます。</p>
+                )}
+                <div className="grid gap-2 md:grid-cols-2">
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">スプレッドシートID</Label>
                     <Input
-                      value={sheetEmailInput}
-                      onChange={(event) => setSheetEmailInput(event.target.value)}
-                      placeholder="user@example.com"
+                      value={sheetIdInput}
+                      onChange={(event) => setSheetIdInput(event.target.value)}
+                      placeholder="例: 1Bx8LW..."
                     />
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant="secondary"
-                      onClick={handleLookupSheetSettings}
-                      disabled={lookupLoading}
-                    >
-                      {lookupLoading ? "検索中..." : "ユーザーを検索"}
-                    </Button>
                   </div>
-                  {targetUserId ? (
-                    <p className="text-xs text-muted-foreground break-all">対象ユーザーID: {targetUserId}</p>
-                  ) : (
-                    <p className="text-xs text-muted-foreground">検索すると該当ユーザーのシート情報が表示されます。</p>
-                  )}
-                  <div className="grid gap-2 md:grid-cols-2">
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">スプレッドシートID</Label>
-                      <Input
-                        value={sheetIdInput}
-                        onChange={(event) => setSheetIdInput(event.target.value)}
-                        placeholder="例: 1Bx8LW..."
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <Label className="text-xs text-muted-foreground">タブ名</Label>
-                      <Input
-                        value={sheetTitleInput}
-                        onChange={(event) => setSheetTitleInput(event.target.value)}
-                        placeholder="例: シート1"
-                      />
-                    </div>
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Button type="button" size="sm" variant="default" onClick={handleSaveSheetSettings} disabled={savingSheetSettings || !targetUserId}>
-                      {savingSheetSettings ? "保存中..." : "シート設定を保存"}
-                    </Button>
-                    <Button type="button" size="sm" variant="outline" disabled={!adminSheetSettings} asChild>
-                      <a
-                        href={adminSheetSettings ? `https://docs.google.com/spreadsheets/d/${adminSheetSettings.spreadsheetId}/edit` : undefined}
-                        target="_blank"
-                        rel="noreferrer"
-                      >
-                        対象シートを開く
-                      </a>
-                    </Button>
+                  <div className="space-y-1">
+                    <Label className="text-xs text-muted-foreground">タブ名</Label>
+                    <Input
+                      value={sheetTitleInput}
+                      onChange={(event) => setSheetTitleInput(event.target.value)}
+                      placeholder="例: シート1"
+                    />
                   </div>
                 </div>
-              )}
+                <div className="flex flex-wrap gap-2">
+                  <Button type="button" size="sm" variant="default" onClick={handleSaveSheetSettings} disabled={savingSheetSettings || !targetUserId}>
+                    {savingSheetSettings ? "保存中..." : "シート設定を保存"}
+                  </Button>
+                  <Button type="button" size="sm" variant="outline" disabled={!adminSheetSettings} asChild>
+                    <a
+                      href={adminSheetSettings ? `https://docs.google.com/spreadsheets/d/${adminSheetSettings.spreadsheetId}/edit` : undefined}
+                      target="_blank"
+                      rel="noreferrer"
+                    >
+                      対象シートを開く
+                    </a>
+                  </Button>
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="space-y-4 rounded-md border p-4">
+            <div>
+              <p className="text-sm font-medium">商品インポート（CSV）</p>
+              <p className="text-xs text-muted-foreground">テンプレートで編集した CSV をアップロードします。</p>
+            </div>
+            <div className="space-y-3 rounded-md border bg-muted/40 p-3 text-xs">
+              <div>
+                <p className="font-medium">テンプレートをダウンロード</p>
+                <p className="text-xs text-muted-foreground">
+                  列構成と入力例を含む CSV をダウンロードし、編集してアップロードしてください。
+                </p>
+                <Button className="mt-2" type="button" onClick={handleTemplateDownload}>
+                  テンプレートをダウンロード
+                </Button>
+                <ul className="text-xs text-muted-foreground list-disc space-y-1 pl-4 mt-2">
+                  {CSV_COLUMNS.map((column) => (
+                    <li key={column.key}>
+                      <span className="font-medium">{column.label}</span>
+                      {column.required ? " (必須)" : ""}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+              <div className="space-y-2">
+                <p className="text-sm font-medium">CSV を選択</p>
+                <p className="text-xs text-muted-foreground">UTF-8 / ヘッダー行付きの CSV を想定しています。</p>
+                <Input ref={fileInputRef} type="file" accept=".csv" onChange={handleFileChange} />
+              </div>
             </div>
           </div>
 
