@@ -1,6 +1,6 @@
 "use client"
 
-import { type ChangeEvent, useMemo, useRef, useState } from "react"
+import { type ChangeEvent, useEffect, useMemo, useRef, useState } from "react"
 
 import Papa from "papaparse"
 import { toast } from "sonner"
@@ -112,6 +112,8 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   const [history, setHistory] = useState<ImportHistoryEntry[]>([])
   const [syncing, setSyncing] = useState(false)
   const [fetchingSheet, setFetchingSheet] = useState(false)
+  const [sheetSettings, setSheetSettings] = useState<{ spreadsheetId: string; worksheetTitle: string } | null>(null)
+  const [sheetSettingsLoading, setSheetSettingsLoading] = useState(true)
   const fileInputRef = useRef<HTMLInputElement | null>(null)
 
   const summary = useMemo(() => {
@@ -122,6 +124,41 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   }, [importRows])
 
   const stagedSummary = useMemo(() => ({ ready: stagedRows.length }), [stagedRows])
+
+  useEffect(() => {
+    let mounted = true
+    const loadSheetSettings = async () => {
+      setSheetSettingsLoading(true)
+      const {
+        data: { session },
+      } = await supabaseClient.auth.getSession()
+      if (!mounted) return
+      if (!session?.user) {
+        setSheetSettings(null)
+        setSheetSettingsLoading(false)
+        return
+      }
+      const { data, error } = await supabaseClient
+        .from("sheet_settings")
+        .select("spreadsheet_id, worksheet_title")
+        .eq("user_id", session.user.id)
+        .maybeSingle()
+      if (!mounted) return
+      if (error && error.code !== "PGRST116") {
+        console.error("Failed to load sheet settings", error)
+        setSheetSettings(null)
+      } else if (data?.spreadsheet_id && data?.worksheet_title) {
+        setSheetSettings({ spreadsheetId: data.spreadsheet_id, worksheetTitle: data.worksheet_title })
+      } else {
+        setSheetSettings(null)
+      }
+      setSheetSettingsLoading(false)
+    }
+    void loadSheetSettings()
+    return () => {
+      mounted = false
+    }
+  }, [])
 
   const handleTemplateDownload = () => {
     const header = CSV_COLUMNS.map((column) => column.key)
@@ -186,6 +223,11 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
   const handleFetchFromSheet = async () => {
     setFetchingSheet(true)
     try {
+      if (!sheetSettings && !sheetSettingsLoading) {
+        toast.error("スプレッドシートの連携設定が見つかりません。")
+        setFetchingSheet(false)
+        return
+      }
       const {
         data: { session },
       } = await supabaseClient.auth.getSession()
@@ -377,6 +419,24 @@ export function ProductImportSection({ data, actions }: ProductImportSectionProp
                 </div>
                 <Button type="button" size="sm" variant="secondary" onClick={handleFetchFromSheet} disabled={fetchingSheet}>
                   {fetchingSheet ? "取得中..." : "シートを読み込む"}
+                </Button>
+              </div>
+              <div className="mt-2 flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
+                <p className="text-muted-foreground">
+                  {sheetSettingsLoading
+                    ? "シート情報を読み込み中..."
+                    : sheetSettings
+                        ? `連携シート: ${sheetSettings.worksheetTitle}`
+                        : "連携シートが未設定です。管理者に依頼してください。"}
+                </p>
+                <Button type="button" size="sm" variant="outline" disabled={!sheetSettings} asChild>
+                  <a
+                    href={sheetSettings ? `https://docs.google.com/spreadsheets/d/${sheetSettings.spreadsheetId}/edit` : undefined}
+                    target="_blank"
+                    rel="noreferrer"
+                  >
+                    スプレッドシートを開く
+                  </a>
                 </Button>
               </div>
             </div>
