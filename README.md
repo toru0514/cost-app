@@ -239,7 +239,6 @@ UI → Application Ports → Domain Services → Repository Adapters という�
         - Sheets API / Drive API を有効化。
         - サービスアカウント（または OAuth クライアント）を作成し、`service-account@project.iam.gserviceaccount.com` を取得。
         - JSON キーを `GOOGLE_SERVICE_ACCOUNT_BASE64` として Base64 で `.env.local` / Vercel Env に登録。
-        - 複製元テンプレートの Spreadsheet ID を `GOOGLE_SHEETS_TEMPLATE_ID` に設定し、完成したシートの所有者にする管理者メールを `GOOGLE_SHEETS_OWNER_EMAIL` に設定しておく。
 
       - [x] **スプレッドシート側の共有設定**
           - インポート対象のシートを 1 ファイルにまとめ、1 行目に CSV と同じヘッダーを配置。
@@ -262,8 +261,7 @@ UI → Application Ports → Domain Services → Repository Adapters という�
   - [x] シート設定マスタ `sheet_settings` を Supabase に作成し、`user_id` ごとに Spreadsheet ID / タブ名を保持する。
   - [x] 既存ユーザー（管理者）のシートID/タブ名を `sheet_settings` に初期投入する。
   - [x] `/api/import/product-sheet` でログイン中ユーザーの `sheet_settings` を参照し、シートID/タブ名を動的に切り替えられるようにする。
-  - [x] シート未設定ユーザーがテンプレートからシートを複製・共有し、`sheet_settings` に登録できるボタン（`/api/import/create-sheet`）を実装する。
-  - [x] 新規ユーザー登録時（初回ログイン時）にテンプレートを自動複製し、`sheet_settings` にレコードを作成するフローを追加する。
+  - [x] シート未設定ユーザーには管理者が手動でシートID/タブ名を割り当てる運用にし、UI 上では未設定時に案内を表示する。
 
 ## 材料費モジュール（第一弾）
 - **目的**: 製品を構成する主要素材のコストを正確に積み上げる。歩留まりや為替差も考慮可能な器を用意。
