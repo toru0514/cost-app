@@ -9,6 +9,7 @@ export async function POST(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
   const defaultWorksheetTitle = process.env.GOOGLE_SHEETS_WORKSHEET_TITLE
+  const ownerEmail = process.env.GOOGLE_SHEETS_OWNER_EMAIL
 
   if (!supabaseUrl || !supabaseAnonKey) {
     return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 })
@@ -59,10 +60,12 @@ export async function POST(request: Request) {
   try {
     const templateId = getTemplateSpreadsheetId()
     const title = `${user.email ?? user.id} シート (${new Date().toLocaleDateString("ja-JP")})`
+    const shareWithEmails = user.email ? [user.email] : []
     const { spreadsheetId } = await createSpreadsheetFromTemplate({
       templateId,
       title,
-      shareWithEmail: user.email ?? undefined,
+      shareWithEmails,
+      ownerEmail,
     })
 
     const { error: insertError } = await supabase.from("sheet_settings").upsert({

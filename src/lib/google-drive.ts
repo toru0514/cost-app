@@ -7,11 +7,13 @@ const DRIVE_SCOPE = ["https://www.googleapis.com/auth/drive"]
 export async function createSpreadsheetFromTemplate({
   templateId,
   title,
-  shareWithEmail,
+  shareWithEmails,
+  ownerEmail,
 }: {
   templateId: string
   title: string
-  shareWithEmail?: string
+  shareWithEmails?: string[]
+  ownerEmail?: string
 }) {
   const creds = loadServiceAccount()
   const auth = new google.auth.JWT({
@@ -32,19 +34,38 @@ export async function createSpreadsheetFromTemplate({
   if (!spreadsheetId) {
     throw new Error("Failed to copy template spreadsheet")
   }
-  if (shareWithEmail) {
+  if (shareWithEmails?.length) {
+    for (const email of shareWithEmails) {
+      if (!email) continue
+      try {
+        await drive.permissions.create({
+          fileId: spreadsheetId,
+          requestBody: {
+            type: "user",
+            role: "writer",
+            emailAddress: email,
+          },
+          sendNotificationEmail: false,
+        })
+      } catch (error) {
+        console.error("Failed to share spreadsheet", { email, error })
+      }
+    }
+  }
+  if (ownerEmail) {
     try {
       await drive.permissions.create({
         fileId: spreadsheetId,
+        transferOwnership: true,
         requestBody: {
           type: "user",
-          role: "writer",
-          emailAddress: shareWithEmail,
+          role: "owner",
+          emailAddress: ownerEmail,
         },
         sendNotificationEmail: false,
       })
     } catch (error) {
-      console.error("Failed to share spreadsheet", error)
+      console.error("Failed to transfer ownership", error)
     }
   }
   return { spreadsheetId }

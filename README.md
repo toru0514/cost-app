@@ -239,7 +239,7 @@ UI → Application Ports → Domain Services → Repository Adapters という�
         - Sheets API / Drive API を有効化。
         - サービスアカウント（または OAuth クライアント）を作成し、`service-account@project.iam.gserviceaccount.com` を取得。
         - JSON キーを `GOOGLE_SERVICE_ACCOUNT_BASE64` として Base64 で `.env.local` / Vercel Env に登録。
-        - 複製元テンプレートの Spreadsheet ID を `GOOGLE_SHEETS_TEMPLATE_ID` に設定しておく。
+        - 複製元テンプレートの Spreadsheet ID を `GOOGLE_SHEETS_TEMPLATE_ID` に設定し、完成したシートの所有者にする管理者メールを `GOOGLE_SHEETS_OWNER_EMAIL` に設定しておく。
 
       - [x] **スプレッドシート側の共有設定**
           - インポート対象のシートを 1 ファイルにまとめ、1 行目に CSV と同じヘッダーを配置。
