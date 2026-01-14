@@ -34,7 +34,8 @@ export function DevelopmentEquipmentSection({ data }: DevelopmentEquipmentSectio
       if (!equipment) return
       const product = data.products.find((item) => item.id === entry.productId)
       const productName = product?.name ?? "未設定"
-      const annualCost = equipment.acquisitionCost / Math.max(equipment.amortizationYears || 1, 1)
+      const utilizationRate = Math.min(Math.max(equipment.utilizationRate ?? 100, 0), 100) / 100
+      const annualCost = (equipment.acquisitionCost / Math.max(equipment.amortizationYears || 1, 1)) * utilizationRate
       const unitCost = (annualCost * entry.allocationRatio) / Math.max(entry.annualQuantity || 1, 1)
 
       if (!groups.has(equipment.id)) {
@@ -98,8 +99,19 @@ export function DevelopmentEquipmentSection({ data }: DevelopmentEquipmentSectio
                     <TableRow key={`equipment-group-${group.equipment.id}`}>
                       <TableCell>{group.equipment.name}</TableCell>
                       <TableCell>
-                        {formatCurrency(group.equipment.acquisitionCost, group.equipment.currency)} /
-                        {group.equipment.amortizationYears}年
+                        {(() => {
+                          const utilizationRate = Math.min(Math.max(group.equipment.utilizationRate ?? 100, 0), 100)
+                          const effectiveCost = (group.equipment.acquisitionCost * utilizationRate) / 100
+                          return (
+                            <>
+                              {formatCurrency(group.equipment.acquisitionCost, group.equipment.currency)} /
+                              {group.equipment.amortizationYears}年
+                              <span className="block text-xs text-muted-foreground">
+                                利用率 {utilizationRate}% / 配賦対象額 {formatCurrency(effectiveCost, group.equipment.currency)}
+                              </span>
+                            </>
+                          )
+                        })()}
                       </TableCell>
                       <TableCell className="text-xs text-muted-foreground">
                         {group.entries

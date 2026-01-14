@@ -23,8 +23,10 @@ export function EquipmentSimulationSection({ data, openSignal }: EquipmentSimula
 
   const equipmentSimulationData = useMemo(() => {
     return data.equipments.map((equipment) => {
+      const utilizationRate = Math.min(Math.max(equipment.utilizationRate ?? 100, 0), 100)
+      const effectiveAcquisitionCost = (equipment.acquisitionCost * utilizationRate) / 100
       const allocations = data.costEntries.equipmentAllocations.filter((entry) => entry.equipmentId === equipment.id)
-      const annualCost = equipment.acquisitionCost / Math.max(equipment.amortizationYears || 1, 1)
+      const annualCost = effectiveAcquisitionCost / Math.max(equipment.amortizationYears || 1, 1)
       const totalUsageHours = allocations.reduce((sum, entry) => sum + (entry.usageHours ?? 0), 0)
       const annualAllocation = allocations.reduce((sum, entry) => {
         const ratio =
@@ -54,6 +56,8 @@ export function EquipmentSimulationSection({ data, openSignal }: EquipmentSimula
         currentUnitCost,
         relatedProducts,
         baseSalePriceAverage,
+        utilizationRate,
+        effectiveAcquisitionCost,
       }
     })
   }, [data.costEntries.equipmentAllocations, data.equipments, data.products])
@@ -78,6 +82,8 @@ export function EquipmentSimulationSection({ data, openSignal }: EquipmentSimula
               currentUnitCost,
               relatedProducts,
               baseSalePriceAverage,
+              utilizationRate,
+              effectiveAcquisitionCost,
             } = info
             const defaultSimulation = {
               quantity: Math.max(Math.round(currentAnnualQuantity) || 1000, 1),
@@ -92,8 +98,9 @@ export function EquipmentSimulationSection({ data, openSignal }: EquipmentSimula
             const simUnitAllocation = annualCost / Math.max(simQuantity || 1, 1)
             const effectiveSalePrice = (simSalePrice * simUtilizationRatio) / 100
             const simAnnualMargin = (effectiveSalePrice - simUnitAllocation) * simQuantity
-            const annualRecoveryRate = equipment.acquisitionCost > 0 ? (simAnnualMargin / equipment.acquisitionCost) * 100 : 0
-            const paybackYears = simAnnualMargin > 0 ? equipment.acquisitionCost / simAnnualMargin : Infinity
+            const annualRecoveryRate =
+              effectiveAcquisitionCost > 0 ? (simAnnualMargin / effectiveAcquisitionCost) * 100 : 0
+            const paybackYears = simAnnualMargin > 0 ? effectiveAcquisitionCost / simAnnualMargin : Infinity
             const paybackText = Number.isFinite(paybackYears) ? `${paybackYears.toFixed(1)}年` : "未達"
             const relatedProductNames = relatedProducts.length
               ? relatedProducts.map((product) => product.name).join(" / ")
@@ -120,6 +127,7 @@ export function EquipmentSimulationSection({ data, openSignal }: EquipmentSimula
                     <p>
                       取得額 {formatCurrency(equipment.acquisitionCost, equipment.currency)} / {equipment.amortizationYears}年償却
                     </p>
+                    <p>利用率 {utilizationRate}% → 配賦対象 {formatCurrency(effectiveAcquisitionCost, equipment.currency)}</p>
                     <p>年間償却額 {formatCurrency(annualCost, equipment.currency)}</p>
                   </div>
                 </div>
@@ -165,7 +173,9 @@ export function EquipmentSimulationSection({ data, openSignal }: EquipmentSimula
                     <p>有効販売価格: {formatCurrency(effectiveSalePrice, equipment.currency)}</p>
                     <p>利用割合: {simUtilizationRatio.toFixed(1)}%</p>
                     <p>年間粗利: {formatCurrency(simAnnualMargin, equipment.currency)}</p>
-                    <p>年間回収率: {simAnnualMargin > 0 && equipment.acquisitionCost > 0 ? `${annualRecoveryRate.toFixed(1)}%` : "-"}</p>
+                    <p>
+                      年間回収率: {simAnnualMargin > 0 && effectiveAcquisitionCost > 0 ? `${annualRecoveryRate.toFixed(1)}%` : "-"}
+                    </p>
                     <p>回収見込み: {paybackText}</p>
                   </div>
                 </div>

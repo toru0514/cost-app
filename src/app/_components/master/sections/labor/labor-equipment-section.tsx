@@ -32,6 +32,7 @@ const INITIAL_EQUIPMENT_FORM: Omit<Equipment, "id"> = {
   acquisitionCost: 0,
   currency: "JPY",
   amortizationYears: 5,
+  utilizationRate: 100,
   note: "",
 }
 
@@ -151,6 +152,19 @@ export function LaborEquipmentSection({ data, actions, openSignal }: LaborEquipm
             </div>
           </div>
           <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">設備使用率 (%)</Label>
+            <NumberInput
+              placeholder="例: 50"
+              value={equipmentForm.utilizationRate ?? 100}
+              onValueChange={(next) =>
+                setEquipmentForm((prev) => ({ ...prev, utilizationRate: next === "" ? 0 : Math.min(Math.max(Number(next), 0), 100) }))
+              }
+              min={0}
+              max={100}
+            />
+            <FieldHint>この製品群で使う割合。半分だけ使うなら50%など。</FieldHint>
+          </div>
+          <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">通貨</Label>
             <Select value={equipmentForm.currency} onValueChange={(value) => setEquipmentForm((prev) => ({ ...prev, currency: value }))}>
               <SelectTrigger>
@@ -182,7 +196,8 @@ export function LaborEquipmentSection({ data, actions, openSignal }: LaborEquipm
           <RegisteredList
             title="登録済み 設備"
             items={data.equipments.map(
-              (equipment) => `${equipment.name} / ${formatCurrency(equipment.acquisitionCost, equipment.currency)} / ${equipment.amortizationYears}年`
+              (equipment) =>
+                `${equipment.name} / ${formatCurrency(equipment.acquisitionCost, equipment.currency)} / ${equipment.amortizationYears}年 / 利用率${equipment.utilizationRate ?? 100}%`
             )}
           />
         </form>

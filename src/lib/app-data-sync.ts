@@ -171,6 +171,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       acquisitionCost: Number(row.acquisition_cost ?? 0),
       currency: row.currency ?? "JPY",
       amortizationYears: Number(row.amortization_years ?? 1),
+      utilizationRate: Number(row.utilization_rate ?? 100),
       note: row.note ?? undefined,
     })
 
@@ -366,6 +367,7 @@ function buildSyncPayload(data: AppData) {
       acquisition_cost: item.acquisitionCost,
       currency: item.currency,
       amortization_years: item.amortizationYears,
+      utilization_rate: item.utilizationRate ?? 100,
       note: item.note ?? null,
     })),
     option_presets: (data.optionPresets ?? []).map((item) => ({

@@ -55,7 +55,8 @@ export function calculateProductUnitCosts(productId: string, data: AppData) {
   const equipment = equipmentEntries.reduce((sum, entry) => {
     const equipment = data.equipments.find((eq) => eq.id === entry.equipmentId)
     if (!equipment) return sum
-    const annualCost = equipment.acquisitionCost / Math.max(equipment.amortizationYears || 1, 1)
+    const utilizationRate = Math.min(Math.max(equipment.utilizationRate ?? 100, 0), 100) / 100
+    const annualCost = (equipment.acquisitionCost / Math.max(equipment.amortizationYears || 1, 1)) * utilizationRate
     const ratio =
       totalEquipmentHours > 0 && entry.usageHours !== undefined
         ? entry.usageHours / totalEquipmentHours

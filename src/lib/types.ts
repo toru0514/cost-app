@@ -64,6 +64,7 @@ export type Equipment = {
   acquisitionCost: number
   currency: string
   amortizationYears: number
+  utilizationRate?: number
   note?: string
 }
 
@@ -379,6 +380,7 @@ export const sampleAppData: AppData = {
       acquisitionCost: 400000,
       currency: "JPY",
       amortizationYears: 5,
+      utilizationRate: 100,
       note: "平ミシン",
     },
     {
@@ -387,6 +389,7 @@ export const sampleAppData: AppData = {
       acquisitionCost: 600000,
       currency: "JPY",
       amortizationYears: 5,
+      utilizationRate: 100,
       note: "自動裁断",
     },
   ],

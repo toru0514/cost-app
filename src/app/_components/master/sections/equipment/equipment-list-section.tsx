@@ -28,13 +28,22 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
     acquisitionCost: 0,
     currency: "JPY",
     amortizationYears: 5,
+    utilizationRate: 100,
     note: "",
   })
 
   const { updateEquipment, removeEquipment, addEquipment } = actions
 
   const resetEquipment = () =>
-    setEditingEquipment({ id: null, name: "", acquisitionCost: 0, currency: "JPY", amortizationYears: 5, note: "" })
+    setEditingEquipment({
+      id: null,
+      name: "",
+      acquisitionCost: 0,
+      currency: "JPY",
+      amortizationYears: 5,
+      utilizationRate: 100,
+      note: "",
+    })
 
   const renderActionButtons = (onSave: () => void, onCancel: () => void, onDelete?: () => void) => (
     <div className="flex gap-2">
@@ -82,6 +91,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
       acquisitionCost: equipment.acquisitionCost,
       currency: equipment.currency,
       amortizationYears: equipment.amortizationYears,
+      utilizationRate: equipment.utilizationRate ?? 100,
       note: equipment.note,
     })
     toast.success("設備をコピーしました", { description: `「${name}」を作成しました。` })
@@ -91,6 +101,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
       acquisitionCost: equipment.acquisitionCost,
       currency: equipment.currency,
       amortizationYears: equipment.amortizationYears,
+      utilizationRate: equipment.utilizationRate ?? 100,
       note: equipment.note ?? "",
     })
   }
@@ -111,6 +122,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                   <TableHead>名称</TableHead>
                   <TableHead>取得額</TableHead>
                   <TableHead>償却年数</TableHead>
+                  <TableHead>使用率</TableHead>
                   <TableHead>備考</TableHead>
                   <TableHead className="w-36 text-right">
                     <span className="sr-only">操作</span>
@@ -175,6 +187,23 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                       </TableCell>
                       <TableCell>
                         {isEditing ? (
+                          <NumberInput
+                            value={editingEquipment.utilizationRate ?? 100}
+                            onValueChange={(next) =>
+                              setEditingEquipment((prev) => ({
+                                ...prev,
+                                utilizationRate: next === "" ? 0 : Math.min(Math.max(Number(next), 0), 100),
+                              }))
+                            }
+                            min={0}
+                            max={100}
+                          />
+                        ) : (
+                          `${equipment.utilizationRate ?? 100}%`
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isEditing ? (
                           <Textarea
                             value={editingEquipment.note ?? ""}
                             onChange={(event) => setEditingEquipment((prev) => ({ ...prev, note: event.target.value }))}
@@ -199,6 +228,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                                   acquisitionCost: equipment.acquisitionCost,
                                   currency: equipment.currency,
                                   amortizationYears: equipment.amortizationYears,
+                                  utilizationRate: equipment.utilizationRate ?? 100,
                                   note: equipment.note ?? "",
                                 })
                               }

@@ -102,7 +102,8 @@ export function MasterOverviewSection({ data }: MasterOverviewSectionProps) {
         })),
       equipment: (appData) =>
         appData.equipments.map((equipment) => {
-          const detail = `${formatCurrency(equipment.acquisitionCost, equipment.currency)} / ${equipment.amortizationYears}年`
+          const utilizationRate = equipment.utilizationRate ?? 100
+          const detail = `${formatCurrency(equipment.acquisitionCost, equipment.currency)} / ${equipment.amortizationYears}年 / 利用率${utilizationRate}%`
           return {
             id: equipment.id,
             name: equipment.name,

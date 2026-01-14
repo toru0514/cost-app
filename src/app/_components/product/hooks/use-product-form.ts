@@ -107,7 +107,8 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
       const otherAnnualQuantity = existingEquipmentQuantities.get(draft.equipmentId) ?? 0
       const totalAnnualQuantity = Math.max(currentAnnualQuantity + otherAnnualQuantity, 1)
       const amortizationYears = Math.max(equipment.amortizationYears || 1, 1)
-      const annualCost = equipment.acquisitionCost / amortizationYears
+      const utilizationRate = Math.min(Math.max(equipment.utilizationRate ?? 100, 0), 100) / 100
+      const annualCost = (equipment.acquisitionCost / amortizationYears) * utilizationRate
       const usageHours = draft.usageHours ?? 0
       const ratio = totalEquipmentHours > 0 ? usageHours / totalEquipmentHours : Number(draft.allocationRatio) || 0
       return sum + (annualCost * ratio) / totalAnnualQuantity
