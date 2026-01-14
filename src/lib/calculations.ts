@@ -43,6 +43,15 @@ export function calculateProductUnitCosts(productId: string, data: AppData) {
   const equipmentEntries = data.costEntries.equipmentAllocations.filter((entry) => entry.productId === productId)
   const totalEquipmentHours = equipmentEntries.reduce((sum, entry) => sum + (entry.usageHours ?? 0), 0)
 
+  const equipmentAnnualQuantityMap = data.costEntries.equipmentAllocations.reduce((map, entry) => {
+    const product = data.products.find((p) => p.id === entry.productId)
+    const fallbackQuantity = product?.expectedProduction.quantity ?? quantity
+    const normalizedQuantity = Math.max(Number(entry.annualQuantity) || Number(fallbackQuantity) || 0, 0)
+    if (normalizedQuantity <= 0) return map
+    map.set(entry.equipmentId, (map.get(entry.equipmentId) ?? 0) + normalizedQuantity)
+    return map
+  }, new Map<string, number>())
+
   const equipment = equipmentEntries.reduce((sum, entry) => {
     const equipment = data.equipments.find((eq) => eq.id === entry.equipmentId)
     if (!equipment) return sum
@@ -51,7 +60,11 @@ export function calculateProductUnitCosts(productId: string, data: AppData) {
       totalEquipmentHours > 0 && entry.usageHours !== undefined
         ? entry.usageHours / totalEquipmentHours
         : entry.allocationRatio
-    return sum + (annualCost * ratio) / Math.max(entry.annualQuantity || quantity, 1)
+    const totalAnnualQuantity = Math.max(
+      equipmentAnnualQuantityMap.get(entry.equipmentId) ?? entry.annualQuantity ?? quantity,
+      1
+    )
+    return sum + (annualCost * ratio) / totalAnnualQuantity
   }, 0)
 
   const logistics = data.costEntries.logistics

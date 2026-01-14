@@ -28,7 +28,7 @@ export interface ProductFormStateResult extends ProductDraftStateResult {
 }
 
 export function useProductFormState(args: UseProductFormStateArgs): ProductFormStateResult {
-  const { data, actions } = args
+  const { data, actions, editingProductId } = args
   const draftState = useProductDraftState(args)
   const {
     shippingMethods,
@@ -44,6 +44,17 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
     totalEquipmentHours,
     resetFormState,
   } = draftState
+
+  const existingEquipmentQuantities = useMemo(() => {
+    const map = new Map<string, number>()
+    data.costEntries.equipmentAllocations.forEach((entry) => {
+      if (editingProductId && entry.productId === editingProductId) return
+      const quantity = Math.max(Number(entry.annualQuantity) || 0, 0)
+      if (quantity <= 0) return
+      map.set(entry.equipmentId, (map.get(entry.equipmentId) ?? 0) + quantity)
+    })
+    return map
+  }, [data.costEntries.equipmentAllocations, editingProductId])
 
   const costSummary = useMemo<ProductCostSummary>(() => {
     const salePrice = Number(productForm.salePrice) || 0
@@ -89,12 +100,17 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
     const equipment = equipmentAllocDrafts.reduce((sum, draft) => {
       const equipment = data.equipments.find((entry) => entry.id === draft.equipmentId)
       if (!equipment) return sum
-      const annualQuantity = Math.max(Number(draft.annualQuantity) || productForm.expectedProduction.quantity, 1)
+      const currentAnnualQuantity = Math.max(
+        Number(draft.annualQuantity) || Number(productForm.expectedProduction.quantity) || 0,
+        0
+      )
+      const otherAnnualQuantity = existingEquipmentQuantities.get(draft.equipmentId) ?? 0
+      const totalAnnualQuantity = Math.max(currentAnnualQuantity + otherAnnualQuantity, 1)
       const amortizationYears = Math.max(equipment.amortizationYears || 1, 1)
       const annualCost = equipment.acquisitionCost / amortizationYears
       const usageHours = draft.usageHours ?? 0
       const ratio = totalEquipmentHours > 0 ? usageHours / totalEquipmentHours : Number(draft.allocationRatio) || 0
-      return sum + (annualCost * ratio) / annualQuantity
+      return sum + (annualCost * ratio) / totalAnnualQuantity
     }, 0)
 
     const logistics = logisticsDrafts.reduce((sum, draft) => {
@@ -131,6 +147,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
     data.materials,
     data.packagingItems,
     developmentDrafts,
+    existingEquipmentQuantities,
     electricityDrafts,
     equipmentAllocDrafts,
     laborDrafts,
