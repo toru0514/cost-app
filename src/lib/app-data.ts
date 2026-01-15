@@ -217,6 +217,12 @@ export function useAppData() {
   }, [authState.status])
 
   useEffect(() => {
+    if (authState.status === "authenticated") {
+      console.log("auth user id:", authState.user.id)
+    }
+  }, [authState])
+
+  useEffect(() => {
     if (!hydrated) return
     if (authState.status !== "authenticated") {
       setRemoteLoadCompleted(true)
