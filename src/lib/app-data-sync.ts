@@ -21,6 +21,7 @@ import type {
   LogisticsCostEntry,
   ElectricityCostEntry,
 } from "./types"
+import { emptyAppData } from "./types"
 
 const TABLES = {
   categories: {
@@ -301,7 +302,13 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
   }
 }
 
-function buildSyncPayload(data: AppData) {
+function buildSyncPayload(data: AppData, previous?: AppData) {
+  const prev = previous ?? emptyAppData
+  const toDeletePayload = (prevItems: { id: string }[], currentItems: { id: string }[]) => {
+    if (!prevItems?.length) return []
+    const currentIds = new Set(currentItems.map((item) => item.id))
+    return prevItems.filter((item) => !currentIds.has(item.id)).map((item) => ({ id: item.id }))
+  }
   const serializeDate = (value: string | undefined) => {
     if (!value) return new Date().toISOString()
     const date = new Date(value)
@@ -313,18 +320,21 @@ function buildSyncPayload(data: AppData) {
 
   return {
     categories_large: data.categories.large.map((item) => ({ id: item.id, name: item.name, description: item.description ?? null })),
+    categories_large_deleted: toDeletePayload(prev.categories.large, data.categories.large),
     categories_medium: data.categories.medium.map((item) => ({
       id: item.id,
       name: item.name,
       description: item.description ?? null,
       large_id: item.largeId ?? null,
     })),
+    categories_medium_deleted: toDeletePayload(prev.categories.medium, data.categories.medium),
     categories_small: data.categories.small.map((item) => ({
       id: item.id,
       name: item.name,
       description: item.description ?? null,
       medium_id: item.mediumId ?? null,
     })),
+    categories_small_deleted: toDeletePayload(prev.categories.small, data.categories.small),
     materials: data.materials.map((item) => ({
       id: item.id,
       name: item.name,
@@ -336,6 +346,7 @@ function buildSyncPayload(data: AppData) {
       note: item.note ?? null,
       units_per_batch: item.unitsPerBatch ?? null,
     })),
+    materials_deleted: toDeletePayload(prev.materials, data.materials),
     packaging_items: data.packagingItems.map((item) => ({
       id: item.id,
       name: item.name,
@@ -346,6 +357,7 @@ function buildSyncPayload(data: AppData) {
       note: item.note ?? null,
       units_per_batch: item.unitsPerBatch ?? null,
     })),
+    packaging_items_deleted: toDeletePayload(prev.packagingItems, data.packagingItems),
     shipping_methods: (data.shippingMethods ?? []).map((item) => ({
       id: item.id,
       name: item.name,
@@ -354,6 +366,7 @@ function buildSyncPayload(data: AppData) {
       note: item.note ?? null,
       description: item.description ?? null,
     })),
+    shipping_methods_deleted: toDeletePayload(prev.shippingMethods ?? [], data.shippingMethods ?? []),
     labor_roles: data.laborRoles.map((item) => ({
       id: item.id,
       name: item.name,
@@ -361,6 +374,7 @@ function buildSyncPayload(data: AppData) {
       currency: item.currency,
       note: item.note ?? null,
     })),
+    labor_roles_deleted: toDeletePayload(prev.laborRoles, data.laborRoles),
     equipments: data.equipments.map((item) => ({
       id: item.id,
       name: item.name,
@@ -370,11 +384,13 @@ function buildSyncPayload(data: AppData) {
       utilization_rate: item.utilizationRate ?? 100,
       note: item.note ?? null,
     })),
+    equipments_deleted: toDeletePayload(prev.equipments, data.equipments),
     option_presets: (data.optionPresets ?? []).map((item) => ({
       id: item.id,
       name: item.name,
       variants: item.variants,
     })),
+    option_presets_deleted: toDeletePayload(prev.optionPresets ?? [], data.optionPresets ?? []),
     products: data.products.map((item) => ({
       id: item.id,
       name: item.name,
@@ -392,6 +408,7 @@ function buildSyncPayload(data: AppData) {
       expected_production_quantity: item.expectedProduction.quantity,
       equipment_ids: item.equipmentIds ?? [],
     })),
+    products_deleted: toDeletePayload(prev.products, data.products),
     cost_entries_materials: data.costEntries.materials.map((item) => ({
       id: item.id,
       product_id: item.productId,
@@ -401,6 +418,7 @@ function buildSyncPayload(data: AppData) {
       cost_per_unit: item.costPerUnit,
       currency: item.currency,
     })),
+    cost_entries_materials_deleted: toDeletePayload(prev.costEntries.materials, data.costEntries.materials),
     cost_entries_packaging: data.costEntries.packaging.map((item) => ({
       id: item.id,
       product_id: item.productId,
@@ -409,6 +427,7 @@ function buildSyncPayload(data: AppData) {
       cost_per_unit: item.costPerUnit,
       currency: item.currency,
     })),
+    cost_entries_packaging_deleted: toDeletePayload(prev.costEntries.packaging, data.costEntries.packaging),
     cost_entries_labor: data.costEntries.labor.map((item) => ({
       id: item.id,
       product_id: item.productId,
@@ -417,6 +436,7 @@ function buildSyncPayload(data: AppData) {
       people_count: item.peopleCount,
       hourly_rate_override: item.hourlyRateOverride ?? null,
     })),
+    cost_entries_labor_deleted: toDeletePayload(prev.costEntries.labor, data.costEntries.labor),
     cost_entries_outsourcing: data.costEntries.outsourcing.map((item) => ({
       id: item.id,
       product_id: item.productId,
@@ -424,6 +444,7 @@ function buildSyncPayload(data: AppData) {
       currency: item.currency,
       note: item.note ?? null,
     })),
+    cost_entries_outsourcing_deleted: toDeletePayload(prev.costEntries.outsourcing, data.costEntries.outsourcing),
     cost_entries_development: data.costEntries.development.map((item) => ({
       id: item.id,
       product_id: item.productId,
@@ -433,6 +454,7 @@ function buildSyncPayload(data: AppData) {
       tooling_cost: item.toolingCost,
       amortization_years: item.amortizationYears,
     })),
+    cost_entries_development_deleted: toDeletePayload(prev.costEntries.development, data.costEntries.development),
     cost_entries_equipment: data.costEntries.equipmentAllocations.map((item) => ({
       id: item.id,
       product_id: item.productId,
@@ -441,6 +463,7 @@ function buildSyncPayload(data: AppData) {
       annual_quantity: item.annualQuantity,
       usage_hours: item.usageHours ?? null,
     })),
+    cost_entries_equipment_deleted: toDeletePayload(prev.costEntries.equipmentAllocations, data.costEntries.equipmentAllocations),
     cost_entries_logistics: data.costEntries.logistics.map((item) => ({
       id: item.id,
       product_id: item.productId,
@@ -448,12 +471,14 @@ function buildSyncPayload(data: AppData) {
       cost_per_unit: item.costPerUnit,
       currency: item.currency,
     })),
+    cost_entries_logistics_deleted: toDeletePayload(prev.costEntries.logistics, data.costEntries.logistics),
     cost_entries_electricity: data.costEntries.electricity.map((item) => ({
       id: item.id,
       product_id: item.productId,
       cost_per_unit: item.costPerUnit,
       currency: item.currency,
     })),
+    cost_entries_electricity_deleted: toDeletePayload(prev.costEntries.electricity, data.costEntries.electricity),
   }
 }
 
@@ -574,7 +599,7 @@ const buildAuditMetadata = (data: AppData, previousData?: AppData) => {
 
 export async function saveUserAppData(userId: string, data: AppData, previousData?: AppData) {
   try {
-    const payload = buildSyncPayload(data)
+    const payload = buildSyncPayload(data, previousData)
     const { error } = await supabaseClient.rpc("sync_app_data", {
       p_user_id: userId,
       p_payload: payload,
