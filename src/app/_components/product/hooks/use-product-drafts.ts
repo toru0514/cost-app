@@ -413,163 +413,177 @@ export function useProductDraftState({
 
   const autoLaborHoursRef = useRef<number>(productForm.baseManHours || 0)
 
+  const populateFromProduct = useCallback(
+    (productId: string) => {
+      const product = data.products.find((p) => p.id === productId)
+      if (!product) return null
+
+      setProductForm({
+        name: product.name,
+        categoryLargeId: product.categoryLargeId ?? undefined,
+        categoryMediumId: product.categoryMediumId ?? undefined,
+        categorySmallId: product.categorySmallId ?? undefined,
+        sizeVariants:
+          product.sizeVariants?.map((variant) => ({ label: variant.label, quantity: variant.quantity })) ?? [{ label: "", quantity: 0 }],
+        baseManHours: product.baseManHours,
+        defaultElectricityCost: product.defaultElectricityCost,
+        salePrice: product.salePrice ?? 0,
+        registeredAt: product.registeredAt,
+        notes: product.notes ?? "",
+        productionLotSize: product.productionLotSize,
+        expectedProduction: product.expectedProduction,
+        equipmentIds: product.equipmentIds ?? [],
+      })
+
+      setMaterialDrafts(
+        mapOrFallback(
+          data.costEntries.materials
+            .filter((entry) => entry.productId === productId)
+            .map((entry) => ({
+              id: createTempId(),
+              materialId: entry.materialId,
+              usageRatio: entry.usageRatio ?? 0,
+              description: entry.description ?? "",
+            })),
+          createMaterialDraft,
+          false
+        )
+      )
+
+      setPackagingDrafts(
+        mapOrFallback(
+          data.costEntries.packaging
+            .filter((entry) => entry.productId === productId)
+            .map((entry) => ({
+              id: createTempId(),
+              packagingItemId: entry.packagingItemId,
+              quantity: entry.quantity,
+            })),
+          createPackagingDraft,
+          false
+        )
+      )
+
+      setLaborDrafts(
+        mapOrFallback(
+          data.costEntries.labor
+            .filter((entry) => entry.productId === productId)
+            .map((entry) => ({
+              id: createTempId(),
+              laborRoleId: entry.laborRoleId,
+              hours: entry.hours,
+              peopleCount: entry.peopleCount,
+              hourlyRateOverride: entry.hourlyRateOverride,
+            })),
+          () => createLaborDraft(product.baseManHours),
+          false
+        )
+      )
+
+      setOutsourcingDrafts(
+        mapOrFallback(
+          data.costEntries.outsourcing
+            .filter((entry) => entry.productId === productId)
+            .map((entry) => ({
+              id: createTempId(),
+              note: entry.note ?? "",
+              costPerUnit: entry.costPerUnit,
+              currency: entry.currency,
+            })),
+          createOutsourcingDraft,
+          false
+        )
+      )
+
+      setDevelopmentDrafts(
+        mapOrFallback(
+          data.costEntries.development
+            .filter((entry) => entry.productId === productId)
+            .map((entry) => ({
+              id: createTempId(),
+              title: entry.title ?? "",
+              prototypeLaborCost: entry.prototypeLaborCost,
+              prototypeMaterialCost: entry.prototypeMaterialCost,
+              toolingCost: entry.toolingCost,
+              amortizationYears: entry.amortizationYears,
+            })),
+          createDevelopmentDraft,
+          false
+        )
+      )
+
+      setEquipmentAllocDrafts(
+        data.costEntries.equipmentAllocations
+          .filter((entry) => entry.productId === productId)
+          .map((entry) => ({
+            id: createTempId(),
+            equipmentId: entry.equipmentId,
+            allocationRatio: entry.allocationRatio,
+            annualQuantity: entry.annualQuantity,
+            usageHours: entry.usageHours,
+          }))
+      )
+
+      setLogisticsDrafts(
+        mapOrFallback(
+          data.costEntries.logistics
+            .filter((entry) => entry.productId === productId)
+            .map((entry) => ({
+              id: createTempId(),
+              shippingMethodId: entry.shippingMethodId,
+              costPerUnit: entry.costPerUnit,
+              currency: entry.currency,
+            })),
+          createLogisticsDraft,
+          false
+        )
+      )
+
+      setElectricityDrafts(
+        mapOrFallback(
+          data.costEntries.electricity
+            .filter((entry) => entry.productId === productId)
+            .map((entry) => ({
+              id: createTempId(),
+              costPerUnit: entry.costPerUnit,
+              currency: entry.currency,
+            })),
+          createElectricityDraft,
+          false
+        )
+      )
+
+      autoLaborHoursRef.current = product.baseManHours
+      return product
+    },
+    [
+      createDevelopmentDraft,
+      createElectricityDraft,
+      createLaborDraft,
+      createLogisticsDraft,
+      createMaterialDraft,
+      createOutsourcingDraft,
+      createPackagingDraft,
+      data.costEntries.development,
+      data.costEntries.electricity,
+      data.costEntries.equipmentAllocations,
+      data.costEntries.labor,
+      data.costEntries.logistics,
+      data.costEntries.materials,
+      data.costEntries.outsourcing,
+      data.costEntries.packaging,
+      data.products,
+    ]
+  )
+
   useEffect(() => {
     if (!editingProductId) return
-    const product = data.products.find((p) => p.id === editingProductId)
-    if (!product) return
-    const mapOrFallback = <T,>(entries: T[], fallback: () => T, allowEmpty = false) =>
-      entries.length > 0 ? entries : allowEmpty ? [] : [fallback()]
-
-    setProductForm({
-      name: product.name,
-      categoryLargeId: product.categoryLargeId ?? undefined,
-      categoryMediumId: product.categoryMediumId ?? undefined,
-      categorySmallId: product.categorySmallId ?? undefined,
-      sizeVariants:
-        product.sizeVariants?.map((variant) => ({ label: variant.label, quantity: variant.quantity })) ?? [{ label: "", quantity: 0 }],
-      baseManHours: product.baseManHours,
-      defaultElectricityCost: product.defaultElectricityCost,
-      salePrice: product.salePrice ?? 0,
-      registeredAt: product.registeredAt,
-      notes: product.notes ?? "",
-      productionLotSize: product.productionLotSize,
-      expectedProduction: product.expectedProduction,
-      equipmentIds: product.equipmentIds ?? [],
-    })
-
-    setMaterialDrafts(
-      mapOrFallback(
-        data.costEntries.materials
-          .filter((entry) => entry.productId === editingProductId)
-          .map((entry) => ({
-            id: createTempId(),
-            materialId: entry.materialId,
-            usageRatio: entry.usageRatio ?? 0,
-            description: entry.description ?? "",
-          })),
-        createMaterialDraft,
-        false
-      )
-    )
-
-    setPackagingDrafts(
-      mapOrFallback(
-        data.costEntries.packaging
-          .filter((entry) => entry.productId === editingProductId)
-          .map((entry) => ({
-            id: createTempId(),
-            packagingItemId: entry.packagingItemId,
-            quantity: entry.quantity,
-          })),
-        createPackagingDraft,
-        false
-      )
-    )
-
-    setLaborDrafts(
-      mapOrFallback(
-        data.costEntries.labor
-          .filter((entry) => entry.productId === editingProductId)
-          .map((entry) => ({
-            id: createTempId(),
-            laborRoleId: entry.laborRoleId,
-            hours: entry.hours,
-            peopleCount: entry.peopleCount,
-            hourlyRateOverride: entry.hourlyRateOverride,
-          })),
-        () => createLaborDraft(product.baseManHours),
-        false
-      )
-    )
-
-    setOutsourcingDrafts(
-      mapOrFallback(
-        data.costEntries.outsourcing
-          .filter((entry) => entry.productId === editingProductId)
-          .map((entry) => ({
-            id: createTempId(),
-            note: entry.note ?? "",
-            costPerUnit: entry.costPerUnit,
-            currency: entry.currency,
-          })),
-        createOutsourcingDraft,
-        false
-      )
-    )
-
-    setDevelopmentDrafts(
-      mapOrFallback(
-        data.costEntries.development
-          .filter((entry) => entry.productId === editingProductId)
-          .map((entry) => ({
-            id: createTempId(),
-            title: entry.title ?? "",
-            prototypeLaborCost: entry.prototypeLaborCost,
-            prototypeMaterialCost: entry.prototypeMaterialCost,
-            toolingCost: entry.toolingCost,
-            amortizationYears: entry.amortizationYears,
-          })),
-        createDevelopmentDraft,
-        false
-      )
-    )
-
-    setEquipmentAllocDrafts(
-      data.costEntries.equipmentAllocations
-        .filter((entry) => entry.productId === editingProductId)
-        .map((entry) => ({
-          id: createTempId(),
-          equipmentId: entry.equipmentId,
-          allocationRatio: entry.allocationRatio,
-          annualQuantity: entry.annualQuantity,
-          usageHours: entry.usageHours ?? 0,
-        }))
-    )
-
-    setLogisticsDrafts(
-      mapOrFallback(
-        data.costEntries.logistics
-          .filter((entry) => entry.productId === editingProductId)
-          .map((entry) => ({
-            id: createTempId(),
-            shippingMethodId: entry.shippingMethodId,
-          })),
-        createLogisticsDraft,
-        false
-      )
-    )
-
-    setElectricityDrafts(
-      mapOrFallback(
-        data.costEntries.electricity
-          .filter((entry) => entry.productId === editingProductId)
-          .map((entry) => ({
-            id: createTempId(),
-            costPerUnit: entry.costPerUnit,
-            currency: entry.currency,
-          })),
-        createElectricityDraft,
-        false
-      )
-    )
-
-    autoLaborHoursRef.current = product.baseManHours
-  }, [
-    createDevelopmentDraft,
-    createElectricityDraft,
-    createLaborDraft,
-    createLogisticsDraft,
-    createMaterialDraft,
-    createOutsourcingDraft,
-    createPackagingDraft,
-    data.costEntries,
-    data.products,
-    editingProductId,
-  ])
+    populateFromProduct(editingProductId)
+  }, [editingProductId, populateFromProduct])
 
   useEffect(() => {
     if (!copySourceProductId) return
-    const product = data.products.find((p) => p.id === copySourceProductId)
+    const product = populateFromProduct(copySourceProductId)
     if (!product) return
 
     setProductForm((prev) => ({
@@ -578,7 +592,7 @@ export function useProductDraftState({
       registeredAt: new Date().toISOString().slice(0, 10),
     }))
     onRequestEditClear?.()
-  }, [copySourceProductId, copyRequestNonce, data.products, onRequestEditClear])
+  }, [copySourceProductId, copyRequestNonce, onRequestEditClear, populateFromProduct])
 
   useEffect(() => {
     const nextHours = Number(productForm.baseManHours) || 0
