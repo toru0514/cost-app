@@ -19,6 +19,7 @@ export type LaborCostDraft = {
   hours: number
   peopleCount: number
   hourlyRateOverride?: number
+  isAutoLinked?: boolean
 }
 
 export type OutsourcingCostDraft = {

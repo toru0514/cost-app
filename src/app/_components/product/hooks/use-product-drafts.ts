@@ -114,11 +114,12 @@ export function useProductDraftState({
   }), [data.packagingItems])
 
   const createLaborDraft = useCallback(
-    (initialHours = 1): LaborCostDraft => ({
+    (initialHours = 0): LaborCostDraft => ({
       id: createTempId(),
       laborRoleId: data.laborRoles[0]?.id ?? "",
       hours: initialHours,
       peopleCount: 1,
+      isAutoLinked: true,
     }),
     [data.laborRoles]
   )
@@ -204,6 +205,7 @@ export function useProductDraftState({
         hours: entry.hours,
         peopleCount: entry.peopleCount,
         hourlyRateOverride: entry.hourlyRateOverride,
+        isAutoLinked: true,
       }))
     return entries.length ? entries : [createLaborDraft(editingProduct.baseManHours)]
   }
@@ -302,14 +304,23 @@ export function useProductDraftState({
   )
   const handleRemovePackagingDraft = useCallback((id: string) => removeDraft(setPackagingDrafts, id), [])
 
-  const handleAddLaborDraft = useCallback(
-    () => addDraft(setLaborDrafts, createLaborDraft(Number(productForm.baseManHours) || 0)),
-    [createLaborDraft, productForm.baseManHours]
-  )
-  const handleUpdateLaborDraft = useCallback(
-    (id: string, patch: Partial<LaborCostDraft>) => updateDraft(setLaborDrafts, id, patch),
-    []
-  )
+  const handleAddLaborDraft = useCallback(() => {
+    const baseHours = Number(productForm.baseManHours) || 0
+    addDraft(setLaborDrafts, createLaborDraft(baseHours))
+  }, [createLaborDraft, productForm.baseManHours])
+  const handleUpdateLaborDraft = useCallback((id: string, patch: Partial<LaborCostDraft>) => {
+    setLaborDrafts((drafts) =>
+      drafts.map((draft) => {
+        if (draft.id !== id) return draft
+        const shouldUnlink = Object.prototype.hasOwnProperty.call(patch, "hours")
+        return {
+          ...draft,
+          ...patch,
+          isAutoLinked: shouldUnlink ? false : draft.isAutoLinked,
+        }
+      })
+    )
+  }, [])
   const handleRemoveLaborDraft = useCallback((id: string) => removeDraft(setLaborDrafts, id), [])
 
   const handleAddOutsourcingDraft = useCallback(
@@ -474,6 +485,7 @@ export function useProductDraftState({
               hours: entry.hours,
               peopleCount: entry.peopleCount,
               hourlyRateOverride: entry.hourlyRateOverride,
+              isAutoLinked: true,
             })),
           () => createLaborDraft(product.baseManHours),
           false
@@ -520,7 +532,7 @@ export function useProductDraftState({
             equipmentId: entry.equipmentId,
             allocationRatio: entry.allocationRatio,
             annualQuantity: entry.annualQuantity,
-            usageHours: entry.usageHours,
+            usageHours: entry.usageHours ?? 0,
           }))
       )
 
@@ -599,10 +611,9 @@ export function useProductDraftState({
     if (autoLaborHoursRef.current === nextHours) return
     setLaborDrafts((drafts) =>
       drafts.map((draft) => {
-        if (draft.hours === autoLaborHoursRef.current || draft.hours === 0) {
-          return { ...draft, hours: nextHours }
-        }
-        return draft
+        if (draft.isAutoLinked === false) return draft
+        if (draft.hours === nextHours) return draft
+        return { ...draft, hours: nextHours }
       })
     )
     autoLaborHoursRef.current = nextHours
