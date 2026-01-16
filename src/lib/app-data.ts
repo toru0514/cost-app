@@ -47,8 +47,8 @@ const ensureArray = <T,>(value: T[] | null | undefined): T[] => (Array.isArray(v
 
 const normalizeAppData = (dataset?: Partial<AppData> | null): AppData => {
   const source = dataset ?? {}
-  const categories = source.categories ?? {}
-  const costEntries = source.costEntries ?? {}
+  const categories = (source.categories ?? {}) as Partial<AppData["categories"]>
+  const costEntries = (source.costEntries ?? {}) as Partial<AppData["costEntries"]>
 
   return {
     categories: {

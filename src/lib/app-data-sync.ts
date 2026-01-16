@@ -278,13 +278,13 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       id: row.id,
       name: row.name,
       description: row.description ?? undefined,
-      largeId: row.large_id ?? undefined,
+      largeId: row.large_id ?? "",
     })
     const mapSmall = (row: CategorySmallRow): CategorySmall => ({
       id: row.id,
       name: row.name,
       description: row.description ?? undefined,
-      mediumId: row.medium_id ?? undefined,
+      mediumId: row.medium_id ?? "",
     })
 
     const mapMaterial = (row: MaterialRow): Material => ({
