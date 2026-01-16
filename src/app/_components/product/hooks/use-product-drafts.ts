@@ -610,7 +610,7 @@ export function useProductDraftState({
               feeId: entry.feeId,
             })),
           createFeeDraft,
-          data.fees.length === 0
+          Boolean(editingProductId) || data.fees.length === 0
         )
       )
 
@@ -637,6 +637,7 @@ export function useProductDraftState({
       data.costEntries.fees,
       data.products,
       data.fees.length,
+      editingProductId,
     ]
   )
 
