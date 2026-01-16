@@ -14,6 +14,7 @@ import { MaterialSection } from "../sections/material"
 import { OptionPresetSection } from "../sections/option-preset"
 import { PackagingSection } from "../sections/packaging"
 import { ShippingSection } from "../sections/shipping"
+import { FeeSection } from "../sections/fee"
 import type { FormSectionOpenSignal } from "../../shared/ui"
 
 interface MasterRegisterViewProps {
@@ -49,6 +50,8 @@ export function MasterRegisterView({ data, actions }: MasterRegisterViewProps) {
         <PackagingSection data={data} actions={actions} openSignal={sectionOpenSignal} />
 
         <ShippingSection data={data} actions={actions} openSignal={sectionOpenSignal} />
+
+        <FeeSection data={data} actions={actions} openSignal={sectionOpenSignal} />
 
         <OptionPresetSection data={data} actions={actions} openSignal={sectionOpenSignal} />
       </div>

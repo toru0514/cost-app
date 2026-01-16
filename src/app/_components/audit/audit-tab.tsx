@@ -62,8 +62,8 @@ const renderChangeList = (label: string, summary?: ChangeSummary) => {
 const describePayload = (log: AuditLog) => {
   const stats = log.metadata?.payloadStats
   if (!stats) return "-"
-  const masterSummary = `マスタ 材料${stats.materials}・梱包${stats.packaging}・配送${stats.shippingMethods}・人件${stats.laborRoles}・設備${stats.equipments}・オプション${stats.optionPresets}`
-  const costSummary = `コスト 材${stats.costEntries.materials}・梱${stats.costEntries.packaging}・人件${stats.costEntries.labor}・外注${stats.costEntries.outsourcing}・開発${stats.costEntries.development}・設備${stats.costEntries.equipment}・物流${stats.costEntries.logistics}・電力${stats.costEntries.electricity}`
+  const masterSummary = `マスタ 材料${stats.materials}・梱包${stats.packaging}・配送${stats.shippingMethods}・人件${stats.laborRoles}・設備${stats.equipments}・手数料${stats.fees}・オプション${stats.optionPresets}`
+  const costSummary = `コスト 材${stats.costEntries.materials}・梱${stats.costEntries.packaging}・人件${stats.costEntries.labor}・外注${stats.costEntries.outsourcing}・開発${stats.costEntries.development}・設備${stats.costEntries.equipment}・物流${stats.costEntries.logistics}・電力${stats.costEntries.electricity}・手数料${stats.costEntries.fees}`
   const categorySummary = `カテゴリ 大${stats.categories.large} / 中${stats.categories.medium} / 小${stats.categories.small}`
   const total = stats.summary?.totalRecords
   const payloadChanges = log.metadata?.changes
@@ -76,6 +76,7 @@ const describePayload = (log: AuditLog) => {
         {renderChangeList("配送方法", payloadChanges?.shippingMethods)}
         {renderChangeList("人件費マスタ", payloadChanges?.laborRoles)}
         {renderChangeList("設備", payloadChanges?.equipments)}
+        {renderChangeList("手数料", payloadChanges?.fees)}
         {renderChangeList("オプションプリセット", payloadChanges?.optionPresets)}
         {renderChangeList("大カテゴリ", payloadChanges?.categoriesLarge)}
         {renderChangeList("中カテゴリ", payloadChanges?.categoriesMedium)}

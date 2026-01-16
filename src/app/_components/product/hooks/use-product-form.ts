@@ -41,6 +41,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
     equipmentAllocDrafts,
     logisticsDrafts,
     electricityDrafts,
+    feeDrafts,
     totalEquipmentHours,
     resetFormState,
   } = draftState
@@ -122,7 +123,16 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
 
     const electricity = electricityDrafts.reduce((sum, draft) => sum + (Number(draft.costPerUnit) || 0), 0)
 
-    const total = material + packaging + labor + outsourcing + development + equipment + logistics + electricity
+    const fees = feeDrafts.reduce((sum, draft) => {
+      const fee = data.fees.find((item) => item.id === draft.feeId)
+      if (!fee) return sum
+      const rate = Number(fee.ratePercent) || 0
+      const fixed = Number(fee.fixedAmount) || 0
+      return sum + (salePrice * rate) / 100 + fixed
+    }, 0)
+
+    const total =
+      material + packaging + labor + outsourcing + development + equipment + logistics + electricity + fees
     const grossProfit = salePrice - total
     const profitMargin = salePrice > 0 ? (grossProfit / salePrice) * 100 : 0
 
@@ -140,16 +150,19 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
         { key: "equipment", label: "設備配賦", value: equipment },
         { key: "logistics", label: "物流費", value: logistics },
         { key: "electricity", label: "電気代", value: electricity },
+        { key: "fees", label: "手数料", value: fees },
       ],
     }
   }, [
     data.equipments,
     data.laborRoles,
     data.materials,
+    data.fees,
     data.packagingItems,
     developmentDrafts,
     existingEquipmentQuantities,
     electricityDrafts,
+    feeDrafts,
     equipmentAllocDrafts,
     laborDrafts,
     logisticsDrafts,
@@ -191,12 +204,13 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
         addPackagingCostEntry,
         addLaborCostEntry,
         addOutsourcingCostEntry,
-        addDevelopmentCostEntry,
-        addEquipmentAllocation,
-        addLogisticsCostEntry,
-        addElectricityCostEntry,
-        removeCostEntriesByProduct,
-      } = actions
+      addDevelopmentCostEntry,
+      addEquipmentAllocation,
+      addLogisticsCostEntry,
+      addElectricityCostEntry,
+      addFeeCostEntry,
+      removeCostEntriesByProduct,
+    } = actions
 
       const isEditing = Boolean(args.editingProductId)
       const targetProductId = args.editingProductId ?? createTempId()
@@ -339,6 +353,20 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
           })
         )
 
+      feeDrafts
+        .filter((draft) => draft.feeId)
+        .forEach((draft) => {
+          const fee = data.fees.find((item) => item.id === draft.feeId)
+          if (!fee) return
+          addFeeCostEntry({
+            productId: targetProductId,
+            feeId: draft.feeId,
+            ratePercent: fee.ratePercent,
+            fixedAmount: fee.fixedAmount,
+            currency: fee.currency,
+          })
+        })
+
       toast.success(isEditing ? "商品を更新しました" : "商品を登録しました", {
         description: `「${normalizedProduct.name || "商品"}」の原価情報を保存しました。`,
       })
@@ -354,6 +382,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
       data.materials,
       data.packagingItems,
       electricityDrafts,
+      feeDrafts,
       equipmentAllocDrafts,
       laborDrafts,
       logisticsDrafts,
@@ -364,6 +393,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
       resetFormState,
       shippingMethods,
       developmentDrafts,
+      data.fees,
     ]
   )
 

@@ -42,6 +42,7 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
                   <TableHead>設備</TableHead>
                   <TableHead>物流</TableHead>
                   <TableHead>電気</TableHead>
+                  <TableHead>手数料</TableHead>
                   <TableHead>合計</TableHead>
                 </TableRow>
               </TableHeader>
@@ -57,6 +58,7 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
                     <TableCell>{formatCurrency(costs.equipment)}</TableCell>
                     <TableCell>{formatCurrency(costs.logistics)}</TableCell>
                     <TableCell>{formatCurrency(costs.electricity)}</TableCell>
+                    <TableCell>{formatCurrency(costs.fees)}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(costs.total)}</TableCell>
                   </TableRow>
                 ))}

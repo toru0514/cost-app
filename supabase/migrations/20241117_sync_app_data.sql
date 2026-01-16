@@ -43,6 +43,11 @@ begin
     alter table equipments add constraint equipments_user_id_id_key unique (user_id, id);
   end if;
   if not exists (
+    select 1 from pg_constraint where conname = 'fees_user_id_id_key'
+  ) then
+    alter table fees add constraint fees_user_id_id_key unique (user_id, id);
+  end if;
+  if not exists (
     select 1 from pg_constraint where conname = 'option_presets_user_id_id_key'
   ) then
     alter table option_presets add constraint option_presets_user_id_id_key unique (user_id, id);
@@ -92,6 +97,20 @@ begin
   ) then
     alter table cost_entries_electricity add constraint cost_entries_electricity_user_id_id_key unique (user_id, id);
   end if;
+  if not exists (
+    select 1 from pg_constraint where conname = 'cost_entries_fees_user_id_id_key'
+  ) then
+    alter table cost_entries_fees add constraint cost_entries_fees_user_id_id_key unique (user_id, id);
+  end if;
+
+  if not exists (
+    select 1 from information_schema.columns
+    where table_schema = 'public'
+      and table_name = 'equipments'
+      and column_name = 'utilization_rate'
+  ) then
+    alter table equipments add column utilization_rate numeric default 100 not null;
+  end if;
 end $$;
 
 create or replace function sync_app_data(p_user_id uuid, p_payload jsonb)
@@ -127,7 +146,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'categories_large_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from categories_large where user_id = p_user_id and id in (select id from tmp_deleted_categories_large);
+  delete from categories_large where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_categories_large);
 
   v_stage := 'categories_medium';
   create temporary table tmp_categories_medium (id uuid, name text, description text, large_id uuid) on commit drop;
@@ -146,7 +165,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'categories_medium_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from categories_medium where user_id = p_user_id and id in (select id from tmp_deleted_categories_medium);
+  delete from categories_medium where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_categories_medium);
 
   v_stage := 'categories_small';
   create temporary table tmp_categories_small (id uuid, name text, description text, medium_id uuid) on commit drop;
@@ -165,7 +184,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'categories_small_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from categories_small where user_id = p_user_id and id in (select id from tmp_deleted_categories_small);
+  delete from categories_small where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_categories_small);
 
   v_stage := 'materials';
   create temporary table tmp_materials (
@@ -208,7 +227,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'materials_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from materials where user_id = p_user_id and id in (select id from tmp_deleted_materials);
+  delete from materials where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_materials);
 
   v_stage := 'packaging_items';
   create temporary table tmp_packaging_items (
@@ -248,7 +267,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'packaging_items_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from packaging_items where user_id = p_user_id and id in (select id from tmp_deleted_packaging_items);
+  delete from packaging_items where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_packaging_items);
 
   v_stage := 'shipping_methods';
   create temporary table tmp_shipping_methods (
@@ -282,7 +301,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'shipping_methods_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from shipping_methods where user_id = p_user_id and id in (select id from tmp_deleted_shipping_methods);
+  delete from shipping_methods where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_shipping_methods);
 
   v_stage := 'labor_roles';
   create temporary table tmp_labor_roles (
@@ -313,7 +332,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'labor_roles_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from labor_roles where user_id = p_user_id and id in (select id from tmp_deleted_labor_roles);
+  delete from labor_roles where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_labor_roles);
 
   v_stage := 'equipments';
   create temporary table tmp_equipments (
@@ -350,7 +369,40 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'equipments_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from equipments where user_id = p_user_id and id in (select id from tmp_deleted_equipments);
+  delete from equipments where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_equipments);
+
+  v_stage := 'fees';
+  create temporary table tmp_fees (
+    id uuid,
+    name text,
+    rate_percent numeric,
+    fixed_amount numeric,
+    currency text,
+    note text
+  ) on commit drop;
+  insert into tmp_fees (id, name, rate_percent, fixed_amount, currency, note)
+  select coalesce((value->>'id')::uuid, gen_random_uuid()),
+         value->>'name',
+         coalesce(nullif(value->>'rate_percent','')::numeric, 0),
+         coalesce(nullif(value->>'fixed_amount','')::numeric, 0),
+         value->>'currency',
+         nullif(value->>'note','')
+  from jsonb_array_elements(coalesce(p_payload->'fees', '[]'::jsonb)) as value;
+  insert into fees (id, user_id, name, rate_percent, fixed_amount, currency, note)
+  select tmp.id, p_user_id, tmp.name, tmp.rate_percent, tmp.fixed_amount, tmp.currency, tmp.note from tmp_fees tmp
+  on conflict (user_id, id) do update set
+    name = excluded.name,
+    rate_percent = excluded.rate_percent,
+    fixed_amount = excluded.fixed_amount,
+    currency = excluded.currency,
+    note = excluded.note;
+
+  create temporary table tmp_deleted_fees (id uuid) on commit drop;
+  insert into tmp_deleted_fees (id)
+  select (value->>'id')::uuid
+  from jsonb_array_elements(coalesce(p_payload->'fees_deleted', '[]'::jsonb)) as value
+  where value ? 'id';
+  delete from fees where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_fees);
 
   v_stage := 'option_presets';
   create temporary table tmp_option_presets (
@@ -372,7 +424,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'option_presets_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from option_presets where user_id = p_user_id and id in (select id from tmp_deleted_option_presets);
+  delete from option_presets where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_option_presets);
 
   v_stage := 'products';
   create temporary table tmp_products (
@@ -483,7 +535,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'products_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from products where user_id = p_user_id and id in (select id from tmp_deleted_products);
+  delete from products where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_products);
 
   v_stage := 'cost_entries_materials';
   create temporary table tmp_cost_entries_materials (
@@ -520,7 +572,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_materials_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from cost_entries_materials where user_id = p_user_id and id in (select id from tmp_deleted_cost_entries_materials);
+  delete from cost_entries_materials where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_cost_entries_materials);
 
   v_stage := 'cost_entries_packaging';
   create temporary table tmp_cost_entries_packaging (
@@ -554,7 +606,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_packaging_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from cost_entries_packaging where user_id = p_user_id and id in (select id from tmp_deleted_cost_entries_packaging);
+  delete from cost_entries_packaging where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_cost_entries_packaging);
 
   v_stage := 'cost_entries_labor';
   create temporary table tmp_cost_entries_labor (
@@ -588,7 +640,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_labor_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from cost_entries_labor where user_id = p_user_id and id in (select id from tmp_deleted_cost_entries_labor);
+  delete from cost_entries_labor where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_cost_entries_labor);
 
   v_stage := 'cost_entries_outsourcing';
   create temporary table tmp_cost_entries_outsourcing (
@@ -619,7 +671,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_outsourcing_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from cost_entries_outsourcing where user_id = p_user_id and id in (select id from tmp_deleted_cost_entries_outsourcing);
+  delete from cost_entries_outsourcing where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_cost_entries_outsourcing);
 
   v_stage := 'cost_entries_development';
   create temporary table tmp_cost_entries_development (
@@ -656,7 +708,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_development_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from cost_entries_development where user_id = p_user_id and id in (select id from tmp_deleted_cost_entries_development);
+  delete from cost_entries_development where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_cost_entries_development);
 
   v_stage := 'cost_entries_equipment';
   create temporary table tmp_cost_entries_equipment (
@@ -690,7 +742,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_equipment_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from cost_entries_equipment where user_id = p_user_id and id in (select id from tmp_deleted_cost_entries_equipment);
+  delete from cost_entries_equipment where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_cost_entries_equipment);
 
   v_stage := 'cost_entries_logistics';
   create temporary table tmp_cost_entries_logistics (
@@ -721,7 +773,7 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_logistics_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from cost_entries_logistics where user_id = p_user_id and id in (select id from tmp_deleted_cost_entries_logistics);
+  delete from cost_entries_logistics where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_cost_entries_logistics);
 
     v_stage := 'cost_entries_electricity';
     create temporary table tmp_cost_entries_electricity (
@@ -749,7 +801,41 @@ begin
   select (value->>'id')::uuid
   from jsonb_array_elements(coalesce(p_payload->'cost_entries_electricity_deleted', '[]'::jsonb)) as value
   where value ? 'id';
-  delete from cost_entries_electricity where user_id = p_user_id and id in (select id from tmp_deleted_cost_entries_electricity);
+  delete from cost_entries_electricity where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_cost_entries_electricity);
+
+  v_stage := 'cost_entries_fees';
+  create temporary table tmp_cost_entries_fees (
+    id uuid,
+    product_id uuid,
+    fee_id uuid,
+    rate_percent numeric,
+    fixed_amount numeric,
+    currency text
+  ) on commit drop;
+  insert into tmp_cost_entries_fees (id, product_id, fee_id, rate_percent, fixed_amount, currency)
+  select coalesce((value->>'id')::uuid, gen_random_uuid()),
+         nullif(value->>'product_id','')::uuid,
+         nullif(value->>'fee_id','')::uuid,
+         coalesce(nullif(value->>'rate_percent','')::numeric, 0),
+         coalesce(nullif(value->>'fixed_amount','')::numeric, 0),
+         value->>'currency'
+  from jsonb_array_elements(coalesce(p_payload->'cost_entries_fees', '[]'::jsonb)) as value;
+  insert into cost_entries_fees (id, user_id, product_id, fee_id, rate_percent, fixed_amount, currency)
+  select tmp.id, p_user_id, tmp.product_id, tmp.fee_id, tmp.rate_percent, tmp.fixed_amount, tmp.currency
+  from tmp_cost_entries_fees tmp
+  on conflict (user_id, id) do update set
+    product_id = excluded.product_id,
+    fee_id = excluded.fee_id,
+    rate_percent = excluded.rate_percent,
+    fixed_amount = excluded.fixed_amount,
+    currency = excluded.currency;
+
+  create temporary table tmp_deleted_cost_entries_fees (id uuid) on commit drop;
+  insert into tmp_deleted_cost_entries_fees (id)
+  select (value->>'id')::uuid
+  from jsonb_array_elements(coalesce(p_payload->'cost_entries_fees_deleted', '[]'::jsonb)) as value
+  where value ? 'id';
+  delete from cost_entries_fees where user_id::text = p_user_id::text and id::text in (select id::text from tmp_deleted_cost_entries_fees);
   exception
     when others then
       get stacked diagnostics

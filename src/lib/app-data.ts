@@ -19,6 +19,8 @@ import {
   LogisticsCostEntry,
   Material,
   MaterialCostEntry,
+  Fee,
+  FeeCostEntry,
   OutsourcingCostEntry,
   PackagingCostEntry,
   PackagingItem,
@@ -41,6 +43,41 @@ const createId = () =>
 
 const cloneAppData = (dataset: AppData): AppData => JSON.parse(JSON.stringify(dataset))
 
+const ensureArray = <T,>(value: T[] | null | undefined): T[] => (Array.isArray(value) ? value : [])
+
+const normalizeAppData = (dataset?: Partial<AppData> | null): AppData => {
+  const source = dataset ?? {}
+  const categories = source.categories ?? {}
+  const costEntries = source.costEntries ?? {}
+
+  return {
+    categories: {
+      large: ensureArray(categories.large),
+      medium: ensureArray(categories.medium),
+      small: ensureArray(categories.small),
+    },
+    materials: ensureArray(source.materials),
+    packagingItems: ensureArray(source.packagingItems),
+    shippingMethods: ensureArray(source.shippingMethods),
+    laborRoles: ensureArray(source.laborRoles),
+    equipments: ensureArray(source.equipments),
+    fees: ensureArray(source.fees),
+    optionPresets: ensureArray(source.optionPresets),
+    products: ensureArray(source.products),
+    costEntries: {
+      materials: ensureArray(costEntries.materials),
+      packaging: ensureArray(costEntries.packaging),
+      labor: ensureArray(costEntries.labor),
+      outsourcing: ensureArray(costEntries.outsourcing),
+      development: ensureArray(costEntries.development),
+      equipmentAllocations: ensureArray(costEntries.equipmentAllocations),
+      logistics: ensureArray(costEntries.logistics),
+      electricity: ensureArray(costEntries.electricity),
+      fees: ensureArray(costEntries.fees),
+    },
+  }
+}
+
 type Updater<T> = (state: T) => T
 
 const apply = <T,>(set: React.Dispatch<React.SetStateAction<T>>, updater: Updater<T>) => {
@@ -54,6 +91,7 @@ const hasMeaningfulData = (dataset: AppData) => {
   if ((dataset.shippingMethods ?? []).length > 0) return true
   if (dataset.laborRoles.length > 0) return true
   if (dataset.equipments.length > 0) return true
+  if (dataset.fees.length > 0) return true
   if (dataset.optionPresets.length > 0) return true
   if (dataset.categories.large.length > 0) return true
   if (dataset.categories.medium.length > 0) return true
@@ -67,6 +105,7 @@ const hasMeaningfulData = (dataset: AppData) => {
   if (entries.equipmentAllocations.length > 0) return true
   if (entries.logistics.length > 0) return true
   if (entries.electricity.length > 0) return true
+  if (entries.fees.length > 0) return true
   return false
 }
 
@@ -201,9 +240,10 @@ export function useAppData() {
     const stored = window.localStorage.getItem(STORAGE_KEY)
     if (stored) {
       try {
-        const parsed = JSON.parse(stored) as AppData
+        const parsed = JSON.parse(stored) as Partial<AppData>
+        const normalized = normalizeAppData(parsed)
         startTransition(() => {
-          setData(parsed)
+          setData(normalized)
         })
       } catch (error) {
         console.warn("Failed to parse stored data", error)
@@ -245,8 +285,9 @@ export function useAppData() {
         }
         skipNextSaveRef.current = true
         clearSaveRetry()
-        setData(remote)
-        lastSyncedDataRef.current = cloneAppData(remote)
+        const normalized = normalizeAppData(remote)
+        setData(normalized)
+        lastSyncedDataRef.current = cloneAppData(normalized)
         if (typeof window !== "undefined") {
           window.localStorage.removeItem(STORAGE_KEY)
         }
@@ -576,6 +617,32 @@ export function useAppData() {
     }))
   }, [update])
 
+  const addFee = useCallback(
+    (input: Omit<Fee, "id"> & { id?: string }) => {
+      const { id, ...rest } = input
+      update((prev) => ({ ...prev, fees: [...prev.fees, { id: id ?? createId(), ...rest }] }))
+    },
+    [update]
+  )
+
+  const updateFee = useCallback((input: Fee) => {
+    update((prev) => ({
+      ...prev,
+      fees: prev.fees.map((fee) => (fee.id === input.id ? input : fee)),
+    }))
+  }, [update])
+
+  const removeFee = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      fees: prev.fees.filter((fee) => fee.id !== id),
+      costEntries: {
+        ...prev.costEntries,
+        fees: prev.costEntries.fees.filter((entry) => entry.feeId !== id),
+      },
+    }))
+  }, [update])
+
   const addProduct = useCallback(
     (input: Omit<Product, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -706,6 +773,20 @@ export function useAppData() {
     [update]
   )
 
+  const addFeeCostEntry = useCallback(
+    (input: Omit<FeeCostEntry, "id"> & { id?: string }) => {
+      const { id, ...rest } = input
+      update((prev) => ({
+        ...prev,
+        costEntries: {
+          ...prev.costEntries,
+          fees: [...prev.costEntries.fees, { id: id ?? createId(), ...rest }],
+        },
+      }))
+    },
+    [update]
+  )
+
   const removeProduct = useCallback(
     (productId: string) => {
       update((prev) => ({
@@ -729,6 +810,7 @@ export function useAppData() {
           equipmentAllocations: prev.costEntries.equipmentAllocations.filter((entry) => entry.productId !== productId),
           logistics: prev.costEntries.logistics.filter((entry) => entry.productId !== productId),
           electricity: prev.costEntries.electricity.filter((entry) => entry.productId !== productId),
+          fees: prev.costEntries.fees.filter((entry) => entry.productId !== productId),
         },
       }))
     },
@@ -795,6 +877,9 @@ export function useAppData() {
       addEquipment,
       updateEquipment,
       removeEquipment,
+      addFee,
+      updateFee,
+      removeFee,
       addProduct,
       updateProduct,
       addMaterialCostEntry,
@@ -805,6 +890,7 @@ export function useAppData() {
       addEquipmentAllocation,
       addLogisticsCostEntry,
       addElectricityCostEntry,
+      addFeeCostEntry,
       removeProduct,
       removeCostEntriesByProduct,
       resetAll,

@@ -10,6 +10,7 @@ import { MaterialListSection } from "../sections/material"
 import { OptionPresetListSection } from "../sections/option-preset"
 import { PackagingListSection } from "../sections/packaging"
 import { ShippingListSection } from "../sections/shipping"
+import { FeeListSection } from "../sections/fee"
 
 interface MasterListViewProps {
   data: AppData
@@ -35,6 +36,7 @@ export function MasterListView({ data, actions }: MasterListViewProps) {
 
       <div className="space-y-6">
         <ShippingListSection data={data} actions={actions} createTempId={createTempId} />
+        <FeeListSection data={data} actions={actions} createTempId={createTempId} />
         <LaborListSection data={data} actions={actions} createTempId={createTempId} />
         <EquipmentListSection data={data} actions={actions} createTempId={createTempId} />
       </div>

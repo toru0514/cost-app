@@ -11,6 +11,7 @@ export function formatCurrency(value: number, currency = "JPY") {
 export function calculateProductUnitCosts(productId: string, data: AppData) {
   const product = data.products.find((p) => p.id === productId)
   const quantity = product?.expectedProduction.quantity || 1
+  const salePrice = product?.salePrice || 0
 
   const material = data.costEntries.materials
     .filter((entry) => entry.productId === productId)
@@ -76,6 +77,14 @@ export function calculateProductUnitCosts(productId: string, data: AppData) {
     .filter((entry) => entry.productId === productId)
     .reduce((sum, entry) => sum + entry.costPerUnit, 0)
 
+  const fees = data.costEntries.fees
+    .filter((entry) => entry.productId === productId)
+    .reduce((sum, entry) => {
+      const rate = Number(entry.ratePercent) || 0
+      const fixed = Number(entry.fixedAmount) || 0
+      return sum + (salePrice * rate) / 100 + fixed
+    }, 0)
+
   const total =
     material +
     packaging +
@@ -84,7 +93,8 @@ export function calculateProductUnitCosts(productId: string, data: AppData) {
     development +
     equipment +
     logistics +
-    electricity
+    electricity +
+    fees
 
   return {
     material,
@@ -95,6 +105,7 @@ export function calculateProductUnitCosts(productId: string, data: AppData) {
     equipment,
     logistics,
     electricity,
+    fees,
     total,
   }
 }

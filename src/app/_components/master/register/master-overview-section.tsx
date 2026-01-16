@@ -14,6 +14,7 @@ export type MasterOverviewType =
   | "packaging"
   | "labor"
   | "equipment"
+  | "fees"
   | "shipping"
   | "optionPresets"
   | "categoryLarge"
@@ -34,6 +35,7 @@ const MASTER_OVERVIEW_TYPE_OPTIONS: { value: MasterOverviewType; label: string }
   { value: "packaging", label: "梱包材" },
   { value: "labor", label: "人件費" },
   { value: "equipment", label: "設備" },
+  { value: "fees", label: "手数料" },
   { value: "shipping", label: "配送方法" },
   { value: "optionPresets", label: "オプションプリセット" },
   { value: "categoryLarge", label: "カテゴリ (大)" },
@@ -111,6 +113,18 @@ export function MasterOverviewSection({ data }: MasterOverviewSectionProps) {
             value: equipment.acquisitionCost,
             currency: equipment.currency,
             searchText: `${equipment.name} ${equipment.note ?? ""}`.toLowerCase(),
+          }
+        }),
+      fees: (appData) =>
+        appData.fees.map((fee) => {
+          const detail = `${fee.ratePercent}% + ${formatCurrency(fee.fixedAmount, fee.currency)}`
+          return {
+            id: fee.id,
+            name: fee.name,
+            detail: fee.note ? `${detail} / ${fee.note}` : detail,
+            value: fee.fixedAmount + fee.ratePercent,
+            currency: fee.currency,
+            searchText: `${fee.name} ${fee.note ?? ""}`.toLowerCase(),
           }
         }),
       shipping: (appData) =>

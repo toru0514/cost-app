@@ -56,3 +56,8 @@ export type ElectricityCostDraft = {
   costPerUnit: NumericValue
   currency: string
 }
+
+export type FeeCostDraft = {
+  id: string
+  feeId: string
+}

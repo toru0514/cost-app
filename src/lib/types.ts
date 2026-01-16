@@ -68,6 +68,15 @@ export type Equipment = {
   note?: string
 }
 
+export type Fee = {
+  id: string
+  name: string
+  ratePercent: number
+  fixedAmount: number
+  currency: string
+  note?: string
+}
+
 export type ProductSizeVariant = {
   label: string
   quantity: number
@@ -169,6 +178,15 @@ export type ElectricityCostEntry = {
   currency: string
 }
 
+export type FeeCostEntry = {
+  id: string
+  productId: string
+  feeId: string
+  ratePercent: number
+  fixedAmount: number
+  currency: string
+}
+
 export type AuditLogMetadata = {
   changes?: {
     products?: ChangeSummary
@@ -178,6 +196,7 @@ export type AuditLogMetadata = {
     laborRoles?: ChangeSummary
     equipments?: ChangeSummary
     optionPresets?: ChangeSummary
+    fees?: ChangeSummary
     categoriesLarge?: ChangeSummary
     categoriesMedium?: ChangeSummary
     categoriesSmall?: ChangeSummary
@@ -203,6 +222,7 @@ export type AuditLogMetadata = {
     laborRoles: number
     equipments: number
     optionPresets: number
+    fees: number
     products: number
     costEntries: {
       materials: number
@@ -213,6 +233,7 @@ export type AuditLogMetadata = {
       equipment: number
       logistics: number
       electricity: number
+      fees: number
     }
     summary?: {
       totalCategories: number
@@ -252,6 +273,7 @@ export type AppData = {
   shippingMethods: ShippingMethod[]
   laborRoles: LaborRole[]
   equipments: Equipment[]
+  fees: Fee[]
   optionPresets: OptionPreset[]
   products: Product[]
   costEntries: {
@@ -263,6 +285,7 @@ export type AppData = {
     equipmentAllocations: EquipmentAllocationEntry[]
     logistics: LogisticsCostEntry[]
     electricity: ElectricityCostEntry[]
+    fees: FeeCostEntry[]
   }
 }
 
@@ -277,6 +300,7 @@ export const emptyAppData: AppData = {
   shippingMethods: [],
   laborRoles: [],
   equipments: [],
+  fees: [],
   optionPresets: [],
   products: [],
   costEntries: {
@@ -288,6 +312,7 @@ export const emptyAppData: AppData = {
     equipmentAllocations: [],
     logistics: [],
     electricity: [],
+    fees: [],
   },
 }
 
@@ -391,6 +416,24 @@ export const sampleAppData: AppData = {
       amortizationYears: 5,
       utilizationRate: 100,
       note: "自動裁断",
+    },
+  ],
+  fees: [
+    {
+      id: "fee-1",
+      name: "ECプラットフォーム手数料",
+      ratePercent: 6.6,
+      fixedAmount: 40,
+      currency: "JPY",
+      note: "販売額の% + 1件あたり固定",
+    },
+    {
+      id: "fee-2",
+      name: "決済手数料",
+      ratePercent: 3,
+      fixedAmount: 0,
+      currency: "JPY",
+      note: "クレジット決済",
     },
   ],
   optionPresets: [
@@ -535,6 +578,16 @@ export const sampleAppData: AppData = {
         id: "ele-cost-1",
         productId: "prod-1",
         costPerUnit: 25,
+        currency: "JPY",
+      },
+    ],
+    fees: [
+      {
+        id: "fee-cost-1",
+        productId: "prod-1",
+        feeId: "fee-1",
+        ratePercent: 6.6,
+        fixedAmount: 40,
         currency: "JPY",
       },
     ],

@@ -12,6 +12,7 @@ import type {
   MaterialCostDraft,
   OutsourcingCostDraft,
   PackagingCostDraft,
+  FeeCostDraft,
 } from "../types"
 
 const createTempId = () =>
@@ -59,6 +60,7 @@ export interface ProductDraftStateResult {
   equipmentAllocDrafts: EquipmentAllocationDraft[]
   logisticsDrafts: LogisticsCostDraft[]
   electricityDrafts: ElectricityCostDraft[]
+  feeDrafts: FeeCostDraft[]
   totalEquipmentHours: number
   handleToggleEquipment: (equipmentId: string, checked: boolean) => void
   handleAddMaterialDraft: () => void
@@ -83,6 +85,9 @@ export interface ProductDraftStateResult {
   handleAddElectricityDraft: () => void
   handleUpdateElectricityDraft: (id: string, patch: Partial<ElectricityCostDraft>) => void
   handleRemoveElectricityDraft: (id: string) => void
+  handleAddFeeDraft: () => void
+  handleUpdateFeeDraft: (id: string, patch: Partial<FeeCostDraft>) => void
+  handleRemoveFeeDraft: (id: string) => void
   resetFormState: () => void
   handleCancelEdit: () => void
 }
@@ -149,6 +154,11 @@ export function useProductDraftState({
   const createElectricityDraft = useCallback(
     (): ElectricityCostDraft => ({ id: createTempId(), costPerUnit: "", currency: "JPY" }),
     []
+  )
+
+  const createFeeDraft = useCallback(
+    (): FeeCostDraft => ({ id: createTempId(), feeId: data.fees[0]?.id ?? "" }),
+    [data.fees]
   )
 
   const createEmptyProductForm = (): Omit<Product, "id"> => ({
@@ -274,6 +284,18 @@ export function useProductDraftState({
     return entries.length ? entries : [createElectricityDraft()]
   }
 
+  const buildInitialFeeDrafts = () => {
+    if (!editingProductId) return data.fees.length ? [createFeeDraft()] : []
+    const entries = data.costEntries.fees
+      .filter((entry) => entry.productId === editingProductId)
+      .map((entry) => ({
+        id: createTempId(),
+        feeId: entry.feeId,
+      }))
+    if (entries.length > 0) return entries
+    return data.fees.length ? [createFeeDraft()] : []
+  }
+
   const [materialDrafts, setMaterialDrafts] = useState<MaterialCostDraft[]>(buildInitialMaterialDrafts)
   const [packagingDrafts, setPackagingDrafts] = useState<PackagingCostDraft[]>(buildInitialPackagingDrafts)
   const [laborDrafts, setLaborDrafts] = useState<LaborCostDraft[]>(buildInitialLaborDrafts)
@@ -282,6 +304,7 @@ export function useProductDraftState({
   const [equipmentAllocDrafts, setEquipmentAllocDrafts] = useState<EquipmentAllocationDraft[]>(buildInitialEquipmentDrafts)
   const [logisticsDrafts, setLogisticsDrafts] = useState<LogisticsCostDraft[]>(buildInitialLogisticsDrafts)
   const [electricityDrafts, setElectricityDrafts] = useState<ElectricityCostDraft[]>(buildInitialElectricityDrafts)
+  const [feeDrafts, setFeeDrafts] = useState<FeeCostDraft[]>(buildInitialFeeDrafts)
   const [productForm, setProductForm] = useState<Omit<Product, "id">>(createEmptyProductForm)
 
   const handleAddMaterialDraft = useCallback(
@@ -368,6 +391,16 @@ export function useProductDraftState({
   )
   const handleRemoveElectricityDraft = useCallback((id: string) => removeDraft(setElectricityDrafts, id), [])
 
+  const handleAddFeeDraft = useCallback(
+    () => addDraft(setFeeDrafts, createFeeDraft()),
+    [createFeeDraft]
+  )
+  const handleUpdateFeeDraft = useCallback(
+    (id: string, patch: Partial<FeeCostDraft>) => updateDraft(setFeeDrafts, id, patch),
+    []
+  )
+  const handleRemoveFeeDraft = useCallback((id: string) => removeDraft(setFeeDrafts, id), [])
+
   const resetFormState = useCallback(() => {
     setProductForm(createEmptyProductForm())
     setMaterialDrafts([createMaterialDraft()])
@@ -378,6 +411,7 @@ export function useProductDraftState({
     setEquipmentAllocDrafts([])
     setLogisticsDrafts([createLogisticsDraft()])
     setElectricityDrafts([createElectricityDraft()])
+    setFeeDrafts(data.fees.length ? [createFeeDraft()] : [])
   }, [
     createDevelopmentDraft,
     createElectricityDraft,
@@ -386,6 +420,8 @@ export function useProductDraftState({
     createMaterialDraft,
     createOutsourcingDraft,
     createPackagingDraft,
+    createFeeDraft,
+    data.fees.length,
   ])
 
   const handleToggleEquipment = useCallback(
@@ -565,6 +601,19 @@ export function useProductDraftState({
         )
       )
 
+      setFeeDrafts(
+        mapOrFallback(
+          data.costEntries.fees
+            .filter((entry) => entry.productId === productId)
+            .map((entry) => ({
+              id: createTempId(),
+              feeId: entry.feeId,
+            })),
+          createFeeDraft,
+          data.fees.length === 0
+        )
+      )
+
       autoLaborHoursRef.current = product.baseManHours
       return product
     },
@@ -576,6 +625,7 @@ export function useProductDraftState({
       createMaterialDraft,
       createOutsourcingDraft,
       createPackagingDraft,
+      createFeeDraft,
       data.costEntries.development,
       data.costEntries.electricity,
       data.costEntries.equipmentAllocations,
@@ -584,7 +634,9 @@ export function useProductDraftState({
       data.costEntries.materials,
       data.costEntries.outsourcing,
       data.costEntries.packaging,
+      data.costEntries.fees,
       data.products,
+      data.fees.length,
     ]
   )
 
@@ -642,6 +694,7 @@ export function useProductDraftState({
     equipmentAllocDrafts,
     logisticsDrafts,
     electricityDrafts,
+    feeDrafts,
     totalEquipmentHours,
     handleToggleEquipment,
     handleAddMaterialDraft,
@@ -666,6 +719,9 @@ export function useProductDraftState({
     handleAddElectricityDraft,
     handleUpdateElectricityDraft,
     handleRemoveElectricityDraft,
+    handleAddFeeDraft,
+    handleUpdateFeeDraft,
+    handleRemoveFeeDraft,
     resetFormState,
     handleCancelEdit,
   }

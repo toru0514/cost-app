@@ -39,6 +39,7 @@
 - **packaging_items**: `id`, `name`, `unit`, `size_description`, `default_currency`, `notes`, `created_at`, `updated_at`。
 - **labor_roles**: `id`, `name`, `hourly_rate`, `currency`, `notes`, `created_at`, `updated_at`（時給レートマスタ）。
 - **equipments**: `id`, `name`, `acquisition_cost`, `currency`, `amortization_years`, `notes`, `created_at`, `updated_at`。
+- **fees**: `id`, `name`, `rate_percent`, `fixed_amount`, `currency`, `notes`, `created_at`, `updated_at`（販売・決済手数料マスタ）。
 
 ### 商品別コスト入力テーブル
 - **material_cost_entries**: `id`, `product_id`, `material_id`, `material_price_log_id`, `usage_ratio`, `usage_amount`, `unit`, `yield_rate`, `notes`, `created_at`, `updated_at`。
@@ -49,6 +50,7 @@
 - **equipment_allocations**: `id`, `product_id`, `equipment_id`, `allocation_ratio`, `annual_quantity`, `created_at`, `updated_at`。
 - **logistics_cost_entries**: `id`, `product_id`, `shipping_method`, `cost_per_unit`, `currency`, `notes`, `created_at`, `updated_at`。
 - **electricity_cost_entries**: `id`, `product_id`, `cost_per_unit`, `currency`, `created_at`, `updated_at`（商品登録時に入力）。
+- **fee_cost_entries**: `id`, `product_id`, `fee_id`, `rate_percent`, `fixed_amount`, `currency`, `created_at`, `updated_at`。
 
 ### 集計・履歴系（必要に応じて）
 - **cost_snapshots**: `id`, `product_id`, `total_material`, `total_packaging`, `total_labor`, `total_outsourcing`, `total_development`, `total_equipment`, `total_logistics`, `total_electricity`, `unit_cost`, `selling_price`, `margin`, `captured_at`。
@@ -117,6 +119,7 @@ UI → Application Ports → Domain Services → Repository Adapters という�
 |開発コスト|試作段階で発生するコスト。|試作工数、試作用材料費、試作用道具費、償却年数|
 |設備投資|機械・治具・ITインフラなどの購入や減価償却。|設備名、取得額、償却年数、想定年間生産数量|
 |物流・配送費|保管、輸送、ラストワンマイル配送に関わるコスト。|配送方法、商品 1 つあたりの配送費用|
+|販売・決済手数料|EC モールや決済代行サービスへ支払う料率/固定費。|手数料名称、料率(%), 固定額、通貨、備考|
 |間接費（電気代のみ）|製造やオフィス運営で消費する電力コストに限定。|商品 1 つあたりに載せたい電気代|
 
 ## 今後整理したいこと
@@ -133,9 +136,9 @@ UI → Application Ports → Domain Services → Repository Adapters という�
 - カテゴリそのものやカテゴリ内の項目はユーザーが追加・名称変更・削除できる想定で、設定データを永続化しておく。
 
 ## 入力・計算フローのラフ案
-0. 事前準備として、材料マスタ・梱包材マスタ・設備一覧・時給レート（人件費）などを登録しておく。
+0. 事前準備として、材料マスタ・梱包材マスタ・設備一覧・時給レート（人件費）・販売/決済手数料マスタなどを登録しておく。
 1. ユーザーはカテゴリ一覧から必要なものだけ選択し、順番に入力フォームを開く。
-2. 商品登録フォーム内で材料・梱包・人件費・外注・開発・設備配賦・物流・電気などの原価要素をまとめて入力し、原価タブでは参照のみとする（再入力不要）。
+2. 商品登録フォーム内で材料・梱包・人件費・外注・開発・設備配賦・物流・電気・手数料などの原価要素をまとめて入力し、原価タブでは参照のみとする（再入力不要）。
 3. 入力済み原価は「原価確認」タブでカテゴリごとにサマリ表示される。
 4. すべての入力を終えたら「計算サマリ」テーブルで合計原価、1ユニットあたり原価、任意の販売価格に基づく利益率を算出。
 5. 後からカテゴリや項目を編集できるよう、計算サマリは常に最新の入力データを反映。
@@ -149,6 +152,7 @@ UI → Application Ports → Domain Services → Repository Adapters という�
 - **材料マスタページ**: 素材ごとの価格履歴・在庫を管理。
 - **設備ページ**: 設備登録、償却条件、年間生産数配分（商品ごとの利用割合もここで確認）。
 - **時給レートページ**: 職種/工程ごとの時給を登録。人件費入力フォームから参照。
+- **手数料マスタページ**: EC モールや決済サービスの料率/固定額を登録し、商品登録時に選択できるようにする。
 - **カテゴリマスタページ**: 大カテゴリ / 中カテゴリ / 小カテゴリを事前登録し、商品登録フォームでプルダウンから選択できるようにする。
 - **原価確認ページ**: 商品別の原価サマリ。ページ内に商品登録フォーム（基本情報/想定生産量/設備利用設定・原価要素入力など）を配置し、登録内容を参照専用のタブで確認する。
 - **カテゴリ入力ページ群**: 材料費、梱包材費、人件費など各カテゴリごとに独立した入力ページを用意し、マスタ参照しながら明細を追加。
@@ -156,7 +160,7 @@ UI → Application Ports → Domain Services → Repository Adapters という�
 - **原価確認ページ**: 商品登録時に入力した値のみを表示する参照専用タブ。入力はすべて商品登録フォームで完結する。
 
 ## UI メモ（商品登録フォーム / 在庫管理）
-- 「商品基本情報」「原価入力」という2つのセクションで構成し、同一フォーム内で材料・梱包・人件費・外注・開発・設備配賦・物流・電気代まで入力できるようにする。
+- 「商品基本情報」「原価入力」という2つのセクションで構成し、同一フォーム内で材料・梱包・人件費・外注・開発・設備配賦・物流・電気代・手数料まで入力できるようにする。
 - フォーム送信時に商品IDで紐づいたコストエントリがまとめて登録され、原価確認タブに即時反映される。原価確認タブは参照専用で、編集は商品登録フォーム側で実施。
 - 設備の利用状況や想定生産量など、配賦計算に必要な情報も商品登録時に揃える前提とし、後続タブでは再入力させない。
 - 在庫管理カードでは、材料マスタに紐づく在庫レコード（仕入先・ロケーション・在庫数量・単価）を登録し、商品登録とサマリから参照できるようにする。
@@ -196,8 +200,8 @@ UI → Application Ports → Domain Services → Repository Adapters という�
   - [x] Supabase プロジェクト作成・Auth 有効化、永続化するスキーマ設計（AppData を分割するか JSON で保存するか）を確定する。**→ 方針: AppData をテーブル単位へ分割し、各テーブルに `user_id`（Supabase Auth の UID）を持たせてユーザーと紐付ける。** テーブル例:
     - `profiles`: `user_id (PK)`, `name`, `email`, `created_at`.
     - `products`: `id`, `user_id`, `name`, `category_large_id`, `category_medium_id`, `category_small_id`, `sale_price`, `expected_production_quantity`, `notes`, `created_at`, `updated_at`.
-    - `materials`, `packaging_items`, `shipping_methods`, `labor_roles`, `equipments` ...（既存マスタと同名で、全て `user_id` を保持）。
-    - `cost_entries_*` 系（materials/packaging/labor/...）も同様に `user_id` を持たせ、`product_id` と合わせて参照。
+    - `materials`, `packaging_items`, `shipping_methods`, `labor_roles`, `equipments`, `fees` ...（既存マスタと同名で、全て `user_id` を保持）。
+    - `cost_entries_*` 系（materials/packaging/labor/fees/...）も同様に `user_id` を持たせ、`product_id` と合わせて参照。
     - 今回はマルチテナント/権限分離は行わず、`user_id` だけでアクセス制御する。
   - [x] Supabase API キー、URL を `.env.local` に定義し、必要パッケージ（`@supabase/supabase-js` など）を導入する。
   - [x] `AuthProvider` を Supabase Auth ベースに書き換え、セッション情報をアプリ全体に配信する。
@@ -351,4 +355,5 @@ UI → Application Ports → Domain Services → Repository Adapters という�
   - 開発コスト（試作工数コスト、試作用材料費、道具費、償却年数）
   - 設備配賦（設備マスタとの紐付け・利用割合、年間数量）
   - 物流・配送費（配送方法、単価、通貨）
+  - 販売・決済手数料（料率、固定額、使用するマスタの手数料 ID）
   - 電気代（1ユニットあたりの電気代、通貨）

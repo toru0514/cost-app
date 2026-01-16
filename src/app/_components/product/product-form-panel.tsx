@@ -16,6 +16,7 @@ import { MaterialCostSection } from "./sections/material-cost-section"
 import { OutsourcingCostSection } from "./sections/outsourcing-cost-section"
 import { PackagingCostSection } from "./sections/packaging-cost-section"
 import { DevelopmentCostSection } from "./sections/development-cost-section"
+import { FeeCostSection } from "./sections/fee-cost-section"
 
 interface ProductFormPanelProps {
   data: AppData
@@ -45,6 +46,7 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
     equipmentAllocDrafts,
     logisticsDrafts,
     electricityDrafts,
+    feeDrafts,
     totalEquipmentHours,
     costSummary,
     handleToggleEquipment,
@@ -70,6 +72,9 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
     handleAddElectricityDraft,
     handleUpdateElectricityDraft,
     handleRemoveElectricityDraft,
+    handleAddFeeDraft,
+    handleUpdateFeeDraft,
+    handleRemoveFeeDraft,
     handleSubmit,
     handleCancelEdit,
   } = useProductFormState(props)
@@ -162,6 +167,15 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
                   onAdd={handleAddLogisticsDraft}
                   onUpdate={handleUpdateLogisticsDraft}
                   onRemove={handleRemoveLogisticsDraft}
+                />
+
+                <FeeCostSection
+                  fees={data.fees}
+                  salePrice={Number(productForm.salePrice) || 0}
+                  drafts={feeDrafts}
+                  onAdd={handleAddFeeDraft}
+                  onUpdate={handleUpdateFeeDraft}
+                  onRemove={handleRemoveFeeDraft}
                 />
 
                 <ElectricityCostSection

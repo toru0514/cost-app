@@ -10,6 +10,7 @@ export const costKeyConfig = [
   { key: "equipment", label: "設備", color: "bg-amber-500" },
   { key: "logistics", label: "物流", color: "bg-rose-500" },
   { key: "electricity", label: "電気", color: "bg-stone-500" },
+  { key: "fees", label: "手数料", color: "bg-orange-600" },
 ] as const
 
 export type ProductSummary = {
@@ -36,6 +37,7 @@ export const createEmptyTotals = (): CostTotals => ({
   equipment: 0,
   logistics: 0,
   electricity: 0,
+  fees: 0,
   total: 0,
   totalQuantity: 0,
   productCount: 0,
@@ -53,6 +55,7 @@ export const aggregateCostTotals = (entries: ProductSummary[]): CostTotals => {
     acc.equipment += costs.equipment * quantity
     acc.logistics += costs.logistics * quantity
     acc.electricity += costs.electricity * quantity
+    acc.fees += (costs.fees ?? 0) * quantity
     acc.total += costs.total * quantity
     acc.totalQuantity += quantity
     acc.productCount += 1

@@ -20,6 +20,8 @@ import type {
   EquipmentAllocationEntry,
   LogisticsCostEntry,
   ElectricityCostEntry,
+  Fee,
+  FeeCostEntry,
 } from "./types"
 import { emptyAppData } from "./types"
 
@@ -34,6 +36,7 @@ const TABLES = {
   shipping: "shipping_methods",
   labor: "labor_roles",
   equipments: "equipments",
+  fees: "fees",
   optionPresets: "option_presets",
   products: "products",
   costEntries: {
@@ -45,6 +48,7 @@ const TABLES = {
     equipment: "cost_entries_equipment",
     logistics: "cost_entries_logistics",
     electricity: "cost_entries_electricity",
+    fees: "cost_entries_fees",
   },
 } as const
 
@@ -62,39 +66,43 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       small,
       materials,
       packaging,
-      shipping,
-      labor,
-      equipments,
-      optionPresets,
-      products,
-      costMaterials,
+    shipping,
+    labor,
+    equipments,
+    fees,
+    optionPresets,
+    products,
+    costMaterials,
       costPackaging,
       costLabor,
       costOutsourcing,
-      costDevelopment,
-      costEquipment,
-      costLogistics,
-      costElectricity,
-    ] = await Promise.all([
-      fetchRows<any>(TABLES.categories.large, userId),
-      fetchRows<any>(TABLES.categories.medium, userId),
-      fetchRows<any>(TABLES.categories.small, userId),
-      fetchRows<any>(TABLES.materials, userId),
-      fetchRows<any>(TABLES.packaging, userId),
-      fetchRows<any>(TABLES.shipping, userId),
-      fetchRows<any>(TABLES.labor, userId),
-      fetchRows<any>(TABLES.equipments, userId),
-      fetchRows<any>(TABLES.optionPresets, userId),
-      fetchRows<any>(TABLES.products, userId),
-      fetchRows<any>(TABLES.costEntries.materials, userId),
-      fetchRows<any>(TABLES.costEntries.packaging, userId),
-      fetchRows<any>(TABLES.costEntries.labor, userId),
-      fetchRows<any>(TABLES.costEntries.outsourcing, userId),
-      fetchRows<any>(TABLES.costEntries.development, userId),
-      fetchRows<any>(TABLES.costEntries.equipment, userId),
-      fetchRows<any>(TABLES.costEntries.logistics, userId),
-      fetchRows<any>(TABLES.costEntries.electricity, userId),
-    ])
+    costDevelopment,
+    costEquipment,
+    costLogistics,
+    costElectricity,
+    costFees,
+  ] = await Promise.all([
+    fetchRows<any>(TABLES.categories.large, userId),
+    fetchRows<any>(TABLES.categories.medium, userId),
+    fetchRows<any>(TABLES.categories.small, userId),
+    fetchRows<any>(TABLES.materials, userId),
+    fetchRows<any>(TABLES.packaging, userId),
+    fetchRows<any>(TABLES.shipping, userId),
+    fetchRows<any>(TABLES.labor, userId),
+    fetchRows<any>(TABLES.equipments, userId),
+    fetchRows<any>(TABLES.fees, userId),
+    fetchRows<any>(TABLES.optionPresets, userId),
+    fetchRows<any>(TABLES.products, userId),
+    fetchRows<any>(TABLES.costEntries.materials, userId),
+    fetchRows<any>(TABLES.costEntries.packaging, userId),
+    fetchRows<any>(TABLES.costEntries.labor, userId),
+    fetchRows<any>(TABLES.costEntries.outsourcing, userId),
+    fetchRows<any>(TABLES.costEntries.development, userId),
+    fetchRows<any>(TABLES.costEntries.equipment, userId),
+    fetchRows<any>(TABLES.costEntries.logistics, userId),
+    fetchRows<any>(TABLES.costEntries.electricity, userId),
+    fetchRows<any>(TABLES.costEntries.fees, userId),
+  ])
 
     const hasData =
       large.length ||
@@ -173,6 +181,15 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       currency: row.currency ?? "JPY",
       amortizationYears: Number(row.amortization_years ?? 1),
       utilizationRate: Number(row.utilization_rate ?? 100),
+      note: row.note ?? undefined,
+    })
+
+    const mapFee = (row: any): Fee => ({
+      id: row.id,
+      name: row.name,
+      ratePercent: Number(row.rate_percent ?? 0),
+      fixedAmount: Number(row.fixed_amount ?? 0),
+      currency: row.currency ?? "JPY",
       note: row.note ?? undefined,
     })
 
@@ -272,6 +289,15 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       currency: row.currency ?? "JPY",
     })
 
+    const mapFeeEntry = (row: any): FeeCostEntry => ({
+      id: row.id,
+      productId: row.product_id,
+      feeId: row.fee_id,
+      ratePercent: Number(row.rate_percent ?? 0),
+      fixedAmount: Number(row.fixed_amount ?? 0),
+      currency: row.currency ?? "JPY",
+    })
+
     return {
       categories: {
         large: large.map(mapLarge),
@@ -283,6 +309,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       shippingMethods: shipping.map(mapShipping),
       laborRoles: labor.map(mapLabor),
       equipments: equipments.map(mapEquipment),
+      fees: fees.map(mapFee),
       optionPresets: optionPresets.map(mapOptionPreset),
       products: products.map(mapProduct),
       costEntries: {
@@ -294,6 +321,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
         equipmentAllocations: costEquipment.map(mapEquipmentEntry),
         logistics: costLogistics.map(mapLogisticsEntry),
         electricity: costElectricity.map(mapElectricEntry),
+        fees: costFees.map(mapFeeEntry),
       },
     }
   } catch (error) {
@@ -385,6 +413,15 @@ function buildSyncPayload(data: AppData, previous?: AppData) {
       note: item.note ?? null,
     })),
     equipments_deleted: toDeletePayload(prev.equipments, data.equipments),
+    fees: data.fees.map((item) => ({
+      id: item.id,
+      name: item.name,
+      rate_percent: item.ratePercent,
+      fixed_amount: item.fixedAmount,
+      currency: item.currency,
+      note: item.note ?? null,
+    })),
+    fees_deleted: toDeletePayload(prev.fees, data.fees),
     option_presets: (data.optionPresets ?? []).map((item) => ({
       id: item.id,
       name: item.name,
@@ -479,6 +516,15 @@ function buildSyncPayload(data: AppData, previous?: AppData) {
       currency: item.currency,
     })),
     cost_entries_electricity_deleted: toDeletePayload(prev.costEntries.electricity, data.costEntries.electricity),
+    cost_entries_fees: data.costEntries.fees.map((item) => ({
+      id: item.id,
+      product_id: item.productId,
+      fee_id: item.feeId,
+      rate_percent: item.ratePercent,
+      fixed_amount: item.fixedAmount,
+      currency: item.currency,
+    })),
+    cost_entries_fees_deleted: toDeletePayload(prev.costEntries.fees, data.costEntries.fees),
   }
 }
 
@@ -535,6 +581,7 @@ const buildAuditMetadata = (data: AppData, previousData?: AppData) => {
     shippingMethods: data.shippingMethods.length,
     laborRoles: data.laborRoles.length,
     equipments: data.equipments.length,
+    fees: data.fees.length,
     optionPresets: data.optionPresets?.length ?? 0,
     products: data.products.length,
     costEntries: {
@@ -546,6 +593,7 @@ const buildAuditMetadata = (data: AppData, previousData?: AppData) => {
       equipment: data.costEntries.equipmentAllocations.length,
       logistics: data.costEntries.logistics.length,
       electricity: data.costEntries.electricity.length,
+      fees: data.costEntries.fees.length,
     },
   }
 
@@ -557,6 +605,7 @@ const buildAuditMetadata = (data: AppData, previousData?: AppData) => {
       payloadStats.shippingMethods +
       payloadStats.laborRoles +
       payloadStats.equipments +
+      payloadStats.fees +
       payloadStats.optionPresets,
     totalCostEntries:
       payloadStats.costEntries.materials +
@@ -566,7 +615,8 @@ const buildAuditMetadata = (data: AppData, previousData?: AppData) => {
       payloadStats.costEntries.development +
       payloadStats.costEntries.equipment +
       payloadStats.costEntries.logistics +
-      payloadStats.costEntries.electricity,
+      payloadStats.costEntries.electricity +
+      payloadStats.costEntries.fees,
     totalRecords: 0,
   }
   summary.totalRecords = summary.totalCategories + summary.totalMasters + summary.totalCostEntries + payloadStats.products
@@ -587,6 +637,7 @@ const buildAuditMetadata = (data: AppData, previousData?: AppData) => {
             shippingMethods: diffById(previousData.shippingMethods, data.shippingMethods, (item) => item.name),
             laborRoles: diffById(previousData.laborRoles, data.laborRoles, (item) => item.name),
             equipments: diffById(previousData.equipments, data.equipments, (item) => item.name),
+            fees: diffById(previousData.fees, data.fees, (item) => item.name),
             optionPresets: diffById(previousData.optionPresets ?? [], data.optionPresets ?? [], (item) => item.name),
             categoriesLarge: diffById(previousData.categories.large, data.categories.large, (item) => item.name),
             categoriesMedium: diffById(previousData.categories.medium, data.categories.medium, (item) => item.name),
