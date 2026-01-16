@@ -67,9 +67,6 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  let spreadsheetId: string | undefined
-  let worksheetTitle: string | undefined
-
   const { data: sheetSetting, error: sheetError } = await supabase
     .from("sheet_settings")
     .select("spreadsheet_id, worksheet_title")
@@ -81,8 +78,8 @@ export async function GET(request: Request) {
     return NextResponse.json({ error: "Failed to load sheet settings" }, { status: 500 })
   }
 
-  spreadsheetId = sheetSetting?.spreadsheet_id ?? process.env.GOOGLE_SHEETS_SPREADSHEET_ID
-  worksheetTitle = sheetSetting?.worksheet_title ?? process.env.GOOGLE_SHEETS_WORKSHEET_TITLE
+  const spreadsheetId = sheetSetting?.spreadsheet_id ?? process.env.GOOGLE_SHEETS_SPREADSHEET_ID
+  const worksheetTitle = sheetSetting?.worksheet_title ?? process.env.GOOGLE_SHEETS_WORKSHEET_TITLE
 
   if (!spreadsheetId || !worksheetTitle) {
     return NextResponse.json({ error: "Sheet settings not found" }, { status: 400 })

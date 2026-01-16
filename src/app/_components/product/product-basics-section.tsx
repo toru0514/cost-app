@@ -1,6 +1,6 @@
 "use client"
 
-import { Dispatch, SetStateAction, useEffect, useMemo, useState } from "react"
+import { Dispatch, SetStateAction, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,18 +20,19 @@ interface ProductBasicsSectionProps {
 
 export function ProductBasicsSection({ data, productForm, setProductForm, handleToggleEquipment }: ProductBasicsSectionProps) {
   const CATEGORY_NONE_VALUE = "__category-none__"
+  const { large: largeCategories, medium: mediumCategories, small: smallCategories } = data.categories
   const categoryOptions = useMemo(() => {
     const options: { label: string; value: string }[] = []
-    const mediumsByLarge = data.categories.medium.reduce<Record<string, typeof data.categories.medium>>((acc, medium) => {
+    const mediumsByLarge = mediumCategories.reduce<Record<string, typeof mediumCategories>>((acc, medium) => {
       acc[medium.largeId] = acc[medium.largeId] ? [...acc[medium.largeId], medium] : [medium]
       return acc
     }, {})
-    const smallsByMedium = data.categories.small.reduce<Record<string, typeof data.categories.small>>((acc, small) => {
+    const smallsByMedium = smallCategories.reduce<Record<string, typeof smallCategories>>((acc, small) => {
       acc[small.mediumId] = acc[small.mediumId] ? [...acc[small.mediumId], small] : [small]
       return acc
     }, {})
 
-    data.categories.large.forEach((large) => {
+    largeCategories.forEach((large) => {
       options.push({ label: large.name, value: JSON.stringify({ largeId: large.id }) })
       const mediums = mediumsByLarge[large.id] ?? []
       mediums.forEach((medium) => {
@@ -50,29 +51,25 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
     })
 
     return options
-  }, [data.categories.large, data.categories.medium, data.categories.small])
+  }, [largeCategories, mediumCategories, smallCategories])
 
   const currentCategoryLabel = useMemo(() => {
     const largeName = productForm.categoryLargeId
-      ? data.categories.large.find((large) => large.id === productForm.categoryLargeId)?.name
+      ? largeCategories.find((large) => large.id === productForm.categoryLargeId)?.name
       : undefined
     const mediumName = productForm.categoryMediumId
-      ? data.categories.medium.find((medium) => medium.id === productForm.categoryMediumId)?.name
+      ? mediumCategories.find((medium) => medium.id === productForm.categoryMediumId)?.name
       : undefined
     const smallName = productForm.categorySmallId
-      ? data.categories.small.find((small) => small.id === productForm.categorySmallId)?.name
+      ? smallCategories.find((small) => small.id === productForm.categorySmallId)?.name
       : undefined
     const parts = [largeName, mediumName, smallName].filter(Boolean)
     return parts.length ? parts.join(" / ") : undefined
-  }, [data.categories.large, data.categories.medium, data.categories.small, productForm.categoryLargeId, productForm.categoryMediumId, productForm.categorySmallId])
+  }, [largeCategories, mediumCategories, smallCategories, productForm.categoryLargeId, productForm.categoryMediumId, productForm.categorySmallId])
   const optionPresets = data.optionPresets ?? []
   const [selectedPresetId, setSelectedPresetId] = useState<string>(optionPresets[0]?.id ?? "")
-
-  useEffect(() => {
-    if (!selectedPresetId && optionPresets.length > 0) {
-      setSelectedPresetId(optionPresets[0].id)
-    }
-  }, [optionPresets, selectedPresetId])
+  const selectedPresetExists = optionPresets.some((preset) => preset.id === selectedPresetId)
+  const effectivePresetId = selectedPresetExists ? selectedPresetId : optionPresets[0]?.id ?? ""
 
   const calculateSizeTotal = (variants: Product["sizeVariants"]) =>
     variants.reduce((sum, variant) => sum + (variant.label.trim() ? Number(variant.quantity) || 0 : 0), 0)
@@ -108,8 +105,8 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
   }
 
   const handleApplyOptionPreset = () => {
-    if (!selectedPresetId) return
-    const preset = optionPresets.find((entry) => entry.id === selectedPresetId)
+    if (!effectivePresetId) return
+    const preset = optionPresets.find((entry) => entry.id === effectivePresetId)
     if (!preset) return
     const normalized = preset.variants.length
       ? preset.variants.map((variant) => ({
@@ -240,7 +237,7 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">オプションプリセットを適用</Label>
         <div className="flex flex-wrap gap-2">
-          <Select value={selectedPresetId} onValueChange={setSelectedPresetId} disabled={!optionPresets.length}>
+          <Select value={effectivePresetId} onValueChange={setSelectedPresetId} disabled={!optionPresets.length}>
             <SelectTrigger className="min-w-[200px]">
               <SelectValue placeholder="プリセットを選択" />
             </SelectTrigger>
@@ -252,7 +249,12 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
               ))}
             </SelectContent>
           </Select>
-          <Button type="button" variant="outline" onClick={handleApplyOptionPreset} disabled={!selectedPresetId || !optionPresets.length}>
+          <Button
+            type="button"
+            variant="outline"
+            onClick={handleApplyOptionPreset}
+            disabled={!effectivePresetId || !optionPresets.length}
+          >
             プリセットを適用
           </Button>
         </div>

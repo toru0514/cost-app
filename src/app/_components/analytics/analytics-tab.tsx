@@ -5,15 +5,7 @@ import { useMemo, useState } from "react"
 import type { AppData } from "@/lib/types"
 import { calculateProductUnitCosts } from "@/lib/calculations"
 
-import {
-  aggregateCostTotals,
-  categoryLevels,
-  costKeyConfig,
-  createEmptyTotals,
-  formatRangeLabel,
-  monthsRangeOptions,
-  type ProductSummary,
-} from "./utils"
+import { aggregateCostTotals, categoryLevels, formatRangeLabel, type ProductSummary } from "./utils"
 import { FilterPanel } from "./sections/filter-panel"
 import { PeriodComparisonCard } from "./sections/period-comparison-card"
 import { CategoryRankingsSection } from "./sections/category-rankings-section"
@@ -116,7 +108,6 @@ export function AnalyticsTab({ data }: { data: AppData }) {
     })
   }, [data, filteredEntries])
 
-  const hasCostData = aggregatedCostTotals.total > 0
   const currentRangeLabel = useMemo(
     () => formatRangeLabel(rangeBoundaries.currentStart, rangeBoundaries.currentEnd),
     [rangeBoundaries]

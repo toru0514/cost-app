@@ -377,8 +377,6 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
     [
       actions,
       args,
-      data.equipments,
-      data.laborRoles,
       data.materials,
       data.packagingItems,
       electricityDrafts,
@@ -394,6 +392,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
       shippingMethods,
       developmentDrafts,
       data.fees,
+      validateProductForm,
     ]
   )
 

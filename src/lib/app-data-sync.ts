@@ -52,6 +52,155 @@ const TABLES = {
   },
 } as const
 
+type JsonValue = string | number | boolean | null | JsonValue[] | { [key: string]: JsonValue }
+
+type CategoryLargeRow = { id: string; name: string; description: string | null }
+type CategoryMediumRow = CategoryLargeRow & { large_id: string | null }
+type CategorySmallRow = CategoryLargeRow & { medium_id: string | null }
+type MaterialRow = {
+  id: string
+  name: string
+  unit: string | null
+  size_description: string | null
+  currency: string | null
+  unit_cost: number | null
+  supplier: string | null
+  note: string | null
+  units_per_batch: number | null
+}
+type PackagingRow = MaterialRow
+type ShippingMethodRow = {
+  id: string
+  name: string
+  description: string | null
+  unit_cost: number | null
+  currency: string | null
+  note: string | null
+}
+type LaborRoleRow = {
+  id: string
+  name: string
+  hourly_rate: number | null
+  currency: string | null
+  note: string | null
+}
+type EquipmentRow = {
+  id: string
+  name: string
+  acquisition_cost: number | null
+  currency: string | null
+  amortization_years: number | null
+  utilization_rate: number | null
+  note: string | null
+}
+type FeeRow = {
+  id: string
+  name: string
+  rate_percent: number | null
+  fixed_amount: number | null
+  currency: string | null
+  note: string | null
+}
+type OptionPresetRow = { id: string; name: string; variants: JsonValue | null }
+type ProductRow = {
+  id: string
+  name: string
+  category_large_id: string | null
+  category_medium_id: string | null
+  category_small_id: string | null
+  size_variants: JsonValue | null
+  base_man_hours: number | null
+  default_electricity_cost: number | null
+  sale_price: number | null
+  registered_at: string | null
+  notes: string | null
+  production_lot_size: number | null
+  expected_production_period_years: number | null
+  expected_production_quantity: number | null
+  equipment_ids: string[] | null
+}
+
+type MaterialCostRow = {
+  id: string
+  product_id: string
+  material_id: string
+  description: string | null
+  usage_ratio: number | null
+  cost_per_unit: number | null
+  currency: string | null
+}
+type PackagingCostRow = {
+  id: string
+  product_id: string
+  packaging_item_id: string
+  quantity: number | null
+  cost_per_unit: number | null
+  currency: string | null
+}
+type LaborCostRow = {
+  id: string
+  product_id: string
+  labor_role_id: string
+  hours: number | null
+  people_count: number | null
+  hourly_rate_override: number | null
+}
+type OutsourcingCostRow = {
+  id: string
+  product_id: string
+  cost_per_unit: number | null
+  currency: string | null
+  note: string | null
+}
+type DevelopmentCostRow = {
+  id: string
+  product_id: string
+  title: string | null
+  prototype_labor_cost: number | null
+  prototype_material_cost: number | null
+  tooling_cost: number | null
+  amortization_years: number | null
+}
+type EquipmentAllocationRow = {
+  id: string
+  product_id: string
+  equipment_id: string
+  allocation_ratio: number | null
+  annual_quantity: number | null
+  usage_hours: number | null
+}
+type LogisticsCostRow = {
+  id: string
+  product_id: string
+  shipping_method_id: string
+  cost_per_unit: number | null
+  currency: string | null
+}
+type ElectricityCostRow = {
+  id: string
+  product_id: string
+  cost_per_unit: number | null
+  currency: string | null
+}
+type FeeCostRow = {
+  id: string
+  product_id: string
+  fee_id: string
+  rate_percent: number | null
+  fixed_amount: number | null
+  currency: string | null
+}
+
+type AuditLogRow = {
+  id: string
+  user_id: string
+  created_at: string
+  device_info: string | null
+  metadata: AuditLog["metadata"] | null
+}
+
+const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
+
 async function fetchRows<T>(table: string, userId: string): Promise<T[]> {
   const { data, error } = await supabaseClient.from(table).select("*").eq("user_id", userId)
   if (error) throw error
@@ -82,26 +231,26 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
     costElectricity,
     costFees,
   ] = await Promise.all([
-    fetchRows<any>(TABLES.categories.large, userId),
-    fetchRows<any>(TABLES.categories.medium, userId),
-    fetchRows<any>(TABLES.categories.small, userId),
-    fetchRows<any>(TABLES.materials, userId),
-    fetchRows<any>(TABLES.packaging, userId),
-    fetchRows<any>(TABLES.shipping, userId),
-    fetchRows<any>(TABLES.labor, userId),
-    fetchRows<any>(TABLES.equipments, userId),
-    fetchRows<any>(TABLES.fees, userId),
-    fetchRows<any>(TABLES.optionPresets, userId),
-    fetchRows<any>(TABLES.products, userId),
-    fetchRows<any>(TABLES.costEntries.materials, userId),
-    fetchRows<any>(TABLES.costEntries.packaging, userId),
-    fetchRows<any>(TABLES.costEntries.labor, userId),
-    fetchRows<any>(TABLES.costEntries.outsourcing, userId),
-    fetchRows<any>(TABLES.costEntries.development, userId),
-    fetchRows<any>(TABLES.costEntries.equipment, userId),
-    fetchRows<any>(TABLES.costEntries.logistics, userId),
-    fetchRows<any>(TABLES.costEntries.electricity, userId),
-    fetchRows<any>(TABLES.costEntries.fees, userId),
+    fetchRows<CategoryLargeRow>(TABLES.categories.large, userId),
+    fetchRows<CategoryMediumRow>(TABLES.categories.medium, userId),
+    fetchRows<CategorySmallRow>(TABLES.categories.small, userId),
+    fetchRows<MaterialRow>(TABLES.materials, userId),
+    fetchRows<PackagingRow>(TABLES.packaging, userId),
+    fetchRows<ShippingMethodRow>(TABLES.shipping, userId),
+    fetchRows<LaborRoleRow>(TABLES.labor, userId),
+    fetchRows<EquipmentRow>(TABLES.equipments, userId),
+    fetchRows<FeeRow>(TABLES.fees, userId),
+    fetchRows<OptionPresetRow>(TABLES.optionPresets, userId),
+    fetchRows<ProductRow>(TABLES.products, userId),
+    fetchRows<MaterialCostRow>(TABLES.costEntries.materials, userId),
+    fetchRows<PackagingCostRow>(TABLES.costEntries.packaging, userId),
+    fetchRows<LaborCostRow>(TABLES.costEntries.labor, userId),
+    fetchRows<OutsourcingCostRow>(TABLES.costEntries.outsourcing, userId),
+    fetchRows<DevelopmentCostRow>(TABLES.costEntries.development, userId),
+    fetchRows<EquipmentAllocationRow>(TABLES.costEntries.equipment, userId),
+    fetchRows<LogisticsCostRow>(TABLES.costEntries.logistics, userId),
+    fetchRows<ElectricityCostRow>(TABLES.costEntries.electricity, userId),
+    fetchRows<FeeCostRow>(TABLES.costEntries.fees, userId),
   ])
 
     const hasData =
@@ -120,21 +269,25 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       return null
     }
 
-    const mapLarge = (row: any): CategoryLarge => ({ id: row.id, name: row.name, description: row.description ?? undefined })
-    const mapMedium = (row: any): CategoryMedium => ({
+    const mapLarge = (row: CategoryLargeRow): CategoryLarge => ({
+      id: row.id,
+      name: row.name,
+      description: row.description ?? undefined,
+    })
+    const mapMedium = (row: CategoryMediumRow): CategoryMedium => ({
       id: row.id,
       name: row.name,
       description: row.description ?? undefined,
       largeId: row.large_id ?? undefined,
     })
-    const mapSmall = (row: any): CategorySmall => ({
+    const mapSmall = (row: CategorySmallRow): CategorySmall => ({
       id: row.id,
       name: row.name,
       description: row.description ?? undefined,
       mediumId: row.medium_id ?? undefined,
     })
 
-    const mapMaterial = (row: any): Material => ({
+    const mapMaterial = (row: MaterialRow): Material => ({
       id: row.id,
       name: row.name,
       unit: row.unit ?? "",
@@ -146,7 +299,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       unitsPerBatch: row.units_per_batch ?? undefined,
     })
 
-    const mapPackaging = (row: any): PackagingItem => ({
+    const mapPackaging = (row: PackagingRow): PackagingItem => ({
       id: row.id,
       name: row.name,
       unit: row.unit ?? "",
@@ -157,7 +310,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       unitsPerBatch: row.units_per_batch ?? undefined,
     })
 
-    const mapShipping = (row: any): ShippingMethod => ({
+    const mapShipping = (row: ShippingMethodRow): ShippingMethod => ({
       id: row.id,
       name: row.name,
       unitCost: Number(row.unit_cost ?? 0),
@@ -166,7 +319,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       description: row.description ?? undefined,
     })
 
-    const mapLabor = (row: any): LaborRole => ({
+    const mapLabor = (row: LaborRoleRow): LaborRole => ({
       id: row.id,
       name: row.name,
       hourlyRate: Number(row.hourly_rate ?? 0),
@@ -174,7 +327,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       note: row.note ?? undefined,
     })
 
-    const mapEquipment = (row: any): Equipment => ({
+    const mapEquipment = (row: EquipmentRow): Equipment => ({
       id: row.id,
       name: row.name,
       acquisitionCost: Number(row.acquisition_cost ?? 0),
@@ -184,7 +337,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       note: row.note ?? undefined,
     })
 
-    const mapFee = (row: any): Fee => ({
+    const mapFee = (row: FeeRow): Fee => ({
       id: row.id,
       name: row.name,
       ratePercent: Number(row.rate_percent ?? 0),
@@ -193,19 +346,19 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       note: row.note ?? undefined,
     })
 
-    const mapOptionPreset = (row: any): OptionPreset => ({
+    const mapOptionPreset = (row: OptionPresetRow): OptionPreset => ({
       id: row.id,
       name: row.name,
-      variants: row.variants ?? [],
+      variants: asArray(row.variants) as OptionPreset["variants"],
     })
 
-    const mapProduct = (row: any): Product => ({
+    const mapProduct = (row: ProductRow): Product => ({
       id: row.id,
       name: row.name,
       categoryLargeId: row.category_large_id ?? undefined,
       categoryMediumId: row.category_medium_id ?? undefined,
       categorySmallId: row.category_small_id ?? undefined,
-      sizeVariants: row.size_variants ?? [],
+      sizeVariants: asArray(row.size_variants) as Product["sizeVariants"],
       baseManHours: Number(row.base_man_hours ?? 0),
       defaultElectricityCost: Number(row.default_electricity_cost ?? 0),
       salePrice: Number(row.sale_price ?? 0),
@@ -216,10 +369,10 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
         periodYears: Number(row.expected_production_period_years ?? 1),
         quantity: Number(row.expected_production_quantity ?? 1),
       },
-      equipmentIds: row.equipment_ids ?? [],
+      equipmentIds: Array.isArray(row.equipment_ids) ? row.equipment_ids : [],
     })
 
-    const mapMaterialEntry = (row: any): MaterialCostEntry => ({
+    const mapMaterialEntry = (row: MaterialCostRow): MaterialCostEntry => ({
       id: row.id,
       productId: row.product_id,
       materialId: row.material_id,
@@ -229,7 +382,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       currency: row.currency ?? "JPY",
     })
 
-    const mapPackagingEntry = (row: any): PackagingCostEntry => ({
+    const mapPackagingEntry = (row: PackagingCostRow): PackagingCostEntry => ({
       id: row.id,
       productId: row.product_id,
       packagingItemId: row.packaging_item_id,
@@ -238,7 +391,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       currency: row.currency ?? "JPY",
     })
 
-    const mapLaborEntry = (row: any): LaborCostEntry => ({
+    const mapLaborEntry = (row: LaborCostRow): LaborCostEntry => ({
       id: row.id,
       productId: row.product_id,
       laborRoleId: row.labor_role_id,
@@ -247,7 +400,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       hourlyRateOverride: row.hourly_rate_override ?? undefined,
     })
 
-    const mapOutsourcingEntry = (row: any): OutsourcingCostEntry => ({
+    const mapOutsourcingEntry = (row: OutsourcingCostRow): OutsourcingCostEntry => ({
       id: row.id,
       productId: row.product_id,
       costPerUnit: Number(row.cost_per_unit ?? 0),
@@ -255,7 +408,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       note: row.note ?? undefined,
     })
 
-    const mapDevelopmentEntry = (row: any): DevelopmentCostEntry => ({
+    const mapDevelopmentEntry = (row: DevelopmentCostRow): DevelopmentCostEntry => ({
       id: row.id,
       productId: row.product_id,
       title: row.title ?? undefined,
@@ -265,7 +418,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       amortizationYears: Number(row.amortization_years ?? 1),
     })
 
-    const mapEquipmentEntry = (row: any): EquipmentAllocationEntry => ({
+    const mapEquipmentEntry = (row: EquipmentAllocationRow): EquipmentAllocationEntry => ({
       id: row.id,
       productId: row.product_id,
       equipmentId: row.equipment_id,
@@ -274,7 +427,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       usageHours: row.usage_hours ?? undefined,
     })
 
-    const mapLogisticsEntry = (row: any): LogisticsCostEntry => ({
+    const mapLogisticsEntry = (row: LogisticsCostRow): LogisticsCostEntry => ({
       id: row.id,
       productId: row.product_id,
       shippingMethodId: row.shipping_method_id,
@@ -282,14 +435,14 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       currency: row.currency ?? "JPY",
     })
 
-    const mapElectricEntry = (row: any): ElectricityCostEntry => ({
+    const mapElectricEntry = (row: ElectricityCostRow): ElectricityCostEntry => ({
       id: row.id,
       productId: row.product_id,
       costPerUnit: Number(row.cost_per_unit ?? 0),
       currency: row.currency ?? "JPY",
     })
 
-    const mapFeeEntry = (row: any): FeeCostEntry => ({
+    const mapFeeEntry = (row: FeeCostRow): FeeCostEntry => ({
       id: row.id,
       productId: row.product_id,
       feeId: row.fee_id,
@@ -674,7 +827,7 @@ export async function saveUserAppData(userId: string, data: AppData, previousDat
   }
 }
 
-const mapAuditLog = (row: any): AuditLog => ({
+const mapAuditLog = (row: AuditLogRow): AuditLog => ({
   id: row.id,
   userId: row.user_id,
   createdAt: row.created_at,

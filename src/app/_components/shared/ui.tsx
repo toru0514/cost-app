@@ -43,6 +43,8 @@ export function FormSection({
 
   useEffect(() => {
     if (!openSignal) return
+    // フォームセクションを外部シグナルで展開/格納する意図的な更新
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(openSignal.value)
   }, [openSignal])
 

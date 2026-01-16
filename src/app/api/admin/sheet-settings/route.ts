@@ -70,6 +70,7 @@ export async function POST(request: Request) {
   try {
     payload = await request.json()
   } catch (error) {
+    console.error("Failed to parse sheet-settings payload", error)
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 })
   }
 

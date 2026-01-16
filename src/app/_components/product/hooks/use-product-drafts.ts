@@ -642,11 +642,16 @@ export function useProductDraftState({
 
   useEffect(() => {
     if (!editingProductId) return
+    // React Compiler warns about state updates inside effects, butここでは商品編集の開始時に
+    // 既存データでフォームを初期化する必要があるため抑止する
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     populateFromProduct(editingProductId)
   }, [editingProductId, populateFromProduct])
 
   useEffect(() => {
     if (!copySourceProductId) return
+    // コピー機能の初期化も同様にフォームを再構築する必要がある
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     const product = populateFromProduct(copySourceProductId)
     if (!product) return
 
@@ -661,6 +666,8 @@ export function useProductDraftState({
   useEffect(() => {
     const nextHours = Number(productForm.baseManHours) || 0
     if (autoLaborHoursRef.current === nextHours) return
+    // 自動リンクされた工数行に同期させるための意図的な state 更新
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLaborDrafts((drafts) =>
       drafts.map((draft) => {
         if (draft.isAutoLinked === false) return draft

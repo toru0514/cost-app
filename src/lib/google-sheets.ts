@@ -27,6 +27,7 @@ export const loadServiceAccount = () => {
     const json = Buffer.from(base64, "base64").toString("utf-8")
     return JSON.parse(json)
   } catch (error) {
+    console.error("Failed to parse Google service account env", error)
     throw new Error("Failed to parse GOOGLE_SERVICE_ACCOUNT_BASE64")
   }
 }

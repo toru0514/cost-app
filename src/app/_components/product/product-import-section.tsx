@@ -954,6 +954,7 @@ function parseSizeVariants(input: string | undefined, fatalIssues: string[]): Pr
       })
       .filter((variant) => variant.label)
   } catch (error) {
+    console.error("Failed to parse size_variants", error)
     fatalIssues.push("size_variants の JSON 解析に失敗しました")
   }
   return []
