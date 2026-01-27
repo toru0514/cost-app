@@ -45,12 +45,21 @@ const describeClient = (log: AuditLog) => {
 
 const renderChangeList = (label: string, summary?: ChangeSummary) => {
   if (!summary) return null
-  if ((summary.added ?? []).length === 0 && (summary.removed ?? []).length === 0) return null
+  if (
+    (summary.added ?? []).length === 0 &&
+    (summary.removed ?? []).length === 0 &&
+    (summary.updated ?? []).length === 0
+  ) {
+    return null
+  }
   return (
     <div>
       <p className="font-medium text-foreground">{label}</p>
       {summary.added.length > 0 && (
         <p className="text-xs text-emerald-600">追加: {summary.added.join(", ")}</p>
+      )}
+      {summary.updated && summary.updated.length > 0 && (
+        <p className="text-xs text-sky-600">更新: {summary.updated.join(", ")}</p>
       )}
       {summary.removed.length > 0 && (
         <p className="text-xs text-rose-600">削除: {summary.removed.join(", ")}</p>
