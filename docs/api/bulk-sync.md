@@ -154,6 +154,7 @@
 `POST /api/bulk-sync/import`
 ```
 {
+  "target": "master|products",
   "options": {
     "dryRun": false,
     "recordAuditLog": true
@@ -162,6 +163,7 @@
 ```
 - body が空の場合も可（オプション無し）
 - `sheet_settings` に設定されたスプレッドシートから読み込む
+- `target` 指定時は対象シートのみ読み込む（未指定は全シート）
 ```
 
 ## エラー形式

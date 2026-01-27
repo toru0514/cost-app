@@ -15,6 +15,8 @@ type ApplyOptions = {
   recordAuditLog?: boolean
 }
 
+type ImportTarget = "master" | "products"
+
 export async function POST(request: Request) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -71,11 +73,13 @@ export async function POST(request: Request) {
   }
 
   let options: ApplyOptions = {}
+  let target: ImportTarget | undefined
   try {
     const raw = await request.text()
     if (raw.trim()) {
-      const body = JSON.parse(raw) as { options?: ApplyOptions }
+      const body = JSON.parse(raw) as { options?: ApplyOptions; target?: ImportTarget }
       options = body.options ?? {}
+      target = body.target
     }
   } catch (error) {
     return NextResponse.json({ error: "Invalid JSON" }, { status: 400 })
@@ -99,6 +103,20 @@ export async function POST(request: Request) {
 
   try {
     const sheetPayload = await fetchBulkSyncSheetPayload(spreadsheetId)
+    if (target === "master") {
+      delete sheetPayload.payload.products
+    } else if (target === "products") {
+      delete sheetPayload.payload.categories_large
+      delete sheetPayload.payload.categories_medium
+      delete sheetPayload.payload.categories_small
+      delete sheetPayload.payload.materials
+      delete sheetPayload.payload.packaging_items
+      delete sheetPayload.payload.shipping_methods
+      delete sheetPayload.payload.labor_roles
+      delete sheetPayload.payload.equipments
+      delete sheetPayload.payload.fees
+      delete sheetPayload.payload.option_presets
+    }
     const existing = await loadUserAppDataServer(supabase, user.id)
     const { normalized, issues } = validateBulkSyncPayload(sheetPayload.payload, existing)
     const prepared = prepareBulkSyncApply(normalized, existing, issues)
