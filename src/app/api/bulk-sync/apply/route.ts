@@ -3,9 +3,10 @@ import { cookies } from "next/headers"
 import { createClient } from "@supabase/supabase-js"
 
 import { prepareBulkSyncApply } from "@/lib/bulk-sync/apply"
-import { validateBulkSyncPayload } from "@/lib/bulk-sync"
+import { validateBulkSyncPayload, buildBulkSyncDiff } from "@/lib/bulk-sync"
 import { loadUserAppDataServer } from "@/lib/server/load-app-data"
 import type { BulkSyncPayload } from "@/lib/bulk-sync"
+import { buildBulkSyncAuditChanges } from "@/lib/bulk-sync/audit"
 
 export const runtime = "nodejs"
 
@@ -86,6 +87,7 @@ export async function POST(request: Request) {
     const existing = await loadUserAppDataServer(supabase, user.id)
     const { normalized, issues } = validateBulkSyncPayload(body.payload, existing)
     const prepared = prepareBulkSyncApply(normalized, existing, issues)
+    const diff = buildBulkSyncDiff(normalized, existing, issues)
 
     if (!options.dryRun) {
       const { error } = await supabase.rpc("sync_app_data", {
@@ -105,6 +107,7 @@ export async function POST(request: Request) {
             action: "bulk_sync_apply",
             summary: prepared.summary,
             errorCount: prepared.errors.length,
+            changes: buildBulkSyncAuditChanges(diff.items, existing),
             previousData: existing,
           },
         })

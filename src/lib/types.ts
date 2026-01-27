@@ -247,6 +247,7 @@ export type AuditLogMetadata = {
 export type ChangeSummary = {
   added: string[]
   removed: string[]
+  updated?: string[]
 }
 
 export type AuditFilters = {
