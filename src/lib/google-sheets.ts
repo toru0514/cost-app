@@ -44,7 +44,7 @@ const buildSheetsClient = () => {
 
 export async function fetchGoogleSheetRows(options: FetchOptions = {}) {
   const spreadsheetId = options.spreadsheetId ?? ensureEnv("GOOGLE_SHEETS_SPREADSHEET_ID")
-  const worksheetTitle = options.worksheetTitle ?? ensureEnv("GOOGLE_SHEETS_WORKSHEET_TITLE")
+  const worksheetTitle = options.worksheetTitle ?? (options.range ? undefined : ensureEnv("GOOGLE_SHEETS_WORKSHEET_TITLE"))
   const range = options.range ?? `${worksheetTitle}!A1:Z`
 
   const sheets = buildSheetsClient()
