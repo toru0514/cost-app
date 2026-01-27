@@ -4,7 +4,12 @@ import { createClient } from "@supabase/supabase-js"
 
 import { loadUserAppDataServer } from "@/lib/server/load-app-data"
 import { buildBulkSyncSheetRows } from "@/lib/bulk-sync/sheet-export"
-import { appendGoogleSheetValues, clearGoogleSheetRange, updateGoogleSheetValues } from "@/lib/google-sheets"
+import {
+  appendGoogleSheetValues,
+  clearGoogleSheetRange,
+  fetchGoogleSheetRows,
+  updateGoogleSheetValues,
+} from "@/lib/google-sheets"
 
 export const runtime = "nodejs"
 
@@ -125,7 +130,15 @@ export async function POST(request: Request) {
         await updateGoogleSheetValues(spreadsheetId, range, values)
       } else {
         const [, ...dataRows] = values
-        if (dataRows.length > 0) {
+        if (dataRows.length === 0) continue
+
+        const headerCheck = await fetchGoogleSheetRows({
+          spreadsheetId,
+          range: `${sheetName}!A1:Z1`,
+        })
+        if (headerCheck.headers.length === 0) {
+          await updateGoogleSheetValues(spreadsheetId, range, values)
+        } else {
           await appendGoogleSheetValues(spreadsheetId, range, dataRows)
         }
       }
