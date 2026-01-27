@@ -66,18 +66,25 @@ export function BulkSyncSection({ title, description, placeholder, helpText }: B
     setApplyResult(null)
     setRollbackResult(null)
 
-    if (!parsedPayload.payload) {
-      setErrorMessage(parsedPayload.error ?? "JSON を確認してください")
-      return
-    }
-
     setBusy("diff")
     try {
-      const response = await fetch("/api/bulk-sync/diff", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload: parsedPayload.payload, options: { includeDetails: true } }),
-      })
+      const trimmedInput = payloadInput.trim()
+      const requestInit: RequestInit =
+        trimmedInput.length > 0
+          ? {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ payload: parsedPayload.payload, options: { includeDetails: true } }),
+            }
+          : { method: "POST" }
+
+      if (trimmedInput.length > 0 && !parsedPayload.payload) {
+        setErrorMessage(parsedPayload.error ?? "JSON を確認してください")
+        setBusy(null)
+        return
+      }
+
+      const response = await fetch("/api/bulk-sync/diff", requestInit)
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}))
