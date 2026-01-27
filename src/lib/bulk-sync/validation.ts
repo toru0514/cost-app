@@ -174,8 +174,10 @@ const buildCategoryMaps = (payload: NormalizedPayload, existing: AppData) => {
   })
   payload.categories_large.forEach((record) => {
     const name = asString(record.data.name)
-    if (record.id) largeById.set(record.id, name)
-    if (name) largeByName.set(name, record.id ?? name)
+    if (record.id) {
+      largeById.set(record.id, name)
+      if (name) largeByName.set(name, record.id)
+    }
   })
 
   const mediumById = new Map<string, { name: string; largeId: string }>()
@@ -197,7 +199,7 @@ const buildCategoryMaps = (payload: NormalizedPayload, existing: AppData) => {
   existing.equipments.forEach((item) => equipmentByName.set(item.name, item.id))
   payload.equipments.forEach((record) => {
     const name = asString(record.data.name)
-    if (name) equipmentByName.set(name, record.id ?? name)
+    if (name && record.id) equipmentByName.set(name, record.id)
   })
 
   return { largeById, largeByName, mediumById, mediumByName, equipmentByName } satisfies CategoryMaps
