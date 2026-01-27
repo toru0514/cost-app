@@ -36,7 +36,8 @@ export function BulkSyncSection() {
   const [payloadInput, setPayloadInput] = useState("")
   const [diffResult, setDiffResult] = useState<DiffResponse | null>(null)
   const [applyResult, setApplyResult] = useState<ApplyResponse | null>(null)
-  const [busy, setBusy] = useState<"diff" | "apply" | null>(null)
+  const [rollbackResult, setRollbackResult] = useState<ApplyResponse | null>(null)
+  const [busy, setBusy] = useState<"diff" | "apply" | "rollback" | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [dryRun, setDryRun] = useState(false)
   const [recordAuditLog, setRecordAuditLog] = useState(true)
@@ -51,6 +52,7 @@ export function BulkSyncSection() {
   const handleDiff = async () => {
     setErrorMessage(null)
     setApplyResult(null)
+    setRollbackResult(null)
 
     if (!parsedPayload.payload) {
       setErrorMessage(parsedPayload.error ?? "JSON を確認してください")
@@ -109,7 +111,34 @@ export function BulkSyncSection() {
     }
   }
 
-  const statusText = busy === "diff" ? "差分を確認中..." : busy === "apply" ? "反映中..." : "待機中"
+  const handleRollback = async () => {
+    setErrorMessage(null)
+    setRollbackResult(null)
+    setBusy("rollback")
+
+    try {
+      const response = await fetch("/api/bulk-sync/rollback", { method: "POST" })
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error ?? "ロールバックに失敗しました")
+      }
+      const data = (await response.json()) as ApplyResponse
+      setRollbackResult(data)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "ロールバックに失敗しました")
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const statusText =
+    busy === "diff"
+      ? "差分を確認中..."
+      : busy === "apply"
+        ? "反映中..."
+        : busy === "rollback"
+          ? "ロールバック中..."
+          : "待機中"
 
   return (
     <Card>
@@ -155,6 +184,9 @@ export function BulkSyncSection() {
             </Button>
             <Button onClick={handleApply} disabled={busy !== null} variant="default">
               一括反映を実行
+            </Button>
+            <Button onClick={handleRollback} disabled={busy !== null} variant="outline">
+              直前の反映をロールバック
             </Button>
             {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
           </div>
@@ -234,6 +266,21 @@ export function BulkSyncSection() {
                 </Table>
               </div>
             )}
+          </div>
+        )}
+
+        {rollbackResult && (
+          <div className="space-y-3 rounded-lg border border-dashed p-3">
+            <p className="text-sm font-medium">ロールバック結果</p>
+            <div className="flex flex-wrap gap-3">
+              <Badge variant="secondary">反映合計: {rollbackResult.summary.total}</Badge>
+              <Badge variant="outline">成功: {rollbackResult.summary.success}</Badge>
+              <Badge variant={rollbackResult.summary.failed > 0 ? "destructive" : "secondary"}>
+                失敗: {rollbackResult.summary.failed}
+              </Badge>
+              <Badge variant="outline">更新: {rollbackResult.summary.update}</Badge>
+              <Badge variant="outline">削除: {rollbackResult.summary.delete}</Badge>
+            </div>
           </div>
         )}
       </CardContent>
