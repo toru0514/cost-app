@@ -168,6 +168,7 @@
 |列名|型/形式|必須|説明|
 |---|---|---|---|
 |`id`|UUID|任意|既存更新用 ID。空欄なら新規作成。|
+|`status`|文字列|任意|`registered` / `new` / `delete` のいずれか。登録状況の目視用（`is_deleted` が優先）。|
 |`product_name`|文字列|必須|商品名。|
 |`category_large`|文字列|任意|カテゴリ(大)名。|
 |`category_medium`|文字列|任意|カテゴリ(中)名。|
@@ -187,6 +188,8 @@
 - `equipment_names` は `equipments` シートの `name` と突合して解決する。
 - `size_variants` / `variants` の簡易形式は `ラベル:数量` を `|` で連結する。
 - 数値項目が空欄の場合は `null` として扱う（`sale_price` など必須項目はエラー）。
+- `status` は表示用の補助列。`is_deleted = TRUE` の場合は `status` よりも削除が優先される。
+- 登録済み判別は `id` があれば `registered` とみなし、`id` が空で `product_name` が一致する場合は `registered` 扱いとする。
 
 ## 合意した Done 条件
 - TODO: サブイシューで合意した Done 条件を箇条書きで記載する。
