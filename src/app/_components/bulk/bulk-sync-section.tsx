@@ -2,6 +2,8 @@
 
 import { useMemo, useState } from "react"
 
+import { toast } from "sonner"
+
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -9,9 +11,12 @@ import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
 import { parsePayloadJson } from "@/lib/bulk-sync/ui-utils"
+import { retry } from "@/lib/bulk-sync/retry"
 
 const MAX_ERRORS = 200
 const MAX_ISSUES = 200
+const RETRY_LIMIT = 2
+const RETRY_DELAY_MS = 1200
 
 type DiffItem = {
   entity: string
@@ -91,16 +96,27 @@ export function BulkSyncSection() {
 
     setBusy("apply")
     try {
-      const response = await fetch("/api/bulk-sync/apply", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ payload: parsedPayload.payload, options: { dryRun, recordAuditLog } }),
-      })
-
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}))
-        throw new Error(error.error ?? "反映に失敗しました")
-      }
+      const response = await retry(
+        async (attempt) => {
+          const result = await fetch("/api/bulk-sync/apply", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ payload: parsedPayload.payload, options: { dryRun, recordAuditLog } }),
+          })
+          if (!result.ok) {
+            const error = await result.json().catch(() => ({}))
+            throw new Error(error.error ?? "反映に失敗しました")
+          }
+          return result
+        },
+        {
+          retries: RETRY_LIMIT,
+          delayMs: RETRY_DELAY_MS,
+          onRetry: (attempt) => {
+            toast.message(`一括反映に失敗しました。再試行します (${attempt}/${RETRY_LIMIT})`)
+          },
+        }
+      )
 
       const data = (await response.json()) as ApplyResponse
       setApplyResult(data)
@@ -117,11 +133,23 @@ export function BulkSyncSection() {
     setBusy("rollback")
 
     try {
-      const response = await fetch("/api/bulk-sync/rollback", { method: "POST" })
-      if (!response.ok) {
-        const error = await response.json().catch(() => ({}))
-        throw new Error(error.error ?? "ロールバックに失敗しました")
-      }
+      const response = await retry(
+        async (attempt) => {
+          const result = await fetch("/api/bulk-sync/rollback", { method: "POST" })
+          if (!result.ok) {
+            const error = await result.json().catch(() => ({}))
+            throw new Error(error.error ?? "ロールバックに失敗しました")
+          }
+          return result
+        },
+        {
+          retries: RETRY_LIMIT,
+          delayMs: RETRY_DELAY_MS,
+          onRetry: (attempt) => {
+            toast.message(`ロールバックに失敗しました。再試行します (${attempt}/${RETRY_LIMIT})`)
+          },
+        }
+      )
       const data = (await response.json()) as ApplyResponse
       setRollbackResult(data)
     } catch (error) {
@@ -177,6 +205,7 @@ export function BulkSyncSection() {
               />
               監査ログを記録する
             </label>
+            <p className="text-xs text-muted-foreground">失敗時は最大 {RETRY_LIMIT} 回まで自動リトライします。</p>
           </div>
           <div className="flex flex-col gap-2">
             <Button onClick={handleDiff} disabled={busy !== null}>
