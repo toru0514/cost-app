@@ -11,7 +11,7 @@ type FetchOptions = {
   worksheetTitle?: string
 }
 
-const SHEETS_SCOPE = ["https://www.googleapis.com/auth/spreadsheets.readonly"]
+const SHEETS_SCOPE = ["https://www.googleapis.com/auth/spreadsheets"]
 
 export const ensureEnv = (key: string) => {
   const value = process.env[key]
@@ -32,18 +32,22 @@ export const loadServiceAccount = () => {
   }
 }
 
-export async function fetchGoogleSheetRows(options: FetchOptions = {}) {
+const buildSheetsClient = () => {
   const creds = loadServiceAccount()
-  const spreadsheetId = options.spreadsheetId ?? ensureEnv("GOOGLE_SHEETS_SPREADSHEET_ID")
-  const worksheetTitle = options.worksheetTitle ?? ensureEnv("GOOGLE_SHEETS_WORKSHEET_TITLE")
-  const range = options.range ?? `${worksheetTitle}!A1:Z`
-
   const auth = new google.auth.JWT({
     email: creds.client_email,
     key: creds.private_key,
     scopes: SHEETS_SCOPE,
   })
-  const sheets = google.sheets({ version: "v4", auth })
+  return google.sheets({ version: "v4", auth })
+}
+
+export async function fetchGoogleSheetRows(options: FetchOptions = {}) {
+  const spreadsheetId = options.spreadsheetId ?? ensureEnv("GOOGLE_SHEETS_SPREADSHEET_ID")
+  const worksheetTitle = options.worksheetTitle ?? ensureEnv("GOOGLE_SHEETS_WORKSHEET_TITLE")
+  const range = options.range ?? `${worksheetTitle}!A1:Z`
+
+  const sheets = buildSheetsClient()
   const response = await sheets.spreadsheets.values.get({ spreadsheetId, range })
   const values = response.data.values ?? []
   if (values.length === 0) {
@@ -75,3 +79,29 @@ export async function fetchGoogleSheetRows(options: FetchOptions = {}) {
 }
 
 export type GoogleSheetResult = Awaited<ReturnType<typeof fetchGoogleSheetRows>>
+
+export async function clearGoogleSheetRange(spreadsheetId: string, range: string) {
+  const sheets = buildSheetsClient()
+  await sheets.spreadsheets.values.clear({ spreadsheetId, range })
+}
+
+export async function updateGoogleSheetValues(spreadsheetId: string, range: string, values: (string | number | boolean | null)[][]) {
+  const sheets = buildSheetsClient()
+  await sheets.spreadsheets.values.update({
+    spreadsheetId,
+    range,
+    valueInputOption: "USER_ENTERED",
+    requestBody: { values },
+  })
+}
+
+export async function appendGoogleSheetValues(spreadsheetId: string, range: string, values: (string | number | boolean | null)[][]) {
+  const sheets = buildSheetsClient()
+  await sheets.spreadsheets.values.append({
+    spreadsheetId,
+    range,
+    valueInputOption: "USER_ENTERED",
+    insertDataOption: "INSERT_ROWS",
+    requestBody: { values },
+  })
+}
