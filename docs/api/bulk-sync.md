@@ -17,6 +17,8 @@
 |差分取得|POST|`/api/bulk-sync/diff`|投入データと現行データの差分を返す|
 |反映|POST|`/api/bulk-sync/apply`|差分に基づいて一括反映を実行する|
 |結果取得|GET|`/api/bulk-sync/results/{jobId}`|一括反映の結果を取得する|
+|書き出し|POST|`/api/bulk-sync/export`|現行データをスプレッドシートへ書き出す|
+|読み込み|POST|`/api/bulk-sync/import`|スプレッドシートから読み込み一括反映する|
 
 ## 共通ヘッダー
 - `Content-Type: application/json`
@@ -99,6 +101,7 @@
   }
 }
 ```
+※ body が空の場合は、`sheet_settings` に設定されたスプレッドシートから読み取ったデータで差分を算出する。
 
 ### Response 200
 ```
@@ -133,6 +136,32 @@
 ### Response 200
 ```
 { ...ApplyResult... }
+
+## 4. 書き出し
+### Request
+`POST /api/bulk-sync/export`
+```
+{
+  "target": "master|products",
+  "mode": "overwrite|append"
+}
+```
+- `overwrite`: 対象シートをクリアしてヘッダー + データを書き込む
+- `append`: データ行のみ追記（ヘッダーが無い場合は自動でヘッダー + データを書き込む）
+
+## 5. 読み込み
+### Request
+`POST /api/bulk-sync/import`
+```
+{
+  "options": {
+    "dryRun": false,
+    "recordAuditLog": true
+  }
+}
+```
+- body が空の場合も可（オプション無し）
+- `sheet_settings` に設定されたスプレッドシートから読み込む
 ```
 
 ## エラー形式
