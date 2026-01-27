@@ -105,6 +105,7 @@ export async function POST(request: Request) {
             action: "bulk_sync_apply",
             summary: prepared.summary,
             errorCount: prepared.errors.length,
+            previousData: existing,
           },
         })
         if (auditError) {
