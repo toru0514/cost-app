@@ -42,17 +42,49 @@ type BulkSyncSectionProps = {
   description: string
   placeholder: string
   helpText: string
+  target: "master" | "products"
 }
 
-export function BulkSyncSection({ title, description, placeholder, helpText }: BulkSyncSectionProps) {
+const masterEntities = new Set([
+  "categories_large",
+  "categories_medium",
+  "categories_small",
+  "materials",
+  "packaging_items",
+  "shipping_methods",
+  "labor_roles",
+  "equipments",
+  "fees",
+  "option_presets",
+])
+
+const filterDiffByTarget = (diff: DiffResponse, target: "master" | "products") => {
+  const items =
+    target === "products"
+      ? diff.items.filter((item) => item.entity === "products")
+      : diff.items.filter((item) => masterEntities.has(item.entity))
+  const summary = items.reduce(
+    (acc, item) => {
+      acc.total += 1
+      acc[item.operation] += 1
+      return acc
+    },
+    { total: 0, create: 0, update: 0, delete: 0 }
+  )
+  return { summary, items }
+}
+
+export function BulkSyncSection({ title, description, placeholder, helpText, target }: BulkSyncSectionProps) {
   const [payloadInput, setPayloadInput] = useState("")
   const [diffResult, setDiffResult] = useState<DiffResponse | null>(null)
   const [applyResult, setApplyResult] = useState<ApplyResponse | null>(null)
   const [rollbackResult, setRollbackResult] = useState<ApplyResponse | null>(null)
-  const [busy, setBusy] = useState<"diff" | "apply" | "rollback" | null>(null)
+  const [busy, setBusy] = useState<"diff" | "apply" | "rollback" | "export" | "import" | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [dryRun, setDryRun] = useState(false)
   const [recordAuditLog, setRecordAuditLog] = useState(true)
+  const [exportMode, setExportMode] = useState<"overwrite" | "append">("overwrite")
+  const [useManualJson, setUseManualJson] = useState(false)
 
   const parsedPayload = useMemo(() => parsePayloadJson(payloadInput), [payloadInput])
 
@@ -70,7 +102,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText }: B
     try {
       const trimmedInput = payloadInput.trim()
       const requestInit: RequestInit =
-        trimmedInput.length > 0
+        useManualJson && trimmedInput.length > 0
           ? {
               method: "POST",
               headers: { "Content-Type": "application/json" },
@@ -78,7 +110,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText }: B
             }
           : { method: "POST" }
 
-      if (trimmedInput.length > 0 && !parsedPayload.payload) {
+      if (useManualJson && trimmedInput.length > 0 && !parsedPayload.payload) {
         setErrorMessage(parsedPayload.error ?? "JSON を確認してください")
         setBusy(null)
         return
@@ -92,7 +124,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText }: B
       }
 
       const data = (await response.json()) as DiffResponse
-      setDiffResult(data)
+      setDiffResult(filterDiffByTarget(data, target))
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "差分取得に失敗しました")
     } finally {
@@ -103,23 +135,35 @@ export function BulkSyncSection({ title, description, placeholder, helpText }: B
   const handleApply = async () => {
     setErrorMessage(null)
 
-    if (!parsedPayload.payload) {
-      setErrorMessage(parsedPayload.error ?? "JSON を確認してください")
-      return
-    }
-
-    setBusy("apply")
+    const busyState: "apply" | "import" = useManualJson ? "apply" : "import"
+    setBusy(busyState)
     try {
       const response = await retry(
-        async (attempt) => {
-          const result = await fetch("/api/bulk-sync/apply", {
+        async () => {
+          if (useManualJson) {
+            if (!parsedPayload.payload) {
+              throw new Error(parsedPayload.error ?? "JSON を確認してください")
+            }
+            const result = await fetch("/api/bulk-sync/apply", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ payload: parsedPayload.payload, options: { dryRun, recordAuditLog } }),
+            })
+            if (!result.ok) {
+              const error = await result.json().catch(() => ({}))
+              throw new Error(error.error ?? "反映に失敗しました")
+            }
+            return result
+          }
+
+          const result = await fetch("/api/bulk-sync/import", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ payload: parsedPayload.payload, options: { dryRun, recordAuditLog } }),
+            body: JSON.stringify({ target, options: { dryRun, recordAuditLog } }),
           })
           if (!result.ok) {
             const error = await result.json().catch(() => ({}))
-            throw new Error(error.error ?? "反映に失敗しました")
+            throw new Error(error.error ?? "読み込みに失敗しました")
           }
           return result
         },
@@ -148,7 +192,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText }: B
 
     try {
       const response = await retry(
-        async (attempt) => {
+        async () => {
           const result = await fetch("/api/bulk-sync/rollback", { method: "POST" })
           if (!result.ok) {
             const error = await result.json().catch(() => ({}))
@@ -173,14 +217,39 @@ export function BulkSyncSection({ title, description, placeholder, helpText }: B
     }
   }
 
+  const handleExport = async () => {
+    setErrorMessage(null)
+    setBusy("export")
+    try {
+      const response = await fetch("/api/bulk-sync/export", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ target, mode: exportMode }),
+      })
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error ?? "書き出しに失敗しました")
+      }
+      toast.message("スプレッドシートへ書き出しました。")
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "書き出しに失敗しました")
+    } finally {
+      setBusy(null)
+    }
+  }
+
   const statusText =
     busy === "diff"
       ? "差分を確認中..."
-      : busy === "apply"
-        ? "反映中..."
-        : busy === "rollback"
-          ? "ロールバック中..."
-          : "待機中"
+      : busy === "export"
+        ? "書き出し中..."
+        : busy === "import"
+          ? "読み込み中..."
+          : busy === "apply"
+            ? "反映中..."
+            : busy === "rollback"
+              ? "ロールバック中..."
+              : "待機中"
 
   return (
     <Card>
@@ -191,22 +260,26 @@ export function BulkSyncSection({ title, description, placeholder, helpText }: B
       <CardContent className="space-y-6">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <Label htmlFor="bulk-sync-payload">投入 JSON</Label>
+            <Label>スプレッドシート連携</Label>
             <Badge variant={busy ? "default" : "secondary"}>{statusText}</Badge>
           </div>
-          <Textarea
-            id="bulk-sync-payload"
-            rows={10}
-            placeholder={placeholder}
-            value={payloadInput}
-            onChange={(event) => setPayloadInput(event.target.value)}
-          />
           <p className="text-xs text-muted-foreground">{helpText}</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
           <div className="space-y-2 rounded-lg border border-dashed p-3">
             <p className="text-sm font-medium">実行オプション</p>
+            <label className="flex items-center gap-2 text-sm">
+              <span className="w-20">書き出し</span>
+              <select
+                className="h-8 rounded border px-2 text-sm"
+                value={exportMode}
+                onChange={(event) => setExportMode(event.target.value as "overwrite" | "append")}
+              >
+                <option value="overwrite">上書き</option>
+                <option value="append">追記</option>
+              </select>
+            </label>
             <label className="flex items-center gap-2 text-sm">
               <input type="checkbox" checked={dryRun} onChange={(event) => setDryRun(event.target.checked)} />
               Dry Run（反映せず検証のみ）
@@ -225,14 +298,40 @@ export function BulkSyncSection({ title, description, placeholder, helpText }: B
             <Button onClick={handleDiff} disabled={busy !== null}>
               差分を確認
             </Button>
+            <Button onClick={handleExport} disabled={busy !== null} variant="outline">
+              シートへ書き出し
+            </Button>
             <Button onClick={handleApply} disabled={busy !== null} variant="default">
-              一括反映を実行
+              シートから読み込み
             </Button>
             <Button onClick={handleRollback} disabled={busy !== null} variant="outline">
               直前の反映をロールバック
             </Button>
             {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
           </div>
+        </div>
+
+        <div className="space-y-2 rounded-lg border border-dashed p-3">
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={useManualJson}
+              onChange={(event) => setUseManualJson(event.target.checked)}
+            />
+            JSON を手動で指定する（高度な操作）
+          </label>
+          {useManualJson && (
+            <>
+              <Textarea
+                id="bulk-sync-payload"
+                rows={10}
+                placeholder={placeholder}
+                value={payloadInput}
+                onChange={(event) => setPayloadInput(event.target.value)}
+              />
+              <p className="text-xs text-muted-foreground">JSON を指定した場合のみ /api/bulk-sync/apply を使用します。</p>
+            </>
+          )}
         </div>
 
         {diffResult && (
