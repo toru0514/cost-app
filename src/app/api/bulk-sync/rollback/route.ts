@@ -4,6 +4,7 @@ import { createClient } from "@supabase/supabase-js"
 
 import { buildSyncPayloadFromAppData, normalizeAppData } from "@/lib/bulk-sync/snapshot"
 import { loadUserAppDataServer } from "@/lib/server/load-app-data"
+import type { AppData } from "@/lib/types"
 
 export const runtime = "nodejs"
 
@@ -94,7 +95,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: "Rollback source not found" }, { status: 404 })
     }
 
-    const snapshot = normalizeAppData((log.metadata as { previousData?: unknown }).previousData)
+    const previousData = (log.metadata as { previousData?: unknown }).previousData
+    if (!previousData || typeof previousData !== "object") {
+      return NextResponse.json({ error: "Rollback source is invalid" }, { status: 400 })
+    }
+
+    const snapshot = normalizeAppData(previousData as Partial<AppData>)
     const current = await loadUserAppDataServer(supabase, user.id)
 
     const payload = buildSyncPayloadFromAppData(snapshot, current)
