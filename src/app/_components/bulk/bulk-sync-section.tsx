@@ -37,7 +37,14 @@ type ApplyResponse = {
   errors: { entity: string; rowIndex?: number; message: string; code: string }[]
 }
 
-export function BulkSyncSection() {
+type BulkSyncSectionProps = {
+  title: string
+  description: string
+  placeholder: string
+  helpText: string
+}
+
+export function BulkSyncSection({ title, description, placeholder, helpText }: BulkSyncSectionProps) {
   const [payloadInput, setPayloadInput] = useState("")
   const [diffResult, setDiffResult] = useState<DiffResponse | null>(null)
   const [applyResult, setApplyResult] = useState<ApplyResponse | null>(null)
@@ -171,8 +178,8 @@ export function BulkSyncSection() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>一括反映</CardTitle>
-        <CardDescription>スプレッドシートから生成した JSON を投入して差分と反映結果を確認します。</CardDescription>
+        <CardTitle>{title}</CardTitle>
+        <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
         <div className="space-y-2">
@@ -183,11 +190,11 @@ export function BulkSyncSection() {
           <Textarea
             id="bulk-sync-payload"
             rows={10}
-            placeholder='{"materials":[],"products":[]}'
+            placeholder={placeholder}
             value={payloadInput}
             onChange={(event) => setPayloadInput(event.target.value)}
           />
-          <p className="text-xs text-muted-foreground">`docs/spreadsheet-spec.md` と `docs/api/bulk-sync.md` の定義に準拠してください。</p>
+          <p className="text-xs text-muted-foreground">{helpText}</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
