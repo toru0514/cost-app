@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea"
 import { parsePayloadJson } from "@/lib/bulk-sync/ui-utils"
 import { retry } from "@/lib/bulk-sync/retry"
+import { supabaseClient } from "@/lib/supabase-client"
 
 const MAX_ERRORS = 200
 const MAX_ISSUES = 200
@@ -74,6 +75,25 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
 
   const parsedPayload = useMemo(() => parsePayloadJson(payloadInput), [payloadInput])
 
+  const resolveAccessToken = async () => {
+    try {
+      const { data: sessionData } = await supabaseClient.auth.getSession()
+      if (sessionData.session?.access_token) return sessionData.session.access_token
+      const { data: refreshed } = await supabaseClient.auth.refreshSession()
+      return refreshed.session?.access_token
+    } catch {
+      return undefined
+    }
+  }
+
+  const buildAuthHeaders = async (includeJson: boolean) => {
+    const accessToken = await resolveAccessToken()
+    return {
+      ...(includeJson ? { "Content-Type": "application/json" } : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
+    }
+  }
+
   const issueItems = useMemo(() => {
     if (!diffResult) return []
     return diffResult.items.filter((item) => item.issues.length > 0).slice(0, MAX_ISSUES)
@@ -87,14 +107,16 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
     setBusy("diff")
     try {
       const trimmedInput = payloadInput.trim()
+      const headers = await buildAuthHeaders(useManualJson && trimmedInput.length > 0)
       const requestInit: RequestInit =
         useManualJson && trimmedInput.length > 0
           ? {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers,
+              credentials: "include",
               body: JSON.stringify({ payload: parsedPayload.payload, options: { includeDetails: true } }),
             }
-          : { method: "POST" }
+          : { method: "POST", headers, credentials: "include" }
 
       if (useManualJson && trimmedInput.length > 0 && !parsedPayload.payload) {
         setErrorMessage(parsedPayload.error ?? "JSON を確認してください")
@@ -132,9 +154,11 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
       const response = await retry(
         async () => {
           if (useManualJson) {
+            const headers = await buildAuthHeaders(true)
             const result = await fetch("/api/bulk-sync/apply", {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
+              headers,
+              credentials: "include",
               body: JSON.stringify({ payload: parsedPayload.payload, options: { dryRun, recordAuditLog } }),
             })
             if (!result.ok) {
@@ -144,9 +168,11 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
             return result
           }
 
+          const headers = await buildAuthHeaders(true)
           const result = await fetch("/api/bulk-sync/import", {
             method: "POST",
-            headers: { "Content-Type": "application/json" },
+            headers,
+            credentials: "include",
             body: JSON.stringify({ target, options: { dryRun, recordAuditLog } }),
           })
           if (!result.ok) {
@@ -181,7 +207,12 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
     try {
       const response = await retry(
         async () => {
-          const result = await fetch("/api/bulk-sync/rollback", { method: "POST" })
+          const headers = await buildAuthHeaders(false)
+          const result = await fetch("/api/bulk-sync/rollback", {
+            method: "POST",
+            headers,
+            credentials: "include",
+          })
           if (!result.ok) {
             const error = await result.json().catch(() => ({}))
             throw new Error(error.error ?? "ロールバックに失敗しました")
@@ -209,9 +240,11 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
     setErrorMessage(null)
     setBusy("export")
     try {
+      const headers = await buildAuthHeaders(true)
       const response = await fetch("/api/bulk-sync/export", {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
+        headers,
+        credentials: "include",
         body: JSON.stringify({ target, mode: exportMode }),
       })
       if (!response.ok) {
