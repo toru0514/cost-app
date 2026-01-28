@@ -44,25 +44,11 @@ type BulkSyncSectionProps = {
   helpText: string
   target: "master" | "products"
 }
-
-const masterEntities = new Set([
-  "categories_large",
-  "categories_medium",
-  "categories_small",
-  "materials",
-  "packaging_items",
-  "shipping_methods",
-  "labor_roles",
-  "equipments",
-  "fees",
-  "option_presets",
-])
-
 const filterDiffByTarget = (diff: DiffResponse, target: "master" | "products") => {
   const items =
     target === "products"
       ? diff.items.filter((item) => item.entity === "products")
-      : diff.items.filter((item) => masterEntities.has(item.entity))
+      : diff.items.filter((item) => item.entity !== "products")
   const summary = items.reduce(
     (acc, item) => {
       acc.total += 1
@@ -135,15 +121,17 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
   const handleApply = async () => {
     setErrorMessage(null)
 
+    if (useManualJson && !parsedPayload.payload) {
+      setErrorMessage(parsedPayload.error ?? "JSON を確認してください")
+      return
+    }
+
     const busyState: "apply" | "import" = useManualJson ? "apply" : "import"
     setBusy(busyState)
     try {
       const response = await retry(
         async () => {
           if (useManualJson) {
-            if (!parsedPayload.payload) {
-              throw new Error(parsedPayload.error ?? "JSON を確認してください")
-            }
             const result = await fetch("/api/bulk-sync/apply", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
