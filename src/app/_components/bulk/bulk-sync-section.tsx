@@ -102,7 +102,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
         return
       }
 
-      const response = await fetch("/api/bulk-sync/diff", requestInit)
+      const response = await fetch("/api/bulk-sync/diff", { ...requestInit, credentials: "include" })
 
       if (!response.ok) {
         const error = await response.json().catch(() => ({}))
@@ -135,6 +135,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
             const result = await fetch("/api/bulk-sync/apply", {
               method: "POST",
               headers: { "Content-Type": "application/json" },
+              credentials: "include",
               body: JSON.stringify({ payload: parsedPayload.payload, options: { dryRun, recordAuditLog } }),
             })
             if (!result.ok) {
@@ -147,6 +148,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
           const result = await fetch("/api/bulk-sync/import", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
+            credentials: "include",
             body: JSON.stringify({ target, options: { dryRun, recordAuditLog } }),
           })
           if (!result.ok) {
@@ -181,7 +183,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
     try {
       const response = await retry(
         async () => {
-          const result = await fetch("/api/bulk-sync/rollback", { method: "POST" })
+          const result = await fetch("/api/bulk-sync/rollback", { method: "POST", credentials: "include" })
           if (!result.ok) {
             const error = await result.json().catch(() => ({}))
             throw new Error(error.error ?? "ロールバックに失敗しました")
@@ -212,6 +214,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
       const response = await fetch("/api/bulk-sync/export", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ target, mode: exportMode }),
       })
       if (!response.ok) {
