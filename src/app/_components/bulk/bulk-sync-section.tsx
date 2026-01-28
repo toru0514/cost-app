@@ -75,16 +75,22 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
 
   const parsedPayload = useMemo(() => parsePayloadJson(payloadInput), [payloadInput])
 
-  const buildAuthHeaders = async (includeJson: boolean) => {
+  const resolveAccessToken = async () => {
     try {
-      const { data } = await supabaseClient.auth.getSession()
-      const accessToken = data.session?.access_token
-      return {
-        ...(includeJson ? { "Content-Type": "application/json" } : {}),
-        ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
-      }
+      const { data: sessionData } = await supabaseClient.auth.getSession()
+      if (sessionData.session?.access_token) return sessionData.session.access_token
+      const { data: refreshed } = await supabaseClient.auth.refreshSession()
+      return refreshed.session?.access_token
     } catch {
-      return includeJson ? { "Content-Type": "application/json" } : {}
+      return undefined
+    }
+  }
+
+  const buildAuthHeaders = async (includeJson: boolean) => {
+    const accessToken = await resolveAccessToken()
+    return {
+      ...(includeJson ? { "Content-Type": "application/json" } : {}),
+      ...(accessToken ? { Authorization: `Bearer ${accessToken}` } : {}),
     }
   }
 
