@@ -81,7 +81,7 @@ export async function POST(request: Request) {
     const { data: log, error: logError } = await supabase
       .from("sync_audit_logs")
       .select("id, metadata, created_at")
-      .eq("metadata->>action", "bulk_sync_apply")
+      .in("metadata->>action", ["bulk_sync_apply", "bulk_sync_import"])
       .order("created_at", { ascending: false })
       .limit(1)
       .maybeSingle()
