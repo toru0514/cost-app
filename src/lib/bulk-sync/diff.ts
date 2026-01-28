@@ -43,6 +43,9 @@ const buildExistingIndex = (existing: AppData) => {
 
   const largeNameById = new Map(existing.categories.large.map((item) => [item.id, item.name]))
   const mediumById = new Map(existing.categories.medium.map((item) => [item.id, item]))
+  const mediumNameById = new Map(existing.categories.medium.map((item) => [item.id, item.name]))
+  const smallNameById = new Map(existing.categories.small.map((item) => [item.id, item.name]))
+  const equipmentNameById = new Map(existing.equipments.map((item) => [item.id, item.name]))
 
   existing.categories.large.forEach((item) => addRecord("categories_large", item.id, item.name, item))
 
@@ -70,7 +73,22 @@ const buildExistingIndex = (existing: AppData) => {
   existing.equipments.forEach((item) => addRecord("equipments", item.id, item.name, item))
   existing.fees.forEach((item) => addRecord("fees", item.id, item.name, item))
   existing.optionPresets.forEach((item) => addRecord("option_presets", item.id, item.name, item))
-  existing.products.forEach((item) => addRecord("products", item.id, item.name, item))
+  existing.products.forEach((item) => {
+    const categoryLarge = item.categoryLargeId ? largeNameById.get(item.categoryLargeId) : undefined
+    const categoryMedium = item.categoryMediumId ? mediumNameById.get(item.categoryMediumId) : undefined
+    const categorySmall = item.categorySmallId ? smallNameById.get(item.categorySmallId) : undefined
+    const equipmentNames = (item.equipmentIds ?? [])
+      .map((id) => equipmentNameById.get(id))
+      .filter(Boolean)
+      .sort()
+    addRecord("products", item.id, item.name, {
+      ...item,
+      categoryLarge,
+      categoryMedium,
+      categorySmall,
+      equipmentNames,
+    })
+  })
 
   return { byId: map, byNaturalKey: naturalMap }
 }
@@ -174,6 +192,12 @@ const normalizeRecord = (entity: string, record: ComparableRecord | null) => {
   })
 
   if (entity === "products") {
+    if ("expectedProduction" in result) {
+      const expected = result.expectedProduction as { periodYears?: unknown; quantity?: unknown }
+      result.expectedPeriodYears = normalizePrimitive(expected?.periodYears)
+      result.expectedQuantity = normalizePrimitive(expected?.quantity)
+      delete result.expectedProduction
+    }
     if ("product_name" in result && !("name" in result)) {
       result.name = result.product_name
       delete result.product_name
@@ -221,6 +245,18 @@ const normalizeRecord = (entity: string, record: ComparableRecord | null) => {
     if ("category_small" in result) {
       result.categorySmall = result.category_small
       delete result.category_small
+    }
+    if ("categoryLargeId" in result) {
+      delete result.categoryLargeId
+    }
+    if ("categoryMediumId" in result) {
+      delete result.categoryMediumId
+    }
+    if ("categorySmallId" in result) {
+      delete result.categorySmallId
+    }
+    if ("equipmentIds" in result) {
+      delete result.equipmentIds
     }
   }
 
