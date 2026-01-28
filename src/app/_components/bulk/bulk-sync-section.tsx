@@ -44,7 +44,6 @@ type BulkSyncSectionProps = {
   helpText: string
   target: "master" | "products"
 }
-
 const filterDiffByTarget = (diff: DiffResponse, target: "master" | "products") => {
   const items =
     target === "products"
