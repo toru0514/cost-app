@@ -170,6 +170,7 @@ export type DiffSummary = {
 export type DiffItem = {
   entity: BulkSyncEntity
   operation: "create" | "update" | "delete"
+  issueOnly?: boolean
   key: {
     id?: string
     naturalKey: string

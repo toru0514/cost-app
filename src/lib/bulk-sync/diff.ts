@@ -6,6 +6,7 @@ type ComparableRecord = Record<string, unknown>
 const buildSummary = (items: DiffItem[]): DiffSummary => {
   return items.reduce<DiffSummary>(
     (acc, item) => {
+      if (item.issueOnly) return acc
       acc.total += 1
       if (item.operation === "create") acc.create += 1
       if (item.operation === "update") acc.update += 1
@@ -93,23 +94,32 @@ const buildExistingIndex = (existing: AppData) => {
   return { byId: map, byNaturalKey: naturalMap }
 }
 
-const normalizePrimitive = (value: unknown): unknown => {
+const normalizeString = (value: unknown): unknown => {
   if (value === null || value === undefined) return null
   if (typeof value === "string") {
     const trimmed = value.trim()
-    if (!trimmed) return null
-    const lowered = trimmed.toLowerCase()
-    if (lowered === "true") return true
-    if (lowered === "false") return false
-    const numeric = Number(trimmed)
-    if (!Number.isNaN(numeric)) return numeric
-    return trimmed
+    return trimmed ? trimmed : null
   }
   if (typeof value === "number") {
     if (!Number.isFinite(value)) return null
     return value
   }
   if (typeof value === "boolean") return value
+  return value
+}
+
+const normalizeNumber = (value: unknown): unknown => {
+  if (value === null || value === undefined || value === "") return null
+  if (typeof value === "number") {
+    if (!Number.isFinite(value)) return null
+    return value
+  }
+  if (typeof value === "string") {
+    const trimmed = value.trim()
+    if (!trimmed) return null
+    const numeric = Number(trimmed)
+    return Number.isFinite(numeric) ? numeric : trimmed
+  }
   return value
 }
 
@@ -135,8 +145,8 @@ const normalizeVariants = (value: unknown) => {
     return value
       .map((entry) => {
         if (!entry || typeof entry !== "object") return null
-        const label = normalizePrimitive((entry as { label?: unknown }).label)
-        const quantity = normalizePrimitive((entry as { quantity?: unknown }).quantity)
+        const label = normalizeString((entry as { label?: unknown }).label)
+        const quantity = normalizeNumber((entry as { quantity?: unknown }).quantity)
         return label ? { label, quantity } : null
       })
       .filter(Boolean)
@@ -159,8 +169,8 @@ const normalizeVariants = (value: unknown) => {
       .filter(Boolean)
       .map((segment) => {
         const [labelRaw, quantityRaw] = segment.split(":")
-        const label = normalizePrimitive(labelRaw)
-        const quantity = normalizePrimitive(quantityRaw)
+        const label = normalizeString(labelRaw)
+        const quantity = normalizeNumber(quantityRaw)
         return label ? { label, quantity } : null
       })
       .filter(Boolean)
@@ -171,6 +181,28 @@ const normalizeVariants = (value: unknown) => {
 }
 
 const toCamelCase = (value: string) => value.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+
+const numericKeys = new Set([
+  "unitCost",
+  "unitsPerBatch",
+  "hourlyRate",
+  "acquisitionCost",
+  "amortizationYears",
+  "utilizationRate",
+  "ratePercent",
+  "fixedAmount",
+  "salePrice",
+  "baseManHours",
+  "expectedPeriodYears",
+  "expectedQuantity",
+  "defaultElectricityCost",
+  "productionLotSize",
+])
+
+const normalizeValue = (key: string, value: unknown) => {
+  if (numericKeys.has(key)) return normalizeNumber(value)
+  return normalizeString(value)
+}
 
 const normalizeRecord = (entity: string, record: ComparableRecord | null, allowedKeys?: Set<string>) => {
   if (!record) return {}
@@ -192,14 +224,14 @@ const normalizeRecord = (entity: string, record: ComparableRecord | null, allowe
       result[camelKey] = normalizeVariants(value)
       return
     }
-    result[camelKey] = normalizePrimitive(value)
+    result[camelKey] = normalizeValue(camelKey, value)
   })
 
   if (entity === "products") {
     if ("expectedProduction" in result) {
       const expected = result.expectedProduction as { periodYears?: unknown; quantity?: unknown }
-      result.expectedPeriodYears = normalizePrimitive(expected?.periodYears)
-      result.expectedQuantity = normalizePrimitive(expected?.quantity)
+      result.expectedPeriodYears = normalizeNumber(expected?.periodYears)
+      result.expectedQuantity = normalizeNumber(expected?.quantity)
       delete result.expectedProduction
     }
     if ("productName" in result && !("name" in result)) {
@@ -296,6 +328,17 @@ export const buildBulkSyncDiff = (
         : "create"
 
       if (!operation) {
+        if (recordIssues.length > 0) {
+          items.push({
+            entity: entity as DiffItem["entity"],
+            operation: "update",
+            issueOnly: true,
+            key: { id: record.id, naturalKey: record.naturalKey },
+            before: existingRecord,
+            after: record.data,
+            issues: recordIssues,
+          })
+        }
         return
       }
 
