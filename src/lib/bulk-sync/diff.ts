@@ -1,5 +1,5 @@
 import type { AppData } from "../types"
-import type { DiffItem, DiffResult, DiffSummary, NormalizedPayload, ValidationIssue } from "./types"
+import type { BulkSyncEntity, DiffItem, DiffResult, DiffSummary, NormalizedPayload, ValidationIssue } from "./types"
 
 type ComparableRecord = Record<string, unknown>
 
@@ -170,25 +170,29 @@ const normalizeVariants = (value: unknown) => {
   return value
 }
 
-const normalizeRecord = (entity: string, record: ComparableRecord | null) => {
+const toCamelCase = (value: string) => value.replace(/_([a-z])/g, (_, letter) => letter.toUpperCase())
+
+const normalizeRecord = (entity: string, record: ComparableRecord | null, allowedKeys?: Set<string>) => {
   if (!record) return {}
   const result: ComparableRecord = {}
   Object.entries(record).forEach(([key, value]) => {
     if (value === undefined) return
     if (key === "id") return
-    if (key === "equipment_names") {
-      result[key] = normalizeDelimited(value)
+    const camelKey = key.includes("_") ? toCamelCase(key) : key
+    if (allowedKeys && !allowedKeys.has(camelKey)) return
+    if (camelKey === "equipmentNames") {
+      result[camelKey] = normalizeDelimited(value)
       return
     }
-    if (key === "equipmentIds") {
-      result[key] = Array.isArray(value) ? [...value].sort() : value
+    if (camelKey === "equipmentIds") {
+      result[camelKey] = Array.isArray(value) ? [...value].sort() : value
       return
     }
-    if (key === "variants" || key === "size_variants" || key === "sizeVariants") {
-      result[key] = normalizeVariants(value)
+    if (camelKey === "variants" || camelKey === "sizeVariants") {
+      result[camelKey] = normalizeVariants(value)
       return
     }
-    result[key] = normalizePrimitive(value)
+    result[camelKey] = normalizePrimitive(value)
   })
 
   if (entity === "products") {
@@ -198,53 +202,13 @@ const normalizeRecord = (entity: string, record: ComparableRecord | null) => {
       result.expectedQuantity = normalizePrimitive(expected?.quantity)
       delete result.expectedProduction
     }
-    if ("product_name" in result && !("name" in result)) {
-      result.name = result.product_name
-      delete result.product_name
-    }
-    if ("expected_period_years" in result) {
-      result.expectedPeriodYears = result.expected_period_years
-      delete result.expected_period_years
-    }
-    if ("expected_quantity" in result) {
-      result.expectedQuantity = result.expected_quantity
-      delete result.expected_quantity
-    }
-    if ("base_man_hours" in result) {
-      result.baseManHours = result.base_man_hours
-      delete result.base_man_hours
-    }
-    if ("default_electricity_cost" in result) {
-      result.defaultElectricityCost = result.default_electricity_cost
-      delete result.default_electricity_cost
-    }
-    if ("production_lot_size" in result) {
-      result.productionLotSize = result.production_lot_size
-      delete result.production_lot_size
-    }
-    if ("sale_price" in result) {
-      result.salePrice = result.sale_price
-      delete result.sale_price
+    if ("productName" in result && !("name" in result)) {
+      result.name = result.productName
+      delete result.productName
     }
     if ("notes" in result && !("note" in result)) {
       result.note = result.notes
       delete result.notes
-    }
-    if ("equipment_names" in result) {
-      result.equipmentNames = result.equipment_names
-      delete result.equipment_names
-    }
-    if ("category_large" in result) {
-      result.categoryLarge = result.category_large
-      delete result.category_large
-    }
-    if ("category_medium" in result) {
-      result.categoryMedium = result.category_medium
-      delete result.category_medium
-    }
-    if ("category_small" in result) {
-      result.categorySmall = result.category_small
-      delete result.category_small
     }
     if ("categoryLargeId" in result) {
       delete result.categoryLargeId
@@ -263,11 +227,26 @@ const normalizeRecord = (entity: string, record: ComparableRecord | null) => {
   return result
 }
 
+const ignoredKeysByEntity: Partial<Record<BulkSyncEntity, Set<string>>> = {
+  categories_medium: new Set(["largeName"]),
+  categories_small: new Set(["largeName", "mediumName"]),
+}
+
+const pickComparableKeys = (entity: string, record: ComparableRecord) => {
+  const ignored = ignoredKeysByEntity[entity as BulkSyncEntity]
+  return Object.keys(record).filter((key) => !ignored?.has(key))
+}
+
 const hasRecordChanges = (entity: string, existingRecord: ComparableRecord | null, nextRecord: ComparableRecord) => {
-  const normalizedExisting = normalizeRecord(entity, existingRecord)
-  const normalizedNext = normalizeRecord(entity, nextRecord)
-  const keys = new Set([...Object.keys(normalizedExisting), ...Object.keys(normalizedNext)])
-  for (const key of keys) {
+  const normalizedNextRaw = normalizeRecord(entity, nextRecord)
+  const comparableKeys = pickComparableKeys(entity, normalizedNextRaw)
+  const keySet = new Set(comparableKeys)
+  const normalizedNext: ComparableRecord = {}
+  comparableKeys.forEach((key) => {
+    normalizedNext[key] = normalizedNextRaw[key]
+  })
+  const normalizedExisting = normalizeRecord(entity, existingRecord, keySet)
+  for (const key of keySet) {
     const left = normalizedExisting[key]
     const right = normalizedNext[key]
     if (Array.isArray(left) || Array.isArray(right)) {
