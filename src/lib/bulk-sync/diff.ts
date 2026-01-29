@@ -216,7 +216,11 @@ const normalizeRecord = (
   Object.entries(record).forEach(([key, value]) => {
     if (value === undefined) return
     if (key === "id") return
-    const camelKey = key.includes("_") ? toCamelCase(key) : key
+    let camelKey = key.includes("_") ? toCamelCase(key) : key
+    if (entity === "products") {
+      if (camelKey === "productName") camelKey = "name"
+      if (camelKey === "notes") camelKey = "note"
+    }
     if (allowedKeys && !allowedKeys.has(camelKey)) return
     if (camelKey === "equipmentNames") {
       result[camelKey] = normalizeDelimited(value)
