@@ -1,6 +1,8 @@
-import type { BulkSyncEntity, BulkSyncPayload } from "./types"
+import type { BulkSyncPayload } from "./types"
 import { fetchGoogleSheetRows } from "../google-sheets"
 import { SHEET_COLUMNS, SHEET_ENTITIES } from "./sheet-columns"
+
+export { SHEET_COLUMNS, SHEET_ENTITIES }
 
 const pickRowValues = (values: Record<string, string>, columns: string[]) => {
   return columns.reduce<Record<string, string>>((acc, column) => {

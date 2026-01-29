@@ -1,6 +1,6 @@
 import type { AppData, ProductSizeVariant } from "../types"
 import type { BulkSyncEntity } from "./types"
-import { SHEET_COLUMNS } from "./sheet-payload"
+import { SHEET_COLUMNS } from "./sheet-columns"
 
 type SheetValues = (string | number | boolean | null)[]
 
