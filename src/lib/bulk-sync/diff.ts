@@ -1,5 +1,6 @@
 import type { AppData } from "../types"
 import type { BulkSyncEntity, DiffItem, DiffResult, DiffSummary, NormalizedPayload, ValidationIssue } from "./types"
+import { SHEET_COLUMNS } from "./sheet-columns"
 
 type ComparableRecord = Record<string, unknown>
 
@@ -204,7 +205,12 @@ const normalizeValue = (key: string, value: unknown) => {
   return normalizeString(value)
 }
 
-const normalizeRecord = (entity: string, record: ComparableRecord | null, allowedKeys?: Set<string>) => {
+const normalizeRecord = (
+  entity: string,
+  record: ComparableRecord | null,
+  allowedKeys?: Set<string>,
+  fillMissingAsNull = false
+) => {
   if (!record) return {}
   const result: ComparableRecord = {}
   Object.entries(record).forEach(([key, value]) => {
@@ -226,6 +232,14 @@ const normalizeRecord = (entity: string, record: ComparableRecord | null, allowe
     }
     result[camelKey] = normalizeValue(camelKey, value)
   })
+
+  if (allowedKeys && fillMissingAsNull) {
+    allowedKeys.forEach((key) => {
+      if (!(key in result)) {
+        result[key] = null
+      }
+    })
+  }
 
   if (entity === "products") {
     if ("expectedProduction" in result) {
@@ -264,21 +278,27 @@ const ignoredKeysByEntity: Partial<Record<BulkSyncEntity, Set<string>>> = {
   categories_small: new Set(["largeName", "mediumName"]),
 }
 
-const pickComparableKeys = (entity: string, record: ComparableRecord) => {
-  const ignored = ignoredKeysByEntity[entity as BulkSyncEntity]
-  return Object.keys(record).filter((key) => !ignored?.has(key))
+const buildAllowedKeys = (entity: BulkSyncEntity) => {
+  const ignored = ignoredKeysByEntity[entity]
+  const keys = new Set<string>()
+  SHEET_COLUMNS[entity].forEach((column) => {
+    if (column === "id" || column === "is_deleted" || column === "status") return
+    const camelKey = toCamelCase(column)
+    if (ignored?.has(camelKey)) return
+    keys.add(camelKey)
+  })
+  return keys
 }
 
-const hasRecordChanges = (entity: string, existingRecord: ComparableRecord | null, nextRecord: ComparableRecord) => {
-  const normalizedNextRaw = normalizeRecord(entity, nextRecord)
-  const comparableKeys = pickComparableKeys(entity, normalizedNextRaw)
-  const keySet = new Set(comparableKeys)
-  const normalizedNext: ComparableRecord = {}
-  comparableKeys.forEach((key) => {
-    normalizedNext[key] = normalizedNextRaw[key]
-  })
-  const normalizedExisting = normalizeRecord(entity, existingRecord, keySet)
-  for (const key of keySet) {
+const hasRecordChanges = (
+  entity: string,
+  existingRecord: ComparableRecord | null,
+  nextRecord: ComparableRecord,
+  allowedKeys: Set<string>
+) => {
+  const normalizedNext = normalizeRecord(entity, nextRecord, allowedKeys, true)
+  const normalizedExisting = normalizeRecord(entity, existingRecord, allowedKeys, true)
+  for (const key of allowedKeys) {
     const left = normalizedExisting[key]
     const right = normalizedNext[key]
     if (Array.isArray(left) || Array.isArray(right)) {
@@ -302,6 +322,7 @@ export const buildBulkSyncDiff = (
   const items: DiffItem[] = []
 
   Object.entries(normalized).forEach(([entity, records]) => {
+    const allowedKeys = buildAllowedKeys(entity as BulkSyncEntity)
     records.forEach((record) => {
       const issueKey = toKey(entity, record.id, record.naturalKey)
       const recordIssues = issueMap.get(issueKey) ?? []
@@ -322,7 +343,7 @@ export const buildBulkSyncDiff = (
       }
 
       const operation = existingRecord
-        ? hasRecordChanges(entity, existingRecord, record.data)
+        ? hasRecordChanges(entity, existingRecord, record.data, allowedKeys)
           ? "update"
           : null
         : "create"

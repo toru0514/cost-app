@@ -94,6 +94,7 @@ export const buildBulkSyncAuditChanges = (items: DiffItem[], existing: AppData):
   const changes: BulkSyncAuditChanges = {}
 
   items.forEach((item) => {
+    if (item.issueOnly) return
     const mapped = mapEntity(item.entity)
     if (!mapped) return
     const summary = changes[mapped] ?? createSummary()

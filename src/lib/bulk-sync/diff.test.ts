@@ -77,4 +77,93 @@ describe("buildBulkSyncDiff", () => {
     expect(result.summary.update).toBe(1)
     expect(result.summary.delete).toBe(1)
   })
+
+  it("detects clear when sheet value is blank", () => {
+    const normalized: NormalizedPayload = {
+      ...normalizedBase,
+      materials: [
+        {
+          entity: "materials",
+          id: "mat-1",
+          naturalKey: "コットン",
+          isDeleted: false,
+          data: { name: "コットン" },
+        },
+      ],
+    }
+
+    const existing = {
+      ...emptyAppData,
+      materials: [
+        {
+          id: "mat-1",
+          name: "コットン",
+          unit: "m",
+          sizeDescription: "",
+          currency: "JPY",
+          unitCost: 80,
+          unitsPerBatch: 1,
+          supplier: "",
+          note: "メモあり",
+        },
+      ],
+    }
+
+    const result = buildBulkSyncDiff(normalized, existing, [])
+    expect(result.summary.update).toBe(1)
+  })
+
+  it("keeps issues even when there is no diff", () => {
+    const normalized: NormalizedPayload = {
+      ...normalizedBase,
+      materials: [
+        {
+          entity: "materials",
+          id: "mat-1",
+          naturalKey: "コットン",
+          isDeleted: false,
+          data: {
+            name: "コットン",
+            unit: "m",
+            size_description: "",
+            currency: "JPY",
+            unit_cost: 100,
+            units_per_batch: 1,
+            supplier: "",
+            note: "",
+          },
+        },
+      ],
+    }
+
+    const existing = {
+      ...emptyAppData,
+      materials: [
+        {
+          id: "mat-1",
+          name: "コットン",
+          unit: "m",
+          sizeDescription: "",
+          currency: "JPY",
+          unitCost: 100,
+          unitsPerBatch: 1,
+          supplier: "",
+          note: "",
+        },
+      ],
+    }
+
+    const result = buildBulkSyncDiff(normalized, existing, [
+      {
+        entity: "materials",
+        key: "mat-1",
+        message: "テスト警告",
+        severity: "warning",
+      },
+    ])
+
+    expect(result.items.length).toBe(1)
+    expect(result.items[0].issueOnly).toBe(true)
+    expect(result.summary.total).toBe(0)
+  })
 })
