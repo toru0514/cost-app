@@ -285,6 +285,16 @@ const buildAllowedKeys = (entity: BulkSyncEntity) => {
     if (column === "id" || column === "is_deleted" || column === "status") return
     const camelKey = toCamelCase(column)
     if (ignored?.has(camelKey)) return
+    if (entity === "products") {
+      if (camelKey === "productName") {
+        keys.add("name")
+        return
+      }
+      if (camelKey === "notes") {
+        keys.add("note")
+        return
+      }
+    }
     keys.add(camelKey)
   })
   return keys
