@@ -46,6 +46,7 @@ type PendingCategoryDelete =
       id: string
       name: string
       impactedProducts: number
+      cascadeMessage?: string
     }
 
 export function CategoryListSection({ data, actions, createTempId }: CategoryListSectionProps) {
