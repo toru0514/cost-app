@@ -29,6 +29,7 @@ export function FilterPanel({
         <CardTitle>可視化フィルタ</CardTitle>
         <CardDescription>期間とカテゴリを切り替えてグラフを更新します。</CardDescription>
         <p className="text-xs text-muted-foreground">対象期間: {currentRangeLabel}</p>
+        <p className="text-xs text-muted-foreground">現在の集計基準は商品登録日です。</p>
       </CardHeader>
       <CardContent>
         <div className="flex flex-col gap-3 md:flex-row md:flex-wrap md:items-center">
