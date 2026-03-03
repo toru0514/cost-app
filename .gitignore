@@ -9,3 +9,6 @@ yarn-error.log*
 pnpm-debug.log*
 .eslintcache
 .vercel
+supabase/.temp/
+supabase_backup_*.sql
+docs/PR解説/
