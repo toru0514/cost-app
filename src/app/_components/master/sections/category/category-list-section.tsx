@@ -259,6 +259,16 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
     closeDeleteDialog()
   }
 
+  const getDeleteDialogTitle = () => {
+    if (!pendingDeleteCategory) return "カテゴリを削除しますか？"
+    const levelLabelMap: Record<PendingCategoryDelete["level"], string> = {
+      large: "大",
+      medium: "中",
+      small: "小",
+    }
+    return `${levelLabelMap[pendingDeleteCategory.level]}カテゴリを削除しますか？`
+  }
+
   return (
     <>
       <Card>
@@ -540,11 +550,7 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
       <Dialog open={pendingDeleteCategory !== null} onOpenChange={(open) => !open && closeDeleteDialog()}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>
-              {pendingDeleteCategory
-                ? `${pendingDeleteCategory.level === "large" ? "大" : pendingDeleteCategory.level === "medium" ? "中" : "小"}カテゴリを削除しますか？`
-                : "カテゴリを削除しますか？"}
-            </DialogTitle>
+            <DialogTitle>{getDeleteDialogTitle()}</DialogTitle>
             <DialogDescription className="space-y-1">
               <p>
                 {pendingDeleteCategory
