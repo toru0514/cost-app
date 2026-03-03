@@ -163,6 +163,10 @@ export default function Home() {
       "制作ロット数",
       "想定生産数",
       "販売価格",
+      "原価",
+      "利益",
+      "オプション",
+      "備考",
       "材料費",
       "梱包費",
       "人件費",
@@ -172,10 +176,6 @@ export default function Home() {
       "物流費",
       "電気代",
       "手数料",
-      "原価",
-      "利益",
-      "オプション",
-      "備考",
     ]
 
     const rows = data.products.map((product) => {
@@ -204,6 +204,10 @@ export default function Home() {
         productionLotSize.toString(),
         expectedProductionQuantity.toString(),
         salePrice.toString(),
+        unitCost.toString(),
+        profit.toString(),
+        optionText,
+        product.notes ?? "",
         (costs?.material ?? 0).toString(),
         (costs?.packaging ?? 0).toString(),
         (costs?.labor ?? 0).toString(),
@@ -213,10 +217,6 @@ export default function Home() {
         (costs?.logistics ?? 0).toString(),
         (costs?.electricity ?? 0).toString(),
         (costs?.fees ?? 0).toString(),
-        unitCost.toString(),
-        profit.toString(),
-        optionText,
-        product.notes ?? "",
       ]
     })
 
