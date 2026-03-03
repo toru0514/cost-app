@@ -50,6 +50,29 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
     setEditingMedium({ id: null, name: "", description: "", largeId: data.categories.large[0]?.id ?? "" })
   const resetSmall = () => setEditingSmall({ id: null, name: "", description: "", mediumId: "" })
 
+  const countImpactedProductsByLargeCategory = (largeId: string) => {
+    const mediumIds = new Set(data.categories.medium.filter((category) => category.largeId === largeId).map((category) => category.id))
+    const smallIds = new Set(data.categories.small.filter((category) => mediumIds.has(category.mediumId)).map((category) => category.id))
+    return data.products.filter(
+      (product) =>
+        product.categoryLargeId === largeId ||
+        (product.categoryMediumId ? mediumIds.has(product.categoryMediumId) : false) ||
+        (product.categorySmallId ? smallIds.has(product.categorySmallId) : false)
+    ).length
+  }
+
+  const countImpactedProductsByMediumCategory = (mediumId: string) => {
+    const smallIds = new Set(data.categories.small.filter((category) => category.mediumId === mediumId).map((category) => category.id))
+    return data.products.filter(
+      (product) =>
+        product.categoryMediumId === mediumId ||
+        (product.categorySmallId ? smallIds.has(product.categorySmallId) : false)
+    ).length
+  }
+
+  const countImpactedProductsBySmallCategory = (smallId: string) =>
+    data.products.filter((product) => product.categorySmallId === smallId).length
+
   const renderActionButtons = (onSave: () => void, onCancel: () => void, onDelete?: () => void) => (
     <div className="flex gap-2">
       <Button type="button" size="sm" onClick={onSave}>
@@ -78,6 +101,11 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
   const handleLargeDelete = () => {
     if (!editingLarge.id) return
     const name = editingLarge.name.trim() || "大カテゴリ"
+    const impactedProducts = countImpactedProductsByLargeCategory(editingLarge.id)
+    const confirmed = window.confirm(
+      `このカテゴリを参照している商品が ${impactedProducts} 件あります。\n配下の中カテゴリ・小カテゴリも削除されます。\n削除しますか？`
+    )
+    if (!confirmed) return
     removeLargeCategory(editingLarge.id)
     toast.success("大カテゴリを削除しました", { description: `「${name}」を削除しました。` })
     resetLarge()
@@ -108,6 +136,11 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
   const handleMediumDelete = () => {
     if (!editingMedium.id) return
     const name = editingMedium.name.trim() || "中カテゴリ"
+    const impactedProducts = countImpactedProductsByMediumCategory(editingMedium.id)
+    const confirmed = window.confirm(
+      `このカテゴリを参照している商品が ${impactedProducts} 件あります。\n配下の小カテゴリも削除されます。\n削除しますか？`
+    )
+    if (!confirmed) return
     removeMediumCategory(editingMedium.id)
     toast.success("中カテゴリを削除しました", { description: `「${name}」を削除しました。` })
     resetMedium()
@@ -138,6 +171,11 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
   const handleSmallDelete = () => {
     if (!editingSmall.id) return
     const name = editingSmall.name.trim() || "小カテゴリ"
+    const impactedProducts = countImpactedProductsBySmallCategory(editingSmall.id)
+    const confirmed = window.confirm(
+      `このカテゴリを参照している商品が ${impactedProducts} 件あります。\n削除しますか？`
+    )
+    if (!confirmed) return
     removeSmallCategory(editingSmall.id)
     toast.success("小カテゴリを削除しました", { description: `「${name}」を削除しました。` })
     resetSmall()

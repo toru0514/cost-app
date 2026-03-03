@@ -365,13 +365,32 @@ export function useAppData() {
   }, [update])
 
   const removeLargeCategory = useCallback((id: string) => {
-    update((prev) => ({
-      ...prev,
-      categories: {
-        ...prev.categories,
-        large: prev.categories.large.filter((category) => category.id !== id),
-      },
-    }))
+    update((prev) => {
+      const mediumIdsToRemove = new Set(
+        prev.categories.medium.filter((category) => category.largeId === id).map((category) => category.id)
+      )
+      const smallIdsToRemove = new Set(
+        prev.categories.small
+          .filter((category) => mediumIdsToRemove.has(category.mediumId))
+          .map((category) => category.id)
+      )
+
+      return {
+        ...prev,
+        categories: {
+          ...prev.categories,
+          large: prev.categories.large.filter((category) => category.id !== id),
+          medium: prev.categories.medium.filter((category) => !mediumIdsToRemove.has(category.id)),
+          small: prev.categories.small.filter((category) => !smallIdsToRemove.has(category.id)),
+        },
+        products: prev.products.map((product) => ({
+          ...product,
+          categoryLargeId: product.categoryLargeId === id ? null : product.categoryLargeId,
+          categoryMediumId: product.categoryMediumId && mediumIdsToRemove.has(product.categoryMediumId) ? null : product.categoryMediumId,
+          categorySmallId: product.categorySmallId && smallIdsToRemove.has(product.categorySmallId) ? null : product.categorySmallId,
+        })),
+      }
+    })
   }, [update])
 
   const addMediumCategory = useCallback(
@@ -399,13 +418,25 @@ export function useAppData() {
   }, [update])
 
   const removeMediumCategory = useCallback((id: string) => {
-    update((prev) => ({
-      ...prev,
-      categories: {
-        ...prev.categories,
-        medium: prev.categories.medium.filter((category) => category.id !== id),
-      },
-    }))
+    update((prev) => {
+      const smallIdsToRemove = new Set(
+        prev.categories.small.filter((category) => category.mediumId === id).map((category) => category.id)
+      )
+
+      return {
+        ...prev,
+        categories: {
+          ...prev.categories,
+          medium: prev.categories.medium.filter((category) => category.id !== id),
+          small: prev.categories.small.filter((category) => !smallIdsToRemove.has(category.id)),
+        },
+        products: prev.products.map((product) => ({
+          ...product,
+          categoryMediumId: product.categoryMediumId === id ? null : product.categoryMediumId,
+          categorySmallId: product.categorySmallId && smallIdsToRemove.has(product.categorySmallId) ? null : product.categorySmallId,
+        })),
+      }
+    })
   }, [update])
 
   const addSmallCategory = useCallback(
@@ -439,6 +470,10 @@ export function useAppData() {
         ...prev.categories,
         small: prev.categories.small.filter((category) => category.id !== id),
       },
+      products: prev.products.map((product) => ({
+        ...product,
+        categorySmallId: product.categorySmallId === id ? null : product.categorySmallId,
+      })),
     }))
   }, [update])
 
