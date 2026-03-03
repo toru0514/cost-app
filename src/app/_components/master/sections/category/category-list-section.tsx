@@ -61,6 +61,12 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
     ).length
   }
 
+  const countChildCategoriesByLargeCategory = (largeId: string) => {
+    const mediumIds = new Set(data.categories.medium.filter((category) => category.largeId === largeId).map((category) => category.id))
+    const smallCount = data.categories.small.filter((category) => mediumIds.has(category.mediumId)).length
+    return { mediumCount: mediumIds.size, smallCount }
+  }
+
   const countImpactedProductsByMediumCategory = (mediumId: string) => {
     const smallIds = new Set(data.categories.small.filter((category) => category.mediumId === mediumId).map((category) => category.id))
     return data.products.filter(
@@ -69,6 +75,9 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
         (product.categorySmallId ? smallIds.has(product.categorySmallId) : false)
     ).length
   }
+
+  const countChildCategoriesByMediumCategory = (mediumId: string) =>
+    data.categories.small.filter((category) => category.mediumId === mediumId).length
 
   const countImpactedProductsBySmallCategory = (smallId: string) =>
     data.products.filter((product) => product.categorySmallId === smallId).length
@@ -102,8 +111,13 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
     if (!editingLarge.id) return
     const name = editingLarge.name.trim() || "大カテゴリ"
     const impactedProducts = countImpactedProductsByLargeCategory(editingLarge.id)
+    const { mediumCount, smallCount } = countChildCategoriesByLargeCategory(editingLarge.id)
+    const cascadeMessage =
+      mediumCount > 0 || smallCount > 0
+        ? `配下の中カテゴリ ${mediumCount} 件・小カテゴリ ${smallCount} 件も削除されます。\n`
+        : ""
     const confirmed = window.confirm(
-      `このカテゴリを参照している商品が ${impactedProducts} 件あります。\n配下の中カテゴリ・小カテゴリも削除されます。\n削除しますか？`
+      `このカテゴリを参照している商品が ${impactedProducts} 件あります。\n${cascadeMessage}削除しますか？`
     )
     if (!confirmed) return
     removeLargeCategory(editingLarge.id)
@@ -137,8 +151,10 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
     if (!editingMedium.id) return
     const name = editingMedium.name.trim() || "中カテゴリ"
     const impactedProducts = countImpactedProductsByMediumCategory(editingMedium.id)
+    const childSmallCount = countChildCategoriesByMediumCategory(editingMedium.id)
+    const cascadeMessage = childSmallCount > 0 ? `配下の小カテゴリ ${childSmallCount} 件も削除されます。\n` : ""
     const confirmed = window.confirm(
-      `このカテゴリを参照している商品が ${impactedProducts} 件あります。\n配下の小カテゴリも削除されます。\n削除しますか？`
+      `このカテゴリを参照している商品が ${impactedProducts} 件あります。\n${cascadeMessage}削除しますか？`
     )
     if (!confirmed) return
     removeMediumCategory(editingMedium.id)
