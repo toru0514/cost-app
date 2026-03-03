@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { ExternalLink } from "lucide-react"
 
 import { toast } from "sonner"
 
@@ -72,6 +73,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
   const [recordAuditLog, setRecordAuditLog] = useState(true)
   const [exportMode, setExportMode] = useState<"overwrite" | "append">("overwrite")
   const [useManualJson, setUseManualJson] = useState(false)
+  const [openingSheet, setOpeningSheet] = useState(false)
 
   const parsedPayload = useMemo(() => parsePayloadJson(payloadInput), [payloadInput])
 
@@ -259,6 +261,35 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
     }
   }
 
+  const handleOpenSpreadsheet = async () => {
+    setOpeningSheet(true)
+    try {
+      const headers = await buildAuthHeaders(false)
+      const response = await fetch("/api/bulk-sync/spreadsheet", {
+        method: "GET",
+        headers,
+        credentials: "include",
+      })
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error ?? "スプレッドシート情報の取得に失敗しました")
+      }
+
+      const data = (await response.json()) as { spreadsheetId?: string }
+      if (!data.spreadsheetId) {
+        throw new Error("スプレッドシートIDが未設定です")
+      }
+
+      const url = `https://docs.google.com/spreadsheets/d/${data.spreadsheetId}/edit`
+      window.open(url, "_blank", "noopener,noreferrer")
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "スプレッドシートを開けませんでした")
+    } finally {
+      setOpeningSheet(false)
+    }
+  }
+
   const statusText =
     busy === "diff"
       ? "差分を確認中..."
@@ -275,7 +306,13 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
   return (
     <Card>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <CardTitle>{title}</CardTitle>
+          <Button type="button" variant="outline" size="sm" onClick={handleOpenSpreadsheet} disabled={openingSheet}>
+            <ExternalLink className="mr-1 h-4 w-4" />
+            {openingSheet ? "シート確認中..." : "スプレッドシートを開く"}
+          </Button>
+        </div>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
