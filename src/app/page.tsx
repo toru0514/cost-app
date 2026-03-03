@@ -649,7 +649,7 @@ export default function Home() {
                     <TableHead>オプション/個数</TableHead>
                     <TableHead>配送方法</TableHead>
                     <TableHead>使用設備</TableHead>
-                    <TableHead>ロット数</TableHead>
+                    <TableHead>制作ロット数</TableHead>
                     <TableHead>想定生産数</TableHead>
                     <TableHead>販売価格</TableHead>
                     <TableHead>利益</TableHead>
@@ -672,8 +672,8 @@ export default function Home() {
                           <TableCell className="text-xs text-muted-foreground">{optionText}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{shippingText}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{equipmentText}</TableCell>
-                          <TableCell>{Number(product.productionLotSize ?? 0)}</TableCell>
-                          <TableCell>{Number(product.expectedProduction?.quantity ?? 0)}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{product.productionLotSize ?? 0}</TableCell>
+                          <TableCell className="text-xs text-muted-foreground">{product.expectedProduction?.quantity ?? 0}</TableCell>
                           <TableCell>{formatCurrency(salePrice)}</TableCell>
                           <TableCell className={profit >= 0 ? "text-green-600" : "text-red-600"}>
                             {formatCurrency(profit)}
