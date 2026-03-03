@@ -151,6 +151,8 @@ export default function Home() {
       "小カテゴリ",
       "配送方法",
       "使用設備",
+      "制作ロット数",
+      "想定生産数",
       "販売価格",
       "原価",
       "利益",
@@ -171,6 +173,8 @@ export default function Home() {
         .join(" / ")
       const shippingText = getShippingText(product.id)
       const equipmentText = getEquipmentText(product)
+      const productionLotSize = Number(product.productionLotSize ?? 0)
+      const expectedProductionQuantity = Number(product.expectedProduction?.quantity ?? 0)
       return [
         product.name,
         largeName,
@@ -178,6 +182,8 @@ export default function Home() {
         smallName,
         shippingText,
         equipmentText,
+        productionLotSize.toString(),
+        expectedProductionQuantity.toString(),
         salePrice.toString(),
         unitCost.toString(),
         profit.toString(),
@@ -643,6 +649,8 @@ export default function Home() {
                     <TableHead>オプション/個数</TableHead>
                     <TableHead>配送方法</TableHead>
                     <TableHead>使用設備</TableHead>
+                    <TableHead>ロット数</TableHead>
+                    <TableHead>想定生産数</TableHead>
                     <TableHead>販売価格</TableHead>
                     <TableHead>利益</TableHead>
                     <TableHead>備考</TableHead>
@@ -664,6 +672,8 @@ export default function Home() {
                           <TableCell className="text-xs text-muted-foreground">{optionText}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{shippingText}</TableCell>
                           <TableCell className="text-xs text-muted-foreground">{equipmentText}</TableCell>
+                          <TableCell>{Number(product.productionLotSize ?? 0)}</TableCell>
+                          <TableCell>{Number(product.expectedProduction?.quantity ?? 0)}</TableCell>
                           <TableCell>{formatCurrency(salePrice)}</TableCell>
                           <TableCell className={profit >= 0 ? "text-green-600" : "text-red-600"}>
                             {formatCurrency(profit)}
