@@ -77,6 +77,7 @@ export default function Home() {
   const [loginForm, setLoginForm] = useState({ name: "", email: "", password: "" })
   const [authMode, setAuthMode] = useState<"login" | "signup">("login")
   const [pendingDeleteProduct, setPendingDeleteProduct] = useState<Product | null>(null)
+  const [pendingBackupRestore, setPendingBackupRestore] = useState<{ fileName: string; data: Partial<AppData> } | null>(null)
   const backupImportInputRef = useRef<HTMLInputElement | null>(null)
   const importGuestData = actions.importGuestData
   const productCostMap = useMemo(() => {
@@ -339,13 +340,7 @@ export default function Home() {
           toast.error("バックアップファイルとして認識できません。")
           return
         }
-
-        const confirmed = window.confirm("現在のデータを上書きして復元します。よろしいですか？")
-        if (!confirmed) return
-
-        const imported = importGuestData(parsed)
-        if (!imported) return
-        toast.success("バックアップを復元しました。", { description: `${file.name} を読み込みました。` })
+        setPendingBackupRestore({ fileName: file.name, data: parsed })
       } catch (error) {
         console.error("Failed to import backup json", error)
         toast.error("バックアップの復元に失敗しました。JSONファイルを確認してください。")
@@ -353,8 +348,20 @@ export default function Home() {
         event.target.value = ""
       }
     },
-    [importGuestData]
+    []
   )
+
+  const closeBackupRestoreDialog = useCallback(() => {
+    setPendingBackupRestore(null)
+  }, [])
+
+  const confirmBackupRestore = useCallback(() => {
+    if (!pendingBackupRestore) return
+    const imported = importGuestData(pendingBackupRestore.data)
+    if (!imported) return
+    toast.success("バックアップを復元しました。", { description: `${pendingBackupRestore.fileName} を読み込みました。` })
+    setPendingBackupRestore(null)
+  }, [importGuestData, pendingBackupRestore])
   const handleLoginSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
@@ -868,6 +875,24 @@ export default function Home() {
             </Button>
             <Button type="button" variant="destructive" onClick={confirmDeleteProduct}>
               削除する
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={pendingBackupRestore !== null} onOpenChange={(open) => !open && closeBackupRestoreDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>バックアップを復元しますか？</DialogTitle>
+            <DialogDescription>
+              現在のデータを上書きします。{pendingBackupRestore ? `対象ファイル: ${pendingBackupRestore.fileName}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={closeBackupRestoreDialog}>
+              キャンセル
+            </Button>
+            <Button type="button" variant="destructive" onClick={confirmBackupRestore}>
+              復元する
             </Button>
           </DialogFooter>
         </DialogContent>
