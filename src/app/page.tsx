@@ -167,13 +167,23 @@ export default function Home() {
       "利益",
       "オプション",
       "備考",
+      "材料費",
+      "梱包費",
+      "人件費",
+      "外注費",
+      "開発費",
+      "設備費",
+      "物流費",
+      "電気代",
+      "手数料",
     ]
 
     const rows = data.products.map((product) => {
       const largeName = data.categories.large.find((c) => c.id === product.categoryLargeId)?.name ?? ""
       const mediumName = data.categories.medium.find((c) => c.id === product.categoryMediumId)?.name ?? ""
       const smallName = data.categories.small.find((c) => c.id === product.categorySmallId)?.name ?? ""
-      const unitCost = productCostMap.get(product.id)?.total ?? 0
+      const costs = productCostMap.get(product.id)
+      const unitCost = costs?.total ?? 0
       const salePrice = Number(product.salePrice ?? 0)
       const profit = salePrice - unitCost
       const optionText = (product.sizeVariants ?? [])
@@ -198,6 +208,15 @@ export default function Home() {
         profit.toString(),
         optionText,
         product.notes ?? "",
+        (costs?.material ?? 0).toString(),
+        (costs?.packaging ?? 0).toString(),
+        (costs?.labor ?? 0).toString(),
+        (costs?.outsourcing ?? 0).toString(),
+        (costs?.development ?? 0).toString(),
+        (costs?.equipment ?? 0).toString(),
+        (costs?.logistics ?? 0).toString(),
+        (costs?.electricity ?? 0).toString(),
+        (costs?.fees ?? 0).toString(),
       ]
     })
 
