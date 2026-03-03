@@ -874,6 +874,23 @@ export function useAppData() {
     }
   }, [update, authState])
 
+  const importGuestData = useCallback(
+    (dataset?: Partial<AppData> | null) => {
+      if (authState.status === "authenticated") {
+        toast.error("ログイン中は復元できません")
+        return false
+      }
+
+      const normalized = normalizeAppData(dataset)
+      update(() => normalized)
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized))
+      }
+      return true
+    },
+    [update, authState]
+  )
+
   return {
     data,
     hydrated,
@@ -930,6 +947,7 @@ export function useAppData() {
       removeCostEntriesByProduct,
       resetAll,
       seedSample,
+      importGuestData,
     },
   }
 }
