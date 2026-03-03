@@ -78,6 +78,7 @@ export default function Home() {
   const [authMode, setAuthMode] = useState<"login" | "signup">("login")
   const [pendingDeleteProduct, setPendingDeleteProduct] = useState<Product | null>(null)
   const backupImportInputRef = useRef<HTMLInputElement | null>(null)
+  const importGuestData = actions.importGuestData
   const productCostMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateProductUnitCosts>>()
     data.products.forEach((product) => {
@@ -330,7 +331,19 @@ export default function Home() {
       try {
         const text = await file.text()
         const parsed = JSON.parse(text) as Partial<AppData>
-        const imported = actions.importGuestData(parsed)
+        const hasAppDataShape =
+          parsed !== null &&
+          typeof parsed === "object" &&
+          (Array.isArray(parsed.products) || Array.isArray(parsed.materials) || parsed.categories !== undefined)
+        if (!hasAppDataShape) {
+          toast.error("バックアップファイルとして認識できません。")
+          return
+        }
+
+        const confirmed = window.confirm("現在のデータを上書きして復元します。よろしいですか？")
+        if (!confirmed) return
+
+        const imported = importGuestData(parsed)
         if (!imported) return
         toast.success("バックアップを復元しました。", { description: `${file.name} を読み込みました。` })
       } catch (error) {
@@ -340,7 +353,7 @@ export default function Home() {
         event.target.value = ""
       }
     },
-    [actions]
+    [importGuestData]
   )
   const handleLoginSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
