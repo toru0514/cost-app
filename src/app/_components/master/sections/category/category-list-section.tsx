@@ -4,6 +4,14 @@ import { useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -17,6 +25,29 @@ interface CategoryListSectionProps {
   actions: AppActions
   createTempId: () => string
 }
+
+type PendingCategoryDelete =
+  | {
+      level: "large"
+      id: string
+      name: string
+      impactedProducts: number
+      cascadeMessage?: string
+    }
+  | {
+      level: "medium"
+      id: string
+      name: string
+      impactedProducts: number
+      cascadeMessage?: string
+    }
+  | {
+      level: "small"
+      id: string
+      name: string
+      impactedProducts: number
+      cascadeMessage?: string
+    }
 
 export function CategoryListSection({ data, actions, createTempId }: CategoryListSectionProps) {
   const [editingLarge, setEditingLarge] = useState({ id: null as string | null, name: "", description: "" })
@@ -32,6 +63,7 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
     description: "",
     mediumId: "",
   })
+  const [pendingDeleteCategory, setPendingDeleteCategory] = useState<PendingCategoryDelete | null>(null)
 
   const {
     addLargeCategory,
@@ -114,15 +146,15 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
     const { mediumCount, smallCount } = countChildCategoriesByLargeCategory(editingLarge.id)
     const cascadeMessage =
       mediumCount > 0 || smallCount > 0
-        ? `配下の中カテゴリ ${mediumCount} 件・小カテゴリ ${smallCount} 件も削除されます。\n`
+        ? `配下の中カテゴリ ${mediumCount} 件・小カテゴリ ${smallCount} 件も削除されます。`
         : ""
-    const confirmed = window.confirm(
-      `このカテゴリを参照している商品が ${impactedProducts} 件あります。\n${cascadeMessage}削除しますか？`
-    )
-    if (!confirmed) return
-    removeLargeCategory(editingLarge.id)
-    toast.success("大カテゴリを削除しました", { description: `「${name}」を削除しました。` })
-    resetLarge()
+    setPendingDeleteCategory({
+      level: "large",
+      id: editingLarge.id,
+      name,
+      impactedProducts,
+      cascadeMessage,
+    })
   }
 
   const handleLargeCopy = (category: CategoryLarge) => {
@@ -152,14 +184,14 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
     const name = editingMedium.name.trim() || "中カテゴリ"
     const impactedProducts = countImpactedProductsByMediumCategory(editingMedium.id)
     const childSmallCount = countChildCategoriesByMediumCategory(editingMedium.id)
-    const cascadeMessage = childSmallCount > 0 ? `配下の小カテゴリ ${childSmallCount} 件も削除されます。\n` : ""
-    const confirmed = window.confirm(
-      `このカテゴリを参照している商品が ${impactedProducts} 件あります。\n${cascadeMessage}削除しますか？`
-    )
-    if (!confirmed) return
-    removeMediumCategory(editingMedium.id)
-    toast.success("中カテゴリを削除しました", { description: `「${name}」を削除しました。` })
-    resetMedium()
+    const cascadeMessage = childSmallCount > 0 ? `配下の小カテゴリ ${childSmallCount} 件も削除されます。` : ""
+    setPendingDeleteCategory({
+      level: "medium",
+      id: editingMedium.id,
+      name,
+      impactedProducts,
+      cascadeMessage,
+    })
   }
 
   const handleMediumCopy = (category: CategoryMedium) => {
@@ -188,13 +220,12 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
     if (!editingSmall.id) return
     const name = editingSmall.name.trim() || "小カテゴリ"
     const impactedProducts = countImpactedProductsBySmallCategory(editingSmall.id)
-    const confirmed = window.confirm(
-      `このカテゴリを参照している商品が ${impactedProducts} 件あります。\n削除しますか？`
-    )
-    if (!confirmed) return
-    removeSmallCategory(editingSmall.id)
-    toast.success("小カテゴリを削除しました", { description: `「${name}」を削除しました。` })
-    resetSmall()
+    setPendingDeleteCategory({
+      level: "small",
+      id: editingSmall.id,
+      name,
+      impactedProducts,
+    })
   }
 
   const handleSmallCopy = (category: CategorySmall) => {
@@ -205,13 +236,48 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
     setEditingSmall({ id: newId, name, description: category.description ?? "", mediumId: category.mediumId })
   }
 
+  const closeDeleteDialog = () => {
+    setPendingDeleteCategory(null)
+  }
+
+  const confirmDeleteCategory = () => {
+    if (!pendingDeleteCategory) return
+
+    if (pendingDeleteCategory.level === "large") {
+      removeLargeCategory(pendingDeleteCategory.id)
+      toast.success("大カテゴリを削除しました", { description: `「${pendingDeleteCategory.name}」を削除しました。` })
+      resetLarge()
+    } else if (pendingDeleteCategory.level === "medium") {
+      removeMediumCategory(pendingDeleteCategory.id)
+      toast.success("中カテゴリを削除しました", { description: `「${pendingDeleteCategory.name}」を削除しました。` })
+      resetMedium()
+    } else {
+      removeSmallCategory(pendingDeleteCategory.id)
+      toast.success("小カテゴリを削除しました", { description: `「${pendingDeleteCategory.name}」を削除しました。` })
+      resetSmall()
+    }
+
+    closeDeleteDialog()
+  }
+
+  const getDeleteDialogTitle = () => {
+    if (!pendingDeleteCategory) return "カテゴリを削除しますか？"
+    const levelLabelMap: Record<PendingCategoryDelete["level"], string> = {
+      large: "大",
+      medium: "中",
+      small: "小",
+    }
+    return `${levelLabelMap[pendingDeleteCategory.level]}カテゴリを削除しますか？`
+  }
+
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>カテゴリ一覧</CardTitle>
-        <CardDescription>既存カテゴリをその場で編集できます。</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+    <>
+      <Card>
+        <CardHeader>
+          <CardTitle>カテゴリ一覧</CardTitle>
+          <CardDescription>既存カテゴリをその場で編集できます。</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
         <div>
           <p className="mb-2 font-semibold">大カテゴリ</p>
           {data.categories.large.length === 0 ? (
@@ -480,7 +546,31 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
             </div>
           )}
         </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+      <Dialog open={pendingDeleteCategory !== null} onOpenChange={(open) => !open && closeDeleteDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{getDeleteDialogTitle()}</DialogTitle>
+            <DialogDescription className="space-y-1">
+              <p>
+                {pendingDeleteCategory
+                  ? `このカテゴリを参照している商品が ${pendingDeleteCategory.impactedProducts} 件あります。`
+                  : ""}
+              </p>
+              {pendingDeleteCategory?.cascadeMessage ? <p>{pendingDeleteCategory.cascadeMessage}</p> : null}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={closeDeleteDialog}>
+              キャンセル
+            </Button>
+            <Button type="button" variant="destructive" onClick={confirmDeleteCategory}>
+              削除する
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
