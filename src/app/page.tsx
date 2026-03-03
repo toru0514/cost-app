@@ -5,6 +5,14 @@ import { useCallback, useMemo, useState } from "react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
@@ -68,6 +76,7 @@ export default function Home() {
   const [loginPanelOpen, setLoginPanelOpen] = useState(false)
   const [loginForm, setLoginForm] = useState({ name: "", email: "", password: "" })
   const [authMode, setAuthMode] = useState<"login" | "signup">("login")
+  const [pendingDeleteProduct, setPendingDeleteProduct] = useState<Product | null>(null)
   const productCostMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateProductUnitCosts>>()
     data.products.forEach((product) => {
@@ -247,18 +256,33 @@ export default function Home() {
 
   const handleDeleteProduct = useCallback(
     (product: Product) => {
-      if (typeof window !== "undefined") {
-        const confirmed = window.confirm(`「${product.name}」を削除しますか？関連するコスト明細も削除されます。`)
-        if (!confirmed) return
-      }
-      actions.removeProduct(product.id)
-      actions.removeCostEntriesByProduct(product.id)
-      toast.success("商品を削除しました", {
-        description: `「${product.name}」の情報を削除しました。`,
-      })
+      setPendingDeleteProduct(product)
     },
-    [actions]
+    []
   )
+
+  const confirmDeleteProduct = useCallback(() => {
+    if (!pendingDeleteProduct) return
+    const product = pendingDeleteProduct
+    actions.removeProduct(product.id)
+    actions.removeCostEntriesByProduct(product.id)
+    toast.success("商品を削除しました", {
+      description: `「${product.name}」の情報を削除しました。`,
+    })
+    setPendingDeleteProduct(null)
+  }, [actions, pendingDeleteProduct])
+
+  const closeDeleteProductDialog = useCallback(() => {
+    setPendingDeleteProduct(null)
+  }, [])
+
+  const handleResetLocalStorage = useCallback(() => {
+    if (typeof window !== "undefined") {
+      const confirmed = window.confirm("ローカル保存を完全にクリアします。よろしいですか？")
+      if (!confirmed) return
+    }
+    actions.resetAll()
+  }, [actions])
   const handleLoginSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
@@ -411,11 +435,7 @@ export default function Home() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={() => {
-              if (window.confirm("ローカル保存を完全にクリアします。よろしいですか？")) {
-                actions.resetAll()
-              }
-            }}
+            onClick={handleResetLocalStorage}
             disabled={isAuthenticated}
             title={isAuthenticated ? "ログイン中は利用できません" : undefined}
           >
@@ -740,6 +760,27 @@ export default function Home() {
           />
         </TabsContent>
       </Tabs>
+
+      <Dialog open={pendingDeleteProduct !== null} onOpenChange={(open) => !open && closeDeleteProductDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>商品を削除しますか？</DialogTitle>
+            <DialogDescription>
+              {pendingDeleteProduct
+                ? `「${pendingDeleteProduct.name}」を削除します。関連するコスト明細も削除されます。`
+                : "関連するコスト明細も削除されます。"}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={closeDeleteProductDialog}>
+              キャンセル
+            </Button>
+            <Button type="button" variant="destructive" onClick={confirmDeleteProduct}>
+              削除する
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </main>
   )
