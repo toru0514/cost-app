@@ -8,19 +8,24 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import type { Product } from "@/lib/types"
+import type { AppData, Product } from "@/lib/types"
+
+import { MaterialStockSimulator } from "./material-stock-simulator"
 
 type StockTabProps = {
+  data: AppData
   products: Product[]
   stocks: Map<string, number>
   stocksLoaded: boolean
+  materialStocks: Map<string, number>
+  masterStocksLoaded: boolean
   isAuthenticated: boolean
   onAdjust: (productId: string, delta: number) => Promise<void>
   onSet: (productId: string, quantity: number) => Promise<void>
   onRefresh: () => Promise<void>
 }
 
-export function StockTab({ products, stocks, stocksLoaded, isAuthenticated, onAdjust, onSet, onRefresh }: StockTabProps) {
+export function StockTab({ data, products, stocks, stocksLoaded, materialStocks, masterStocksLoaded, isAuthenticated, onAdjust, onSet, onRefresh }: StockTabProps) {
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
   const [editingStock, setEditingStock] = useState<{ productId: string; value: string } | null>(null)
@@ -81,6 +86,12 @@ export function StockTab({ products, stocks, stocksLoaded, isAuthenticated, onAd
             </div>
           </CardContent>
         </Card>
+        <MaterialStockSimulator
+          data={data}
+          materialStocks={materialStocks}
+          masterStocksLoaded={masterStocksLoaded}
+          isAuthenticated={isAuthenticated}
+        />
       </div>
     )
   }
@@ -206,6 +217,12 @@ export function StockTab({ products, stocks, stocksLoaded, isAuthenticated, onAd
           )}
         </CardContent>
       </Card>
+      <MaterialStockSimulator
+        data={data}
+        materialStocks={materialStocks}
+        masterStocksLoaded={masterStocksLoaded}
+        isAuthenticated={isAuthenticated}
+      />
     </div>
   )
 }
