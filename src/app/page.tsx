@@ -77,6 +77,7 @@ export default function Home() {
   const [loginForm, setLoginForm] = useState({ name: "", email: "", password: "" })
   const [authMode, setAuthMode] = useState<"login" | "signup">("login")
   const [resetPasswordOpen, setResetPasswordOpen] = useState(false)
+  const [isSendingReset, setIsSendingReset] = useState(false)
   const [pendingDeleteProduct, setPendingDeleteProduct] = useState<Product | null>(null)
   const [pendingBackupRestore, setPendingBackupRestore] = useState<{ fileName: string; data: Partial<AppData> } | null>(null)
   const backupImportInputRef = useRef<HTMLInputElement | null>(null)
@@ -396,11 +397,13 @@ export default function Home() {
   )
 
   const handlePasswordReset = useCallback(async () => {
+    if (isSendingReset) return
     const email = loginForm.email.trim()
     if (!email) {
       toast.error("パスワードリセット用のメールアドレスを入力してください。")
       return
     }
+    setIsSendingReset(true)
     try {
       await resetPassword(email)
       toast.success("パスワードリセットメールを送信しました。", {
@@ -410,8 +413,10 @@ export default function Home() {
     } catch (error) {
       const message = error instanceof Error ? error.message : "リセットメール送信に失敗しました。"
       toast.error(message)
+    } finally {
+      setIsSendingReset(false)
     }
-  }, [loginForm.email, resetPassword])
+  }, [isSendingReset, loginForm.email, resetPassword])
 
   const handleLogout = useCallback(() => {
     logout()
@@ -651,8 +656,11 @@ export default function Home() {
                         <p className="mb-2 text-xs text-muted-foreground">
                           入力したメールアドレス宛に、パスワードリセットメールを送信します。
                         </p>
-                        <Button type="button" size="sm" variant="outline" onClick={handlePasswordReset}>
-                          リセットメールを送信
+                        <p className="mb-2 text-xs text-muted-foreground">
+                          上のメールアドレス欄を入力してから送信してください。
+                        </p>
+                        <Button type="button" size="sm" variant="outline" onClick={handlePasswordReset} disabled={isSendingReset}>
+                          {isSendingReset ? "送信中..." : "リセットメールを送信"}
                         </Button>
                       </div>
                     )}
