@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { ExternalLink } from "lucide-react"
+import { ExternalLink, History } from "lucide-react"
 
 import { toast } from "sonner"
 
@@ -39,6 +39,21 @@ type ApplyResponse = {
   errors: { entity: string; rowIndex?: number; message: string; code: string }[]
 }
 
+type HistoryLog = {
+  id: string
+  createdAt: string
+  action: string
+  summary: {
+    total: number
+    success: number
+    failed: number
+    create: number
+    update: number
+    delete: number
+  } | null
+  hasPreviousData: boolean
+}
+
 type BulkSyncSectionProps = {
   title: string
   description: string
@@ -67,8 +82,11 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
   const [diffResult, setDiffResult] = useState<DiffResponse | null>(null)
   const [applyResult, setApplyResult] = useState<ApplyResponse | null>(null)
   const [rollbackResult, setRollbackResult] = useState<ApplyResponse | null>(null)
-  const [busy, setBusy] = useState<"diff" | "apply" | "rollback" | "export" | "import" | null>(null)
+  const [busy, setBusy] = useState<"diff" | "apply" | "rollback" | "export" | "import" | "history" | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [historyLogs, setHistoryLogs] = useState<HistoryLog[] | null>(null)
+  const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
+  const [showHistory, setShowHistory] = useState(false)
   const [dryRun, setDryRun] = useState(false)
   const [recordAuditLog, setRecordAuditLog] = useState(true)
   const [exportMode, setExportMode] = useState<"overwrite" | "append">("overwrite")
@@ -201,7 +219,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
     }
   }
 
-  const handleRollback = async () => {
+  const handleRollback = async (logId?: string) => {
     setErrorMessage(null)
     setRollbackResult(null)
     setBusy("rollback")
@@ -209,11 +227,12 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
     try {
       const response = await retry(
         async () => {
-          const headers = await buildAuthHeaders(false)
+          const headers = await buildAuthHeaders(true)
           const result = await fetch("/api/bulk-sync/rollback", {
             method: "POST",
             headers,
             credentials: "include",
+            body: JSON.stringify(logId ? { logId } : {}),
           })
           if (!result.ok) {
             const error = await result.json().catch(() => ({}))
@@ -231,8 +250,34 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
       )
       const data = (await response.json()) as ApplyResponse
       setRollbackResult(data)
+      setShowHistory(false)
+      setSelectedLogId(null)
     } catch (error) {
       setErrorMessage(error instanceof Error ? error.message : "ロールバックに失敗しました")
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleLoadHistory = async () => {
+    setErrorMessage(null)
+    setBusy("history")
+    try {
+      const headers = await buildAuthHeaders(false)
+      const response = await fetch("/api/bulk-sync/history", {
+        method: "GET",
+        headers,
+        credentials: "include",
+      })
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error ?? "履歴の取得に失敗しました")
+      }
+      const data = (await response.json()) as { history: HistoryLog[] }
+      setHistoryLogs(data.history)
+      setShowHistory(true)
+    } catch (error) {
+      setErrorMessage(error instanceof Error ? error.message : "履歴の取得に失敗しました")
     } finally {
       setBusy(null)
     }
@@ -301,7 +346,9 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
             ? "反映中..."
             : busy === "rollback"
               ? "ロールバック中..."
-              : "待機中"
+              : busy === "history"
+                ? "履歴を取得中..."
+                : "待機中"
 
   return (
     <Card>
@@ -362,8 +409,12 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
             <Button onClick={handleApply} disabled={busy !== null} variant="default">
               シートから読み込み
             </Button>
-            <Button onClick={handleRollback} disabled={busy !== null} variant="outline">
+            <Button onClick={() => handleRollback()} disabled={busy !== null} variant="outline">
               直前の反映をロールバック
+            </Button>
+            <Button onClick={handleLoadHistory} disabled={busy !== null} variant="outline">
+              <History className="mr-1 h-4 w-4" />
+              履歴から選択してロールバック
             </Button>
             {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
           </div>
@@ -391,6 +442,79 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
             </>
           )}
         </div>
+
+        {showHistory && historyLogs !== null && (
+          <div className="space-y-3 rounded-lg border border-dashed p-3">
+            <div className="flex items-center justify-between">
+              <p className="text-sm font-medium">一括反映履歴（最大50件）</p>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setShowHistory(false)
+                  setSelectedLogId(null)
+                }}
+              >
+                閉じる
+              </Button>
+            </div>
+            {historyLogs.length === 0 ? (
+              <p className="text-sm text-muted-foreground">履歴がありません。</p>
+            ) : (
+              <>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>日時</TableHead>
+                      <TableHead>操作</TableHead>
+                      <TableHead>合計</TableHead>
+                      <TableHead>復元可</TableHead>
+                      <TableHead></TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {historyLogs.map((log) => (
+                      <TableRow
+                        key={log.id}
+                        className={selectedLogId === log.id ? "bg-muted" : undefined}
+                        onClick={() => log.hasPreviousData && setSelectedLogId(log.id)}
+                        style={{ cursor: log.hasPreviousData ? "pointer" : "default" }}
+                      >
+                        <TableCell className="text-xs whitespace-nowrap">
+                          {new Date(log.createdAt).toLocaleString("ja-JP")}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          {log.action === "bulk_sync_apply" ? "手動反映" : "シート読込"}
+                        </TableCell>
+                        <TableCell className="text-xs">{log.summary?.total ?? "-"}</TableCell>
+                        <TableCell className="text-xs">
+                          {log.hasPreviousData ? (
+                            <Badge variant="secondary">あり</Badge>
+                          ) : (
+                            <Badge variant="outline">なし</Badge>
+                          )}
+                        </TableCell>
+                        <TableCell className="text-xs">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            disabled={!log.hasPreviousData || busy !== null}
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              handleRollback(log.id)
+                            }}
+                          >
+                            このスナップショットに戻す
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </>
+            )}
+          </div>
+        )}
 
         {diffResult && (
           <div className="space-y-3">
