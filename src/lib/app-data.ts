@@ -486,6 +486,10 @@ export function useAppData() {
   )
 
   const updateMaterial = useCallback((input: Material) => {
+    const affected = dataRef.current.costEntries.materials.filter((entry) => entry.materialId === input.id).length
+    if (affected > 0) {
+      toast.info(`コスト明細 ${affected} 件が「${input.name}」を参照しています。単価は自動更新されません。`)
+    }
     update((prev) => ({
       ...prev,
       materials: prev.materials.map((material) => (material.id === input.id ? input : material)),
@@ -515,6 +519,10 @@ export function useAppData() {
   )
 
   const updatePackagingItem = useCallback((input: PackagingItem) => {
+    const affected = dataRef.current.costEntries.packaging.filter((entry) => entry.packagingItemId === input.id).length
+    if (affected > 0) {
+      toast.info(`コスト明細 ${affected} 件が「${input.name}」を参照しています。単価は自動更新されません。`)
+    }
     update((prev) => ({
       ...prev,
       packagingItems: prev.packagingItems.map((item) => (item.id === input.id ? input : item)),
@@ -544,6 +552,10 @@ export function useAppData() {
   )
 
   const updateShippingMethod = useCallback((input: ShippingMethod) => {
+    const affected = dataRef.current.costEntries.logistics.filter((entry) => entry.shippingMethodId === input.id).length
+    if (affected > 0) {
+      toast.info(`コスト明細 ${affected} 件が「${input.name}」を参照しています。単価は自動更新されません。`)
+    }
     update((prev) => ({
       ...prev,
       shippingMethods: (prev.shippingMethods ?? []).map((method) => (method.id === input.id ? input : method)),
@@ -570,6 +582,10 @@ export function useAppData() {
   )
 
   const updateLaborRole = useCallback((input: LaborRole) => {
+    const affected = dataRef.current.costEntries.labor.filter((entry) => entry.laborRoleId === input.id).length
+    if (affected > 0) {
+      toast.info(`コスト明細 ${affected} 件が「${input.name}」を参照しています。時給は自動更新されません。`)
+    }
     update((prev) => ({
       ...prev,
       laborRoles: prev.laborRoles.map((role) => (role.id === input.id ? input : role)),
@@ -631,6 +647,10 @@ export function useAppData() {
   )
 
   const updateEquipment = useCallback((input: Equipment) => {
+    const affected = dataRef.current.costEntries.equipmentAllocations.filter((entry) => entry.equipmentId === input.id).length
+    if (affected > 0) {
+      toast.info(`コスト明細 ${affected} 件が「${input.name}」を参照しています。償却コストは自動更新されません。`)
+    }
     update((prev) => ({
       ...prev,
       equipments: prev.equipments.map((equipment) => (equipment.id === input.id ? input : equipment)),
@@ -661,6 +681,10 @@ export function useAppData() {
   )
 
   const updateFee = useCallback((input: Fee) => {
+    const affected = dataRef.current.costEntries.fees.filter((entry) => entry.feeId === input.id).length
+    if (affected > 0) {
+      toast.info(`コスト明細 ${affected} 件が「${input.name}」を参照しています。手数料は自動更新されません。`)
+    }
     update((prev) => ({
       ...prev,
       fees: prev.fees.map((fee) => (fee.id === input.id ? input : fee)),
