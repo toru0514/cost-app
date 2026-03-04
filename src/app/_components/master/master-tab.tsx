@@ -12,9 +12,14 @@ import { MasterRegisterView } from "./register/master-register-view"
 interface MasterTabProps {
   data: AppData
   actions: AppActions
+  isAuthenticated: boolean
+  materialStocks: Map<string, number>
+  packagingStocks: Map<string, number>
+  onSetMaterialStock: (id: string, quantity: number) => Promise<void>
+  onSetPackagingStock: (id: string, quantity: number) => Promise<void>
 }
 
-export function MasterTab({ data, actions }: MasterTabProps) {
+export function MasterTab({ data, actions, isAuthenticated, materialStocks, packagingStocks, onSetMaterialStock, onSetPackagingStock }: MasterTabProps) {
   const [view, setView] = useState<"register" | "list">(() => {
     if (typeof window === "undefined") return "register"
     const stored = window.localStorage.getItem("cost-app-master-view")
@@ -50,7 +55,15 @@ export function MasterTab({ data, actions }: MasterTabProps) {
       {view === "register" ? (
         <MasterRegisterView data={data} actions={actions} />
       ) : (
-        <MasterListView data={data} actions={actions} />
+        <MasterListView
+          data={data}
+          actions={actions}
+          isAuthenticated={isAuthenticated}
+          materialStocks={materialStocks}
+          packagingStocks={packagingStocks}
+          onSetMaterialStock={onSetMaterialStock}
+          onSetPackagingStock={onSetPackagingStock}
+        />
       )}
     </div>
   )

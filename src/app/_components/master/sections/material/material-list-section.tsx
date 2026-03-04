@@ -19,9 +19,12 @@ interface MaterialListSectionProps {
   data: AppData
   actions: AppActions
   createTempId: () => string
+  isAuthenticated: boolean
+  materialStocks: Map<string, number>
+  onSetMaterialStock: (id: string, quantity: number) => Promise<void>
 }
 
-export function MaterialListSection({ data, actions, createTempId }: MaterialListSectionProps) {
+export function MaterialListSection({ data, actions, createTempId, isAuthenticated, materialStocks, onSetMaterialStock }: MaterialListSectionProps) {
   const [editingMaterial, setEditingMaterial] = useState<Omit<Material, "id"> & { id: string | null }>({
     id: null,
     name: "",
@@ -34,7 +37,25 @@ export function MaterialListSection({ data, actions, createTempId }: MaterialLis
     note: "",
   })
 
+  const [editingStock, setEditingStock] = useState<{ id: string; value: string } | null>(null)
+  const [savingStockId, setSavingStockId] = useState<string | null>(null)
+
   const { updateMaterial, removeMaterial, addMaterial } = actions
+
+  const handleStockSave = async (material: Material) => {
+    if (!editingStock || editingStock.id !== material.id) return
+    const quantity = Math.max(0, parseFloat(editingStock.value) || 0)
+    setSavingStockId(material.id)
+    try {
+      await onSetMaterialStock(material.id, quantity)
+      toast.success("残数を保存しました", { description: `${material.name}: ${quantity} ${material.unit}` })
+      setEditingStock(null)
+    } catch {
+      toast.error("残数の保存に失敗しました")
+    } finally {
+      setSavingStockId(null)
+    }
+  }
 
   const resetMaterial = () =>
     setEditingMaterial({
@@ -124,7 +145,7 @@ export function MaterialListSection({ data, actions, createTempId }: MaterialLis
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
           <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="min-w-[760px]">
+            <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>名称</TableHead>
@@ -133,6 +154,7 @@ export function MaterialListSection({ data, actions, createTempId }: MaterialLis
                   <TableHead>セット数</TableHead>
                   <TableHead>仕入先</TableHead>
                   <TableHead>備考</TableHead>
+                  <TableHead>現在残数</TableHead>
                   <TableHead className="w-48 text-right">
                     <span className="sr-only">操作</span>
                   </TableHead>
@@ -223,6 +245,49 @@ export function MaterialListSection({ data, actions, createTempId }: MaterialLis
                           />
                         ) : (
                           material.note || "-"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {!isAuthenticated ? (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        ) : editingStock?.id === material.id ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              min={0}
+                              step="any"
+                              value={editingStock.value}
+                              onChange={(e) => setEditingStock({ id: material.id, value: e.target.value })}
+                              className="h-8 w-24"
+                            />
+                            <span className="text-xs text-muted-foreground">{material.unit}</span>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleStockSave(material)}
+                              disabled={savingStockId === material.id}
+                            >
+                              保存
+                            </Button>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => setEditingStock(null)}>
+                              ×
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="text-sm hover:underline"
+                            onClick={() =>
+                              setEditingStock({
+                                id: material.id,
+                                value: String(materialStocks.get(material.id) ?? 0),
+                              })
+                            }
+                          >
+                            {materialStocks.has(material.id)
+                              ? `${materialStocks.get(material.id)} ${material.unit}`
+                              : <span className="text-muted-foreground">-</span>}
+                          </button>
                         )}
                       </TableCell>
                       <TableCell className="text-right">

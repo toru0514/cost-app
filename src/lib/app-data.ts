@@ -32,7 +32,20 @@ import {
 } from "./types"
 import { useAuth } from "./auth"
 import type { AuthState } from "./auth"
-import { deleteProductStock, loadAuditLogs, loadProductStocks, loadUserAppData, saveUserAppData, upsertProductStock } from "./app-data-sync"
+import {
+  deletePackagingStock,
+  deleteMaterialStock,
+  deleteProductStock,
+  loadAuditLogs,
+  loadMaterialStocks,
+  loadPackagingStocks,
+  loadProductStocks,
+  loadUserAppData,
+  saveUserAppData,
+  upsertMaterialStock,
+  upsertPackagingStock,
+  upsertProductStock,
+} from "./app-data-sync"
 
 const STORAGE_KEY = "cost-app-data-v1"
 
@@ -126,6 +139,8 @@ export function useAppData() {
   const [stocks, setStocks] = useState<Map<string, number>>(new Map())
   const [stocksLoaded, setStocksLoaded] = useState(false)
   const stocksRef = useRef<Map<string, number>>(new Map())
+  const [materialStocks, setMaterialStocks] = useState<Map<string, number>>(new Map())
+  const [packagingStocks, setPackagingStocks] = useState<Map<string, number>>(new Map())
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
@@ -220,6 +235,8 @@ export function useAppData() {
       setAuditHasMore(true)
       setStocks(new Map())
       setStocksLoaded(false)
+      setMaterialStocks(new Map())
+      setPackagingStocks(new Map())
     }
   }, [authState.status])
 
@@ -243,11 +260,52 @@ export function useAppData() {
     }
   }, [authState])
 
+  const refreshMasterStocks = useCallback(async () => {
+    if (authState.status !== "authenticated") return
+    try {
+      const [materials, packaging] = await Promise.all([
+        loadMaterialStocks(authState.user.id),
+        loadPackagingStocks(authState.user.id),
+      ])
+      setMaterialStocks(new Map(materials.map((s) => [s.materialId, s.quantity])))
+      setPackagingStocks(new Map(packaging.map((s) => [s.packagingItemId, s.quantity])))
+    } catch (error) {
+      console.error("Failed to load master stocks", error)
+    }
+  }, [authState])
+
+  const setMaterialStock = useCallback(
+    async (materialId: string, quantity: number) => {
+      if (authState.status !== "authenticated") return
+      await upsertMaterialStock(authState.user.id, materialId, quantity)
+      setMaterialStocks((prev) => {
+        const next = new Map(prev)
+        next.set(materialId, quantity)
+        return next
+      })
+    },
+    [authState]
+  )
+
+  const setPackagingStock = useCallback(
+    async (packagingItemId: string, quantity: number) => {
+      if (authState.status !== "authenticated") return
+      await upsertPackagingStock(authState.user.id, packagingItemId, quantity)
+      setPackagingStocks((prev) => {
+        const next = new Map(prev)
+        next.set(packagingItemId, quantity)
+        return next
+      })
+    },
+    [authState]
+  )
+
   useEffect(() => {
     if (remoteLoadCompleted && authState.status === "authenticated") {
       void refreshStocks()
+      void refreshMasterStocks()
     }
-  }, [remoteLoadCompleted, authState.status, refreshStocks])
+  }, [remoteLoadCompleted, authState.status, refreshStocks, refreshMasterStocks])
 
   const setStock = useCallback(
     async (productId: string, quantity: number) => {
@@ -560,7 +618,17 @@ export function useAppData() {
         materials: prev.costEntries.materials.filter((entry) => entry.materialId !== id),
       },
     }))
-  }, [update])
+    setMaterialStocks((prev) => {
+      const next = new Map(prev)
+      next.delete(id)
+      return next
+    })
+    if (authState.status === "authenticated") {
+      void deleteMaterialStock(authState.user.id, id).catch((error) => {
+        console.warn("Failed to delete material stock on removal", error)
+      })
+    }
+  }, [update, authState])
 
   const addPackagingItem = useCallback(
     (input: Omit<PackagingItem, "id"> & { id?: string }) => {
@@ -593,7 +661,17 @@ export function useAppData() {
         packaging: prev.costEntries.packaging.filter((entry) => entry.packagingItemId !== id),
       },
     }))
-  }, [update])
+    setPackagingStocks((prev) => {
+      const next = new Map(prev)
+      next.delete(id)
+      return next
+    })
+    if (authState.status === "authenticated") {
+      void deletePackagingStock(authState.user.id, id).catch((error) => {
+        console.warn("Failed to delete packaging stock on removal", error)
+      })
+    }
+  }, [update, authState])
 
   const addShippingMethod = useCallback(
     (input: Omit<ShippingMethod, "id"> & { id?: string }) => {
@@ -995,6 +1073,10 @@ export function useAppData() {
     refreshStocks,
     setStock,
     adjustStock,
+    materialStocks,
+    packagingStocks,
+    setMaterialStock,
+    setPackagingStock,
     actions: {
       addLargeCategory,
       updateLargeCategory,
