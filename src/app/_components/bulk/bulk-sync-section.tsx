@@ -511,11 +511,6 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
                     ))}
                   </TableBody>
                 </Table>
-                {selectedLogId && !historyLogs.find((l) => l.id === selectedLogId)?.hasPreviousData && (
-                  <p className="text-sm text-destructive">
-                    選択したログにはスナップショットデータがないため復元できません。
-                  </p>
-                )}
               </>
             )}
           </div>

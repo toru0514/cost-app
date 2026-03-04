@@ -77,13 +77,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  let logId: string | undefined
-  try {
-    const body = (await request.json().catch(() => ({}))) as { logId?: string }
-    logId = body.logId
-  } catch {
-    // logId なしの場合は最新ログを使う
-  }
+  const body = (await request.json().catch(() => ({}))) as { logId?: string }
+  const logId = body.logId
 
   try {
     const query = supabase
