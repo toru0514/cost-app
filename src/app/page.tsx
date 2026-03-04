@@ -68,7 +68,9 @@ export default function Home() {
   const [copyProductId, setCopyProductId] = useState<string | null>(null)
   const [copyProductNonce, setCopyProductNonce] = useState(0)
   const [productSearchQuery, setProductSearchQuery] = useState("")
-  const [productCategoryFilter, setProductCategoryFilter] = useState<string | null>(null)
+  const [productCategoryLargeFilter, setProductCategoryLargeFilter] = useState<string | null>(null)
+  const [productCategoryMediumFilter, setProductCategoryMediumFilter] = useState<string | null>(null)
+  const [productCategorySmallFilter, setProductCategorySmallFilter] = useState<string | null>(null)
   const [productSortKey, setProductSortKey] = useState("registered-desc")
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
   const { state: authState, login, logout, signup, resetPassword } = useAuth()
@@ -450,7 +452,10 @@ export default function Home() {
           .filter(Boolean)
           .map((text) => text.toLowerCase())
         const matchesSearch = normalizedSearch.length === 0 || searchBucket.some((text) => text.includes(normalizedSearch))
-        const matchesCategory = !productCategoryFilter || product.categoryLargeId === productCategoryFilter
+        const matchesCategory =
+          (!productCategoryLargeFilter || product.categoryLargeId === productCategoryLargeFilter) &&
+          (!productCategoryMediumFilter || product.categoryMediumId === productCategoryMediumFilter) &&
+          (!productCategorySmallFilter || product.categorySmallId === productCategorySmallFilter)
         const registeredTime = new Date(product.registeredAt ?? "").getTime() || 0
 
         return {
@@ -498,11 +503,53 @@ export default function Home() {
     data.products,
     getEquipmentText,
     getShippingText,
-    productCategoryFilter,
+    productCategoryLargeFilter,
+    productCategoryMediumFilter,
+    productCategorySmallFilter,
     productCostMap,
     productSearchQuery,
     productSortKey,
   ])
+
+  const availableMediumCategories = useMemo(
+    () =>
+      data.categories.medium.filter(
+        (category) => !productCategoryLargeFilter || category.largeId === productCategoryLargeFilter
+      ),
+    [data.categories.medium, productCategoryLargeFilter]
+  )
+
+  const availableSmallCategories = useMemo(
+    () =>
+      data.categories.small.filter((category) => {
+        if (productCategoryMediumFilter) {
+          return category.mediumId === productCategoryMediumFilter
+        }
+        if (productCategoryLargeFilter) {
+          const medium = data.categories.medium.find((item) => item.id === category.mediumId)
+          return medium?.largeId === productCategoryLargeFilter
+        }
+        return true
+      }),
+    [data.categories.small, data.categories.medium, productCategoryLargeFilter, productCategoryMediumFilter]
+  )
+
+  const handleCategoryLargeFilterChange = useCallback((value: string) => {
+    const next = value === "all" ? null : value
+    setProductCategoryLargeFilter(next)
+    setProductCategoryMediumFilter(null)
+    setProductCategorySmallFilter(null)
+  }, [])
+
+  const handleCategoryMediumFilterChange = useCallback((value: string) => {
+    const next = value === "all" ? null : value
+    setProductCategoryMediumFilter(next)
+    setProductCategorySmallFilter(null)
+  }, [])
+
+  const handleCategorySmallFilterChange = useCallback((value: string) => {
+    setProductCategorySmallFilter(value === "all" ? null : value)
+  }, [])
 
   const renderLoading = () => (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center gap-4 p-10 text-muted-foreground">
@@ -774,8 +821,8 @@ export default function Home() {
                   className="w-full flex-1 min-w-[220px]"
                 />
                 <Select
-                  value={productCategoryFilter ?? "all"}
-                  onValueChange={(value) => setProductCategoryFilter(value === "all" ? null : value)}
+                  value={productCategoryLargeFilter ?? "all"}
+                  onValueChange={handleCategoryLargeFilterChange}
                 >
                   <SelectTrigger className="w-full md:w-48">
                     <SelectValue placeholder="大カテゴリで絞り込み" />
@@ -783,6 +830,38 @@ export default function Home() {
                   <SelectContent>
                     <SelectItem value="all">すべてのカテゴリ</SelectItem>
                     {data.categories.large.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={productCategoryMediumFilter ?? "all"}
+                  onValueChange={handleCategoryMediumFilterChange}
+                >
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="中カテゴリで絞り込み" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">すべての中カテゴリ</SelectItem>
+                    {availableMediumCategories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Select
+                  value={productCategorySmallFilter ?? "all"}
+                  onValueChange={handleCategorySmallFilterChange}
+                >
+                  <SelectTrigger className="w-full md:w-48">
+                    <SelectValue placeholder="小カテゴリで絞り込み" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">すべての小カテゴリ</SelectItem>
+                    {availableSmallCategories.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
                       </SelectItem>
