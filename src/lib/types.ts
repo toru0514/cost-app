@@ -193,6 +193,18 @@ export type ProductStock = {
   updatedAt: string
 }
 
+export type MaterialStock = {
+  materialId: string
+  quantity: number
+  updatedAt: string
+}
+
+export type PackagingStock = {
+  packagingItemId: string
+  quantity: number
+  updatedAt: string
+}
+
 export type AuditLogMetadata = {
   changes?: {
     products?: ChangeSummary

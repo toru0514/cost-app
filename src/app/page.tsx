@@ -60,6 +60,11 @@ export default function Home() {
     refreshStocks,
     setStock,
     adjustStock,
+    materialStocks,
+    packagingStocks,
+    masterStocksLoaded,
+    setMaterialStock,
+    setPackagingStock,
   } = useAppData()
   const handleAuditFiltersChange = useCallback(
     (next: AuditFilters) => {
@@ -791,7 +796,16 @@ export default function Home() {
         </TabsContent>
 
         <TabsContent value="master" className="space-y-6">
-          <MasterTab data={data} actions={actions} />
+          <MasterTab
+            data={data}
+            actions={actions}
+            isAuthenticated={isAuthenticated}
+            materialStocks={materialStocks}
+            packagingStocks={packagingStocks}
+            masterStocksLoaded={masterStocksLoaded}
+            onSetMaterialStock={setMaterialStock}
+            onSetPackagingStock={setPackagingStock}
+          />
         </TabsContent>
 
         <TabsContent value="list" className="space-y-6">

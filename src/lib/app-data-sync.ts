@@ -2,6 +2,8 @@ import { supabaseClient } from "./supabase-client"
 import type {
   AppData,
   AuditLog,
+  MaterialStock,
+  PackagingStock,
   ProductStock,
   CategoryLarge,
   CategoryMedium,
@@ -869,6 +871,74 @@ export async function deleteProductStock(userId: string, productId: string): Pro
     .delete()
     .eq("user_id", userId)
     .eq("product_id", productId)
+  if (error) throw error
+}
+
+// --- material stock ---
+
+type MaterialStockRow = { material_id: string; quantity: number; updated_at: string }
+
+export async function loadMaterialStocks(userId: string): Promise<MaterialStock[]> {
+  const { data, error } = await supabaseClient
+    .from("material_stock")
+    .select("material_id, quantity, updated_at")
+    .eq("user_id", userId)
+  if (error) throw error
+  return (data ?? []).map((row: MaterialStockRow) => ({
+    materialId: row.material_id,
+    quantity: Number(row.quantity),
+    updatedAt: row.updated_at,
+  }))
+}
+
+export async function upsertMaterialStock(userId: string, materialId: string, quantity: number): Promise<void> {
+  const { error } = await supabaseClient.from("material_stock").upsert(
+    { user_id: userId, material_id: materialId, quantity, updated_at: new Date().toISOString() },
+    { onConflict: "user_id,material_id" }
+  )
+  if (error) throw error
+}
+
+export async function deleteMaterialStock(userId: string, materialId: string): Promise<void> {
+  const { error } = await supabaseClient
+    .from("material_stock")
+    .delete()
+    .eq("user_id", userId)
+    .eq("material_id", materialId)
+  if (error) throw error
+}
+
+// --- packaging stock ---
+
+type PackagingStockRow = { packaging_item_id: string; quantity: number; updated_at: string }
+
+export async function loadPackagingStocks(userId: string): Promise<PackagingStock[]> {
+  const { data, error } = await supabaseClient
+    .from("packaging_stock")
+    .select("packaging_item_id, quantity, updated_at")
+    .eq("user_id", userId)
+  if (error) throw error
+  return (data ?? []).map((row: PackagingStockRow) => ({
+    packagingItemId: row.packaging_item_id,
+    quantity: Number(row.quantity),
+    updatedAt: row.updated_at,
+  }))
+}
+
+export async function upsertPackagingStock(userId: string, packagingItemId: string, quantity: number): Promise<void> {
+  const { error } = await supabaseClient.from("packaging_stock").upsert(
+    { user_id: userId, packaging_item_id: packagingItemId, quantity, updated_at: new Date().toISOString() },
+    { onConflict: "user_id,packaging_item_id" }
+  )
+  if (error) throw error
+}
+
+export async function deletePackagingStock(userId: string, packagingItemId: string): Promise<void> {
+  const { error } = await supabaseClient
+    .from("packaging_stock")
+    .delete()
+    .eq("user_id", userId)
+    .eq("packaging_item_id", packagingItemId)
   if (error) throw error
 }
 

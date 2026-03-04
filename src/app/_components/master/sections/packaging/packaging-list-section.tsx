@@ -19,9 +19,13 @@ interface PackagingListSectionProps {
   data: AppData
   actions: AppActions
   createTempId: () => string
+  isAuthenticated: boolean
+  packagingStocks: Map<string, number>
+  masterStocksLoaded: boolean
+  onSetPackagingStock: (id: string, quantity: number) => Promise<void>
 }
 
-export function PackagingListSection({ data, actions, createTempId }: PackagingListSectionProps) {
+export function PackagingListSection({ data, actions, createTempId, isAuthenticated, packagingStocks, masterStocksLoaded, onSetPackagingStock }: PackagingListSectionProps) {
   const [editingPackaging, setEditingPackaging] = useState<Omit<PackagingItem, "id"> & { id: string | null }>({
     id: null,
     name: "",
@@ -33,7 +37,25 @@ export function PackagingListSection({ data, actions, createTempId }: PackagingL
     note: "",
   })
 
+  const [editingStock, setEditingStock] = useState<{ id: string; value: string } | null>(null)
+  const [savingStockId, setSavingStockId] = useState<string | null>(null)
+
   const { updatePackagingItem, removePackagingItem, addPackagingItem } = actions
+
+  const handleStockSave = async (item: PackagingItem) => {
+    if (!editingStock || editingStock.id !== item.id) return
+    const quantity = Math.max(0, parseFloat(editingStock.value) || 0)
+    setSavingStockId(item.id)
+    try {
+      await onSetPackagingStock(item.id, quantity)
+      toast.success("残数を保存しました", { description: `${item.name}: ${quantity} ${item.unit}` })
+      setEditingStock(null)
+    } catch {
+      toast.error("残数の保存に失敗しました")
+    } finally {
+      setSavingStockId(null)
+    }
+  }
 
   const resetPackaging = () =>
     setEditingPackaging({
@@ -120,7 +142,7 @@ export function PackagingListSection({ data, actions, createTempId }: PackagingL
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
           <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="min-w-[760px]">
+            <Table className="min-w-[900px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>名称</TableHead>
@@ -129,6 +151,7 @@ export function PackagingListSection({ data, actions, createTempId }: PackagingL
                   <TableHead>セット数</TableHead>
                   <TableHead>仕様</TableHead>
                   <TableHead>備考</TableHead>
+                  <TableHead>現在残数</TableHead>
                   <TableHead className="w-48 text-right">
                     <span className="sr-only">操作</span>
                   </TableHead>
@@ -221,6 +244,52 @@ export function PackagingListSection({ data, actions, createTempId }: PackagingL
                           item.note || "-"
                         )}
                       </TableCell>
+                      <TableCell>
+                        {!isAuthenticated ? (
+                          <span className="text-xs text-muted-foreground">-</span>
+                        ) : editingStock?.id === item.id ? (
+                          <div className="flex items-center gap-1">
+                            <Input
+                              type="number"
+                              min={0}
+                              step="any"
+                              value={editingStock.value}
+                              onChange={(e) => setEditingStock({ id: item.id, value: e.target.value })}
+                              className="h-8 w-24"
+                            />
+                            <span className="text-xs text-muted-foreground">{item.unit}</span>
+                            <Button
+                              type="button"
+                              size="sm"
+                              onClick={() => handleStockSave(item)}
+                              disabled={savingStockId === item.id}
+                            >
+                              保存
+                            </Button>
+                            <Button type="button" size="sm" variant="ghost" onClick={() => setEditingStock(null)}>
+                              ×
+                            </Button>
+                          </div>
+                        ) : (
+                          <button
+                            type="button"
+                            className="text-sm hover:underline"
+                            onClick={() => {
+                              resetPackaging()
+                              setEditingStock({
+                                id: item.id,
+                                value: String(packagingStocks.get(item.id) ?? 0),
+                              })
+                            }}
+                          >
+                            {!masterStocksLoaded
+                              ? <span className="text-muted-foreground">-</span>
+                              : packagingStocks.has(item.id)
+                                ? `${packagingStocks.get(item.id)} ${item.unit}`
+                                : <span className="text-muted-foreground">-</span>}
+                          </button>
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         {isEditing ? (
                           renderActionButtons(handlePackagingSave, resetPackaging, handlePackagingDelete)
@@ -230,7 +299,8 @@ export function PackagingListSection({ data, actions, createTempId }: PackagingL
                               type="button"
                               size="sm"
                               variant="outline"
-                              onClick={() =>
+                              onClick={() => {
+                                setEditingStock(null)
                                 setEditingPackaging({
                                   id: item.id,
                                   name: item.name,
@@ -241,7 +311,7 @@ export function PackagingListSection({ data, actions, createTempId }: PackagingL
                                   unitsPerBatch: item.unitsPerBatch ?? 1,
                                   note: item.note ?? "",
                                 })
-                              }
+                              }}
                             >
                               編集
                             </Button>
