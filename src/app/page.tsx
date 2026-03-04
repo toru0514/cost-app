@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useState } from "react"
+import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -19,14 +19,14 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppData } from "@/lib/app-data"
 import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
-import type { AuditFilters, Product } from "@/lib/types"
+import type { AppData, AuditFilters, Product } from "@/lib/types"
 import { MasterTab } from "./_components/master/master-tab"
 import { ProductTab } from "./_components/product/product-tab"
 import { CostTab } from "./_components/cost/cost-tab"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
 import { AuditTab } from "./_components/audit/audit-tab"
 import { BulkTab } from "./_components/bulk/bulk-tab"
-import { Copy, Edit3, FileDown, Menu, Plus, Trash2 } from "lucide-react"
+import { Copy, Edit3, FileDown, FileUp, Menu, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
 
@@ -77,6 +77,9 @@ export default function Home() {
   const [loginForm, setLoginForm] = useState({ name: "", email: "", password: "" })
   const [authMode, setAuthMode] = useState<"login" | "signup">("login")
   const [pendingDeleteProduct, setPendingDeleteProduct] = useState<Product | null>(null)
+  const [pendingBackupRestore, setPendingBackupRestore] = useState<{ fileName: string; data: Partial<AppData> } | null>(null)
+  const backupImportInputRef = useRef<HTMLInputElement | null>(null)
+  const importGuestData = actions.importGuestData
   const productCostMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateProductUnitCosts>>()
     data.products.forEach((product) => {
@@ -302,6 +305,63 @@ export default function Home() {
     }
     actions.resetAll()
   }, [actions])
+
+  const handleExportBackupJson = useCallback(() => {
+    if (typeof window === "undefined" || isAuthenticated) return
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `cost-app-backup-${new Date().toISOString().slice(0, 10)}.json`
+    document.body.appendChild(link)
+    link.click()
+    document.body.removeChild(link)
+    URL.revokeObjectURL(url)
+    toast.success("バックアップを保存しました。")
+  }, [data, isAuthenticated])
+
+  const handleOpenBackupImport = useCallback(() => {
+    if (isAuthenticated) return
+    backupImportInputRef.current?.click()
+  }, [isAuthenticated])
+
+  const handleImportBackupJson = useCallback(
+    async (event: ChangeEvent<HTMLInputElement>) => {
+      const file = event.target.files?.[0]
+      if (!file) return
+      try {
+        const text = await file.text()
+        const parsed = JSON.parse(text) as Partial<AppData>
+        const hasAppDataShape =
+          parsed !== null &&
+          typeof parsed === "object" &&
+          (Array.isArray(parsed.products) || Array.isArray(parsed.materials) || parsed.categories !== undefined)
+        if (!hasAppDataShape) {
+          toast.error("バックアップファイルとして認識できません。")
+          return
+        }
+        setPendingBackupRestore({ fileName: file.name, data: parsed })
+      } catch (error) {
+        console.error("Failed to import backup json", error)
+        toast.error("バックアップの復元に失敗しました。JSONファイルを確認してください。")
+      } finally {
+        event.target.value = ""
+      }
+    },
+    []
+  )
+
+  const closeBackupRestoreDialog = useCallback(() => {
+    setPendingBackupRestore(null)
+  }, [])
+
+  const confirmBackupRestore = useCallback(() => {
+    if (!pendingBackupRestore) return
+    const imported = importGuestData(pendingBackupRestore.data)
+    if (!imported) return
+    toast.success("バックアップを復元しました。", { description: `${pendingBackupRestore.fileName} を読み込みました。` })
+    setPendingBackupRestore(null)
+  }, [importGuestData, pendingBackupRestore])
   const handleLoginSubmit = useCallback(
     async (event: React.FormEvent<HTMLFormElement>) => {
       event.preventDefault()
@@ -460,6 +520,25 @@ export default function Home() {
           >
             ローカル保存をクリア
           </Button>
+          {!isAuthenticated ? (
+            <>
+              <Button variant="outline" size="sm" onClick={handleExportBackupJson}>
+                <FileDown className="mr-1.5 h-4 w-4" />
+                バックアップ
+              </Button>
+              <Button variant="outline" size="sm" onClick={handleOpenBackupImport}>
+                <FileUp className="mr-1.5 h-4 w-4" />
+                復元
+              </Button>
+              <input
+                ref={backupImportInputRef}
+                type="file"
+                accept="application/json,.json"
+                className="hidden"
+                onChange={handleImportBackupJson}
+              />
+            </>
+          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Badge variant={isAuthenticated ? "default" : "outline"}>
@@ -796,6 +875,24 @@ export default function Home() {
             </Button>
             <Button type="button" variant="destructive" onClick={confirmDeleteProduct}>
               削除する
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={pendingBackupRestore !== null} onOpenChange={(open) => !open && closeBackupRestoreDialog()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>バックアップを復元しますか？</DialogTitle>
+            <DialogDescription>
+              現在のデータを上書きします。{pendingBackupRestore ? `対象ファイル: ${pendingBackupRestore.fileName}` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={closeBackupRestoreDialog}>
+              キャンセル
+            </Button>
+            <Button type="button" variant="destructive" onClick={confirmBackupRestore}>
+              復元する
             </Button>
           </DialogFooter>
         </DialogContent>
