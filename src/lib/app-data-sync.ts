@@ -2,6 +2,7 @@ import { supabaseClient } from "./supabase-client"
 import type {
   AppData,
   AuditLog,
+  ProductStock,
   CategoryLarge,
   CategoryMedium,
   CategorySmall,
@@ -834,6 +835,33 @@ const mapAuditLog = (row: AuditLogRow): AuditLog => ({
   deviceInfo: row.device_info ?? undefined,
   metadata: row.metadata ?? undefined,
 })
+
+type ProductStockRow = {
+  product_id: string
+  quantity: number
+  updated_at: string
+}
+
+export async function loadProductStocks(userId: string): Promise<ProductStock[]> {
+  const { data, error } = await supabaseClient
+    .from("product_stock")
+    .select("product_id, quantity, updated_at")
+    .eq("user_id", userId)
+  if (error) throw error
+  return (data ?? []).map((row: ProductStockRow) => ({
+    productId: row.product_id,
+    quantity: row.quantity,
+    updatedAt: row.updated_at,
+  }))
+}
+
+export async function upsertProductStock(userId: string, productId: string, quantity: number): Promise<void> {
+  const { error } = await supabaseClient.from("product_stock").upsert(
+    { user_id: userId, product_id: productId, quantity, updated_at: new Date().toISOString() },
+    { onConflict: "user_id,product_id" }
+  )
+  if (error) throw error
+}
 
 export async function loadAuditLogs(
   userId: string,

@@ -32,7 +32,7 @@ import {
 } from "./types"
 import { useAuth } from "./auth"
 import type { AuthState } from "./auth"
-import { loadAuditLogs, loadUserAppData, saveUserAppData } from "./app-data-sync"
+import { loadAuditLogs, loadProductStocks, loadUserAppData, saveUserAppData, upsertProductStock } from "./app-data-sync"
 
 const STORAGE_KEY = "cost-app-data-v1"
 
@@ -123,6 +123,9 @@ export function useAppData() {
   const [auditFilters, setAuditFilters] = useState<AuditFilters>({})
   const [auditHasMore, setAuditHasMore] = useState(true)
   const auditLogsIndexRef = useRef(0)
+  const [stocks, setStocks] = useState<Map<string, number>>(new Map())
+  const [stocksLoaded, setStocksLoaded] = useState(false)
+  const stocksRef = useRef<Map<string, number>>(new Map())
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
@@ -215,12 +218,64 @@ export function useAppData() {
       setAuditLogsLoading(false)
       auditLogsIndexRef.current = 0
       setAuditHasMore(true)
+      setStocks(new Map())
+      setStocksLoaded(false)
     }
   }, [authState.status])
 
   const updateAuditFilters = useCallback((next: AuditFilters) => {
     setAuditFilters(next)
   }, [])
+
+  useEffect(() => {
+    stocksRef.current = stocks
+  }, [stocks])
+
+  const refreshStocks = useCallback(async () => {
+    if (authState.status !== "authenticated") return
+    try {
+      const loaded = await loadProductStocks(authState.user.id)
+      const map = new Map(loaded.map((s) => [s.productId, s.quantity]))
+      setStocks(map)
+      setStocksLoaded(true)
+    } catch (error) {
+      console.error("Failed to load product stocks", error)
+    }
+  }, [authState])
+
+  useEffect(() => {
+    if (remoteLoadCompleted && authState.status === "authenticated") {
+      void refreshStocks()
+    }
+  }, [remoteLoadCompleted, authState.status, refreshStocks])
+
+  const setStock = useCallback(
+    async (productId: string, quantity: number) => {
+      if (authState.status !== "authenticated") return
+      await upsertProductStock(authState.user.id, productId, quantity)
+      setStocks((prev) => {
+        const next = new Map(prev)
+        next.set(productId, quantity)
+        return next
+      })
+    },
+    [authState]
+  )
+
+  const adjustStock = useCallback(
+    async (productId: string, delta: number) => {
+      if (authState.status !== "authenticated") return
+      const current = stocksRef.current.get(productId) ?? 0
+      const next = Math.max(0, current + delta)
+      await upsertProductStock(authState.user.id, productId, next)
+      setStocks((prev) => {
+        const map = new Map(prev)
+        map.set(productId, next)
+        return map
+      })
+    },
+    [authState]
+  )
 
   useEffect(() => {
     authStatusRef.current = authState.status
@@ -925,6 +980,11 @@ export function useAppData() {
     refreshAuditLogs,
     loadMoreAuditLogs,
     updateAuditFilters,
+    stocks,
+    stocksLoaded,
+    refreshStocks,
+    setStock,
+    adjustStock,
     actions: {
       addLargeCategory,
       updateLargeCategory,

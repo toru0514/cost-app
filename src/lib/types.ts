@@ -187,6 +187,12 @@ export type FeeCostEntry = {
   currency: string
 }
 
+export type ProductStock = {
+  productId: string
+  quantity: number
+  updatedAt: string
+}
+
 export type AuditLogMetadata = {
   changes?: {
     products?: ChangeSummary

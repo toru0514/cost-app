@@ -26,6 +26,7 @@ import { CostTab } from "./_components/cost/cost-tab"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
 import { AuditTab } from "./_components/audit/audit-tab"
 import { BulkTab } from "./_components/bulk/bulk-tab"
+import { StockTab } from "./_components/stock/stock-tab"
 import { Copy, Edit3, FileDown, FileUp, Menu, Plus, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
@@ -36,6 +37,7 @@ const tabOptions = [
   { value: "product", label: "商品登録" },
   { value: "master", label: "マスタ登録" },
   { value: "list", label: "商品一覧" },
+  { value: "stock", label: "在庫" },
   { value: "bulk", label: "一括処理" },
   { value: "audit", label: "監査ログ" },
 ]
@@ -53,6 +55,11 @@ export default function Home() {
     refreshAuditLogs,
     loadMoreAuditLogs,
     updateAuditFilters,
+    stocks,
+    stocksLoaded,
+    refreshStocks,
+    setStock,
+    adjustStock,
   } = useAppData()
   const handleAuditFiltersChange = useCallback(
     (next: AuditFilters) => {
@@ -973,6 +980,18 @@ export default function Home() {
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="stock" className="space-y-6">
+          <StockTab
+            products={data.products}
+            stocks={stocks}
+            stocksLoaded={stocksLoaded}
+            isAuthenticated={isAuthenticated}
+            onAdjust={adjustStock}
+            onSet={setStock}
+            onRefresh={refreshStocks}
+          />
         </TabsContent>
 
         <TabsContent value="bulk" className="space-y-6">
