@@ -21,10 +21,11 @@ interface MaterialListSectionProps {
   createTempId: () => string
   isAuthenticated: boolean
   materialStocks: Map<string, number>
+  masterStocksLoaded: boolean
   onSetMaterialStock: (id: string, quantity: number) => Promise<void>
 }
 
-export function MaterialListSection({ data, actions, createTempId, isAuthenticated, materialStocks, onSetMaterialStock }: MaterialListSectionProps) {
+export function MaterialListSection({ data, actions, createTempId, isAuthenticated, materialStocks, masterStocksLoaded, onSetMaterialStock }: MaterialListSectionProps) {
   const [editingMaterial, setEditingMaterial] = useState<Omit<Material, "id"> & { id: string | null }>({
     id: null,
     name: "",
@@ -277,16 +278,19 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                           <button
                             type="button"
                             className="text-sm hover:underline"
-                            onClick={() =>
+                            onClick={() => {
+                              resetMaterial()
                               setEditingStock({
                                 id: material.id,
                                 value: String(materialStocks.get(material.id) ?? 0),
                               })
-                            }
+                            }}
                           >
-                            {materialStocks.has(material.id)
-                              ? `${materialStocks.get(material.id)} ${material.unit}`
-                              : <span className="text-muted-foreground">-</span>}
+                            {!masterStocksLoaded
+                              ? <span className="text-muted-foreground">-</span>
+                              : materialStocks.has(material.id)
+                                ? `${materialStocks.get(material.id)} ${material.unit}`
+                                : <span className="text-muted-foreground">-</span>}
                           </button>
                         )}
                       </TableCell>
@@ -299,7 +303,8 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                               type="button"
                               size="sm"
                               variant="outline"
-                              onClick={() =>
+                              onClick={() => {
+                                setEditingStock(null)
                                 setEditingMaterial({
                                   id: material.id,
                                   name: material.name,
@@ -311,7 +316,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                                   supplier: material.supplier ?? "",
                                   note: material.note ?? "",
                                 })
-                              }
+                              }}
                             >
                               編集
                             </Button>

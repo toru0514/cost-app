@@ -21,10 +21,11 @@ interface PackagingListSectionProps {
   createTempId: () => string
   isAuthenticated: boolean
   packagingStocks: Map<string, number>
+  masterStocksLoaded: boolean
   onSetPackagingStock: (id: string, quantity: number) => Promise<void>
 }
 
-export function PackagingListSection({ data, actions, createTempId, isAuthenticated, packagingStocks, onSetPackagingStock }: PackagingListSectionProps) {
+export function PackagingListSection({ data, actions, createTempId, isAuthenticated, packagingStocks, masterStocksLoaded, onSetPackagingStock }: PackagingListSectionProps) {
   const [editingPackaging, setEditingPackaging] = useState<Omit<PackagingItem, "id"> & { id: string | null }>({
     id: null,
     name: "",
@@ -273,16 +274,19 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                           <button
                             type="button"
                             className="text-sm hover:underline"
-                            onClick={() =>
+                            onClick={() => {
+                              resetPackaging()
                               setEditingStock({
                                 id: item.id,
                                 value: String(packagingStocks.get(item.id) ?? 0),
                               })
-                            }
+                            }}
                           >
-                            {packagingStocks.has(item.id)
-                              ? `${packagingStocks.get(item.id)} ${item.unit}`
-                              : <span className="text-muted-foreground">-</span>}
+                            {!masterStocksLoaded
+                              ? <span className="text-muted-foreground">-</span>
+                              : packagingStocks.has(item.id)
+                                ? `${packagingStocks.get(item.id)} ${item.unit}`
+                                : <span className="text-muted-foreground">-</span>}
                           </button>
                         )}
                       </TableCell>
@@ -295,7 +299,8 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                               type="button"
                               size="sm"
                               variant="outline"
-                              onClick={() =>
+                              onClick={() => {
+                                setEditingStock(null)
                                 setEditingPackaging({
                                   id: item.id,
                                   name: item.name,
@@ -306,7 +311,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                                   unitsPerBatch: item.unitsPerBatch ?? 1,
                                   note: item.note ?? "",
                                 })
-                              }
+                              }}
                             >
                               編集
                             </Button>

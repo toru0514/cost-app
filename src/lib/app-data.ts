@@ -141,6 +141,7 @@ export function useAppData() {
   const stocksRef = useRef<Map<string, number>>(new Map())
   const [materialStocks, setMaterialStocks] = useState<Map<string, number>>(new Map())
   const [packagingStocks, setPackagingStocks] = useState<Map<string, number>>(new Map())
+  const [masterStocksLoaded, setMasterStocksLoaded] = useState(false)
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
@@ -237,6 +238,7 @@ export function useAppData() {
       setStocksLoaded(false)
       setMaterialStocks(new Map())
       setPackagingStocks(new Map())
+      setMasterStocksLoaded(false)
     }
   }, [authState.status])
 
@@ -269,6 +271,7 @@ export function useAppData() {
       ])
       setMaterialStocks(new Map(materials.map((s) => [s.materialId, s.quantity])))
       setPackagingStocks(new Map(packaging.map((s) => [s.packagingItemId, s.quantity])))
+      setMasterStocksLoaded(true)
     } catch (error) {
       console.error("Failed to load master stocks", error)
     }
@@ -1075,6 +1078,7 @@ export function useAppData() {
     adjustStock,
     materialStocks,
     packagingStocks,
+    masterStocksLoaded,
     setMaterialStock,
     setPackagingStock,
     actions: {

@@ -15,11 +15,12 @@ interface MasterTabProps {
   isAuthenticated: boolean
   materialStocks: Map<string, number>
   packagingStocks: Map<string, number>
+  masterStocksLoaded: boolean
   onSetMaterialStock: (id: string, quantity: number) => Promise<void>
   onSetPackagingStock: (id: string, quantity: number) => Promise<void>
 }
 
-export function MasterTab({ data, actions, isAuthenticated, materialStocks, packagingStocks, onSetMaterialStock, onSetPackagingStock }: MasterTabProps) {
+export function MasterTab({ data, actions, isAuthenticated, materialStocks, packagingStocks, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock }: MasterTabProps) {
   const [view, setView] = useState<"register" | "list">(() => {
     if (typeof window === "undefined") return "register"
     const stored = window.localStorage.getItem("cost-app-master-view")
@@ -61,6 +62,7 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, pack
           isAuthenticated={isAuthenticated}
           materialStocks={materialStocks}
           packagingStocks={packagingStocks}
+          masterStocksLoaded={masterStocksLoaded}
           onSetMaterialStock={onSetMaterialStock}
           onSetPackagingStock={onSetPackagingStock}
         />

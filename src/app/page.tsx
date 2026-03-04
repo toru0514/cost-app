@@ -62,6 +62,7 @@ export default function Home() {
     adjustStock,
     materialStocks,
     packagingStocks,
+    masterStocksLoaded,
     setMaterialStock,
     setPackagingStock,
   } = useAppData()
@@ -801,6 +802,7 @@ export default function Home() {
             isAuthenticated={isAuthenticated}
             materialStocks={materialStocks}
             packagingStocks={packagingStocks}
+            masterStocksLoaded={masterStocksLoaded}
             onSetMaterialStock={setMaterialStock}
             onSetPackagingStock={setPackagingStock}
           />
