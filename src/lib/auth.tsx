@@ -21,6 +21,7 @@ type AuthContextValue = {
   state: AuthState
   login: (payload: { email: string; password: string }) => Promise<void>
   signup: (payload: { email: string; password: string; name: string }) => Promise<void>
+  resetPassword: (email: string) => Promise<void>
   logout: () => Promise<void>
 }
 
@@ -134,14 +135,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await supabaseClient.auth.signOut()
   }, [])
 
+  const resetPassword = useCallback(async (email: string) => {
+    const normalizedEmail = email.trim()
+    if (!normalizedEmail) {
+      throw new Error("メールアドレスを入力してください。")
+    }
+
+    const redirectTo = typeof window !== "undefined" ? `${window.location.origin}/` : undefined
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(
+      normalizedEmail,
+      redirectTo ? { redirectTo } : undefined
+    )
+    if (error) {
+      throw error
+    }
+  }, [])
+
   const value = useMemo<AuthContextValue>(
     () => ({
       state,
       login,
       logout,
       signup,
+      resetPassword,
     }),
-    [state, login, logout, signup]
+    [state, login, logout, signup, resetPassword]
   )
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>
