@@ -77,14 +77,23 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
+  let logId: string | undefined
   try {
-    const { data: log, error: logError } = await supabase
+    const body = (await request.json().catch(() => ({}))) as { logId?: string }
+    logId = body.logId
+  } catch {
+    // logId なしの場合は最新ログを使う
+  }
+
+  try {
+    const query = supabase
       .from("sync_audit_logs")
       .select("id, metadata, created_at")
       .in("metadata->>action", ["bulk_sync_apply", "bulk_sync_import"])
-      .order("created_at", { ascending: false })
-      .limit(1)
-      .maybeSingle()
+
+    const { data: log, error: logError } = logId
+      ? await query.eq("id", logId).maybeSingle()
+      : await query.order("created_at", { ascending: false }).limit(1).maybeSingle()
 
     if (logError) {
       console.error("Failed to load bulk sync audit log", logError)
