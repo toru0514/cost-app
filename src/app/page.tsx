@@ -71,11 +71,12 @@ export default function Home() {
   const [productCategoryFilter, setProductCategoryFilter] = useState<string | null>(null)
   const [productSortKey, setProductSortKey] = useState("registered-desc")
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const { state: authState, login, logout, signup } = useAuth()
+  const { state: authState, login, logout, signup, resetPassword } = useAuth()
   const isAuthenticated = authState.status === "authenticated"
   const [loginPanelOpen, setLoginPanelOpen] = useState(false)
   const [loginForm, setLoginForm] = useState({ name: "", email: "", password: "" })
   const [authMode, setAuthMode] = useState<"login" | "signup">("login")
+  const [resetPasswordOpen, setResetPasswordOpen] = useState(false)
   const [pendingDeleteProduct, setPendingDeleteProduct] = useState<Product | null>(null)
   const [pendingBackupRestore, setPendingBackupRestore] = useState<{ fileName: string; data: Partial<AppData> } | null>(null)
   const backupImportInputRef = useRef<HTMLInputElement | null>(null)
@@ -394,6 +395,24 @@ export default function Home() {
     [authMode, loginForm, login, signup]
   )
 
+  const handlePasswordReset = useCallback(async () => {
+    const email = loginForm.email.trim()
+    if (!email) {
+      toast.error("パスワードリセット用のメールアドレスを入力してください。")
+      return
+    }
+    try {
+      await resetPassword(email)
+      toast.success("パスワードリセットメールを送信しました。", {
+        description: `${email} を確認してください。`,
+      })
+      setResetPasswordOpen(false)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "リセットメール送信に失敗しました。"
+      toast.error(message)
+    }
+  }, [loginForm.email, resetPassword])
+
   const handleLogout = useCallback(() => {
     logout()
     toast.message("ゲストモードに戻りました")
@@ -600,18 +619,45 @@ export default function Home() {
                   <button
                     type="button"
                     className={`rounded border px-2 py-1 ${authMode === "login" ? "border-primary text-primary" : "border-transparent"}`}
-                    onClick={() => setAuthMode("login")}
+                    onClick={() => {
+                      setAuthMode("login")
+                      setResetPasswordOpen(false)
+                    }}
                   >
                     ログイン
                   </button>
                   <button
                     type="button"
                     className={`rounded border px-2 py-1 ${authMode === "signup" ? "border-primary text-primary" : "border-transparent"}`}
-                    onClick={() => setAuthMode("signup")}
+                    onClick={() => {
+                      setAuthMode("signup")
+                      setResetPasswordOpen(false)
+                    }}
                   >
                     新規登録
                   </button>
                 </div>
+                {authMode === "login" && (
+                  <div className="space-y-2">
+                    <button
+                      type="button"
+                      className="text-xs text-primary underline underline-offset-2"
+                      onClick={() => setResetPasswordOpen((prev) => !prev)}
+                    >
+                      パスワードを忘れた方はこちら
+                    </button>
+                    {resetPasswordOpen && (
+                      <div className="rounded-md border border-dashed p-3">
+                        <p className="mb-2 text-xs text-muted-foreground">
+                          入力したメールアドレス宛に、パスワードリセットメールを送信します。
+                        </p>
+                        <Button type="button" size="sm" variant="outline" onClick={handlePasswordReset}>
+                          リセットメールを送信
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2">
                   <Button type="submit" size="sm">
                     {authMode === "login" ? "ログイン" : "登録してログイン"}
