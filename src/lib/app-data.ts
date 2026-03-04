@@ -32,7 +32,7 @@ import {
 } from "./types"
 import { useAuth } from "./auth"
 import type { AuthState } from "./auth"
-import { loadAuditLogs, loadProductStocks, loadUserAppData, saveUserAppData, upsertProductStock } from "./app-data-sync"
+import { deleteProductStock, loadAuditLogs, loadProductStocks, loadUserAppData, saveUserAppData, upsertProductStock } from "./app-data-sync"
 
 const STORAGE_KEY = "cost-app-data-v1"
 
@@ -907,8 +907,18 @@ export function useAppData() {
         ...prev,
         products: prev.products.filter((product) => product.id !== productId),
       }))
+      setStocks((prev) => {
+        const next = new Map(prev)
+        next.delete(productId)
+        return next
+      })
+      if (authState.status === "authenticated") {
+        void deleteProductStock(authState.user.id, productId).catch((error) => {
+          console.warn("Failed to delete product stock on product removal", error)
+        })
+      }
     },
-    [update]
+    [update, authState]
   )
 
   const removeCostEntriesByProduct = useCallback(

@@ -8,11 +8,7 @@ create table if not exists product_stock (
 
 alter table product_stock enable row level security;
 
-create policy "product_stock_select_own" on product_stock
-  for select
-  using (auth.uid() = user_id);
-
-create policy "product_stock_modify_own" on product_stock
+create policy "product_stock_own" on product_stock
   for all
   using (auth.uid() = user_id)
   with check (auth.uid() = user_id);

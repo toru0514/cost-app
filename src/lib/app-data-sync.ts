@@ -863,6 +863,15 @@ export async function upsertProductStock(userId: string, productId: string, quan
   if (error) throw error
 }
 
+export async function deleteProductStock(userId: string, productId: string): Promise<void> {
+  const { error } = await supabaseClient
+    .from("product_stock")
+    .delete()
+    .eq("user_id", userId)
+    .eq("product_id", productId)
+  if (error) throw error
+}
+
 export async function loadAuditLogs(
   userId: string,
   limit = 50,
