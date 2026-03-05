@@ -344,7 +344,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                               size="sm"
                               variant="outline"
                               onClick={() => handleAdd(item)}
-                              disabled={busy !== null || editingStock?.id === item.id}
+                              disabled={(busy?.startsWith(item.id) ?? false) || editingStock?.id === item.id || editingPackaging.id === item.id}
                             >
                               +追加
                             </Button>
@@ -353,7 +353,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                               size="sm"
                               variant="outline"
                               onClick={() => handleUse(item)}
-                              disabled={busy !== null || editingStock?.id === item.id || (packagingStocks.get(item.id) ?? 0) === 0}
+                              disabled={(busy?.startsWith(item.id) ?? false) || editingStock?.id === item.id || editingPackaging.id === item.id || (packagingStocks.get(item.id) ?? 0) === 0}
                             >
                               −使用
                             </Button>

@@ -348,7 +348,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                               size="sm"
                               variant="outline"
                               onClick={() => handleAdd(material)}
-                              disabled={busy !== null || editingStock?.id === material.id}
+                              disabled={(busy?.startsWith(material.id) ?? false) || editingStock?.id === material.id || editingMaterial.id === material.id}
                             >
                               +追加
                             </Button>
@@ -357,7 +357,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                               size="sm"
                               variant="outline"
                               onClick={() => handleUse(material)}
-                              disabled={busy !== null || editingStock?.id === material.id || (materialStocks.get(material.id) ?? 0) === 0}
+                              disabled={(busy?.startsWith(material.id) ?? false) || editingStock?.id === material.id || editingMaterial.id === material.id || (materialStocks.get(material.id) ?? 0) === 0}
                             >
                               −使用
                             </Button>
