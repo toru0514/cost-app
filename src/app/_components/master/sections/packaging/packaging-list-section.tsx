@@ -49,11 +49,12 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
   const handleStockSave = async (item: PackagingItem) => {
     if (!editingStock || editingStock.id !== item.id) return
     const quantity = Math.max(0, parseFloat(editingStock.value) || 0)
-    const stockUnit = editingStock.unit.trim() || item.unit
+    const stockUnit = editingStock.unit.trim()
+    const displayUnit = stockUnit || item.unit
     setSavingStockId(item.id)
     try {
       await onSetPackagingStock(item.id, quantity, stockUnit)
-      toast.success("残数を保存しました", { description: `${item.name}: ${quantity} ${stockUnit}` })
+      toast.success("残数を保存しました", { description: `${item.name}: ${quantity} ${displayUnit}` })
       setEditingStock(null)
     } catch {
       toast.error("残数の保存に失敗しました")

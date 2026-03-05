@@ -903,7 +903,7 @@ export async function upsertMaterialStock(
     material_id: string
     quantity: number
     updated_at: string
-    stock_unit?: string
+    stock_unit?: string | null
   } = {
     user_id: userId,
     material_id: materialId,
@@ -911,7 +911,7 @@ export async function upsertMaterialStock(
     updated_at: new Date().toISOString(),
   }
   if (typeof stockUnit === "string") {
-    payload.stock_unit = stockUnit
+    payload.stock_unit = stockUnit.length > 0 ? stockUnit : null
   }
   const { error } = await supabaseClient.from("material_stock").upsert(
     payload,
@@ -958,7 +958,7 @@ export async function upsertPackagingStock(
     packaging_item_id: string
     quantity: number
     updated_at: string
-    stock_unit?: string
+    stock_unit?: string | null
   } = {
     user_id: userId,
     packaging_item_id: packagingItemId,
@@ -966,7 +966,7 @@ export async function upsertPackagingStock(
     updated_at: new Date().toISOString(),
   }
   if (typeof stockUnit === "string") {
-    payload.stock_unit = stockUnit
+    payload.stock_unit = stockUnit.length > 0 ? stockUnit : null
   }
   const { error } = await supabaseClient.from("packaging_stock").upsert(
     payload,

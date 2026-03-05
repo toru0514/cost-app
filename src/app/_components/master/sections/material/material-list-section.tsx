@@ -50,11 +50,12 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
   const handleStockSave = async (material: Material) => {
     if (!editingStock || editingStock.id !== material.id) return
     const quantity = Math.max(0, parseFloat(editingStock.value) || 0)
-    const stockUnit = editingStock.unit.trim() || material.unit
+    const stockUnit = editingStock.unit.trim()
+    const displayUnit = stockUnit || material.unit
     setSavingStockId(material.id)
     try {
       await onSetMaterialStock(material.id, quantity, stockUnit)
-      toast.success("残数を保存しました", { description: `${material.name}: ${quantity} ${stockUnit}` })
+      toast.success("残数を保存しました", { description: `${material.name}: ${quantity} ${displayUnit}` })
       setEditingStock(null)
     } catch {
       toast.error("残数の保存に失敗しました")

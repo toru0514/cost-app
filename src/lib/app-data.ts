@@ -326,6 +326,12 @@ export function useAppData() {
           next.set(materialId, normalizedStockUnit)
           return next
         })
+      } else if (normalizedStockUnit === "") {
+        setMaterialStockUnits((prev) => {
+          const next = new Map(prev)
+          next.delete(materialId)
+          return next
+        })
       }
     },
     [authState]
@@ -346,6 +352,12 @@ export function useAppData() {
         setPackagingStockUnits((prev) => {
           const next = new Map(prev)
           next.set(packagingItemId, normalizedStockUnit)
+          return next
+        })
+      } else if (normalizedStockUnit === "") {
+        setPackagingStockUnits((prev) => {
+          const next = new Map(prev)
+          next.delete(packagingItemId)
           return next
         })
       }
