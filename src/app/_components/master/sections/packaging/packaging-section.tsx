@@ -12,11 +12,15 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, PackagingItem } from "@/lib/types"
+import { createTempId } from "@/lib/utils"
+import { toast } from "sonner"
 import { FieldHint, FormSection, RegisteredList, type FormSectionOpenSignal } from "../../../shared/ui"
 
 interface PackagingSectionProps {
   data: AppData
   actions: AppActions
+  isAuthenticated: boolean
+  onSetPackagingStock: (id: string, quantity: number) => Promise<void>
   openSignal?: FormSectionOpenSignal | null
 }
 
@@ -30,8 +34,11 @@ const INITIAL_FORM: Omit<PackagingItem, "id"> = {
   note: "",
 }
 
-export function PackagingSection({ data, actions, openSignal }: PackagingSectionProps) {
+export function PackagingSection({ data, actions, isAuthenticated, onSetPackagingStock, openSignal }: PackagingSectionProps) {
   const [packagingForm, setPackagingForm] = useState<Omit<PackagingItem, "id">>(INITIAL_FORM)
+  const [initialStock, setInitialStock] = useState<number>(INITIAL_FORM.unitsPerBatch ?? 1)
+  const [initialStockOverridden, setInitialStockOverridden] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const { addPackagingItem } = actions
 
   return (
@@ -44,11 +51,31 @@ export function PackagingSection({ data, actions, openSignal }: PackagingSection
       <div className="space-y-2">
         <form
           className="grid gap-2"
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault()
-            if (!packagingForm.name.trim()) return
-            addPackagingItem({ ...packagingForm })
-            setPackagingForm(INITIAL_FORM)
+            if (submitting) return
+            const name = packagingForm.name.trim()
+            if (!name) return
+            setSubmitting(true)
+            try {
+              const id = createTempId()
+              addPackagingItem({ ...packagingForm, id, name })
+              const normalizedInitialStock = Math.max(0, Number(initialStock) || 0)
+              if (isAuthenticated && normalizedInitialStock > 0) {
+                try {
+                  // packaging_stock は FK を持たない設計のため、マスタ同期前でも先に upsert できる。
+                  await onSetPackagingStock(id, normalizedInitialStock)
+                } catch (error) {
+                  console.error("Failed to save initial packaging stock", error)
+                  toast.error("初期在庫数の保存に失敗しました")
+                }
+              }
+              setPackagingForm(INITIAL_FORM)
+              setInitialStock(INITIAL_FORM.unitsPerBatch ?? 1)
+              setInitialStockOverridden(false)
+            } finally {
+              setSubmitting(false)
+            }
           }}
         >
           <div className="space-y-1">
@@ -115,14 +142,35 @@ export function PackagingSection({ data, actions, openSignal }: PackagingSection
               placeholder="例: 100"
               value={packagingForm.unitsPerBatch ?? 1}
               min={1}
-              onValueChange={(next) =>
-                setPackagingForm((prev) => ({ ...prev, unitsPerBatch: next === "" ? 1 : Number(next) }))
-              }
+              onValueChange={(next) => {
+                const unitsPerBatch = next === "" ? 1 : Number(next)
+                setPackagingForm((prev) => ({ ...prev, unitsPerBatch }))
+                if (!initialStockOverridden) {
+                  setInitialStock(unitsPerBatch)
+                }
+              }}
             />
             <FieldHint>仕入れ単位。100枚セットを登録する場合は100と入力。</FieldHint>
           </div>
+          {isAuthenticated ? (
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">初期在庫数</Label>
+              <NumberInput
+                placeholder="例: 100"
+                value={initialStock}
+                min={0}
+                onValueChange={(next) => {
+                  setInitialStock(next === "" ? 0 : Number(next))
+                  setInitialStockOverridden(true)
+                }}
+              />
+              <FieldHint>
+                初期値はセット数量と同じです。手動で上書きできます。0 の場合は在庫テーブルへ保存しません。
+              </FieldHint>
+            </div>
+          ) : null}
           <div className="flex justify-end pt-2">
-            <Button type="submit" size="sm">
+            <Button type="submit" size="sm" disabled={submitting}>
               追加
             </Button>
           </div>
