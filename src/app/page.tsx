@@ -790,6 +790,10 @@ export default function Home() {
           <ProductTab
             data={data}
             actions={actions}
+            stocks={stocks}
+            isAuthenticated={isAuthenticated}
+            onAdjustStock={adjustStock}
+            onSetStock={setStock}
             editingProductId={editingProductId}
             onRequestEditClear={() => setEditingProductId(null)}
             copySourceProductId={copyProductId}
