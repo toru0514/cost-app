@@ -998,9 +998,12 @@ export default function Home() {
 
         <TabsContent value="stock" className="space-y-6">
           <StockTab
+            data={data}
             products={data.products}
             stocks={stocks}
             stocksLoaded={stocksLoaded}
+            materialStocks={materialStocks}
+            masterStocksLoaded={masterStocksLoaded}
             isAuthenticated={isAuthenticated}
             onAdjust={adjustStock}
             onSet={setStock}
