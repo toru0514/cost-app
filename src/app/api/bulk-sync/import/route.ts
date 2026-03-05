@@ -2,10 +2,11 @@ import { NextResponse } from "next/server"
 import { cookies } from "next/headers"
 import { createClient } from "@supabase/supabase-js"
 
-import { prepareBulkSyncApply, type BulkSyncApplyResult } from "@/lib/bulk-sync/apply"
+import { prepareBulkSyncApply } from "@/lib/bulk-sync/apply"
 import { validateBulkSyncPayload, buildBulkSyncDiff } from "@/lib/bulk-sync"
 import { buildBulkSyncAuditChanges } from "@/lib/bulk-sync/audit"
 import { loadUserAppDataServer } from "@/lib/server/load-app-data"
+import { applyStockUpserts } from "@/lib/server/apply-stock-upserts"
 import { fetchBulkSyncSheetPayload } from "@/lib/bulk-sync/sheet-payload"
 
 export const runtime = "nodejs"
@@ -162,36 +163,6 @@ export async function POST(request: Request) {
     console.error("Failed to process bulk sync import", error)
     return NextResponse.json({ error: "Failed to import sheet" }, { status: 500 })
   }
-}
-
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-async function applyStockUpserts(supabase: any, userId: string, stockUpserts: BulkSyncApplyResult["stockUpserts"]) {
-  const now = new Date().toISOString()
-  const results = await Promise.allSettled([
-    ...stockUpserts.materials.map(({ id, quantity }) =>
-      supabase
-        .from("material_stock")
-        .upsert({ user_id: userId, material_id: id, quantity, updated_at: now }, { onConflict: "user_id,material_id" })
-    ),
-    ...stockUpserts.packagingItems.map(({ id, quantity }) =>
-      supabase
-        .from("packaging_stock")
-        .upsert(
-          { user_id: userId, packaging_item_id: id, quantity, updated_at: now },
-          { onConflict: "user_id,packaging_item_id" }
-        )
-    ),
-    ...stockUpserts.products.map(({ id, quantity }) =>
-      supabase
-        .from("product_stock")
-        .upsert({ user_id: userId, product_id: id, quantity, updated_at: now }, { onConflict: "user_id,product_id" })
-    ),
-  ])
-  results.forEach((result) => {
-    if (result.status === "rejected") {
-      console.warn("Failed to upsert stock during bulk sync", result.reason)
-    }
-  })
 }
 
 const projectRefPattern = /https?:\/\/([a-z0-9-]+)\.supabase\.co/i

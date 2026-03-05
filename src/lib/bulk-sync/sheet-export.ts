@@ -58,7 +58,7 @@ export const buildBulkSyncSheetRows = (data: AppData, stocks?: StockMaps) => {
       item.unitsPerBatch ?? "",
       item.supplier ?? "",
       item.note ?? "",
-      stocks?.materialStocks?.has(item.id) ? (stocks.materialStocks.get(item.id) ?? "") : "",
+      stocks?.materialStocks?.get(item.id) ?? "",
       "",
     ]),
     packaging_items: data.packagingItems.map((item) => [
@@ -70,7 +70,7 @@ export const buildBulkSyncSheetRows = (data: AppData, stocks?: StockMaps) => {
       item.unitCost,
       item.unitsPerBatch ?? "",
       item.note ?? "",
-      stocks?.packagingStocks?.has(item.id) ? (stocks.packagingStocks.get(item.id) ?? "") : "",
+      stocks?.packagingStocks?.get(item.id) ?? "",
       "",
     ]),
     shipping_methods: data.shippingMethods.map((item) => [
@@ -131,7 +131,7 @@ export const buildBulkSyncSheetRows = (data: AppData, stocks?: StockMaps) => {
       item.productionLotSize,
       (item.equipmentIds ?? []).map((id) => equipmentById.get(id)).filter(Boolean).join("|"),
       item.notes ?? "",
-      stocks?.productStocks?.has(item.id) ? (stocks.productStocks.get(item.id) ?? "") : "",
+      stocks?.productStocks?.get(item.id) ?? "",
       "",
     ]),
   }
