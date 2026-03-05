@@ -9,16 +9,31 @@ export async function applyStockUpserts(
 ) {
   const now = new Date().toISOString()
   const results = await Promise.allSettled([
-    ...stockUpserts.materials.map(({ id, quantity }) =>
+    ...stockUpserts.materials.map(({ id, quantity, stockUnit }) =>
       supabase
         .from("material_stock")
-        .upsert({ user_id: userId, material_id: id, quantity, updated_at: now }, { onConflict: "user_id,material_id" })
+        .upsert(
+          {
+            user_id: userId,
+            material_id: id,
+            quantity,
+            updated_at: now,
+            ...(stockUnit !== undefined ? { stock_unit: stockUnit || null } : {}),
+          },
+          { onConflict: "user_id,material_id" }
+        )
     ),
-    ...stockUpserts.packagingItems.map(({ id, quantity }) =>
+    ...stockUpserts.packagingItems.map(({ id, quantity, stockUnit }) =>
       supabase
         .from("packaging_stock")
         .upsert(
-          { user_id: userId, packaging_item_id: id, quantity, updated_at: now },
+          {
+            user_id: userId,
+            packaging_item_id: id,
+            quantity,
+            updated_at: now,
+            ...(stockUnit !== undefined ? { stock_unit: stockUnit || null } : {}),
+          },
           { onConflict: "user_id,packaging_item_id" }
         )
     ),
