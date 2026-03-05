@@ -20,7 +20,7 @@ interface MaterialSectionProps {
   data: AppData
   actions: AppActions
   isAuthenticated: boolean
-  onSetMaterialStock: (id: string, quantity: number) => Promise<void>
+  onSetMaterialStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   openSignal?: FormSectionOpenSignal | null
 }
 

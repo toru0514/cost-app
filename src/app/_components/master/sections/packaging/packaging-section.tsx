@@ -20,7 +20,7 @@ interface PackagingSectionProps {
   data: AppData
   actions: AppActions
   isAuthenticated: boolean
-  onSetPackagingStock: (id: string, quantity: number) => Promise<void>
+  onSetPackagingStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   openSignal?: FormSectionOpenSignal | null
 }
 

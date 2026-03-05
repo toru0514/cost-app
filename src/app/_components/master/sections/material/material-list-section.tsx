@@ -21,12 +21,13 @@ interface MaterialListSectionProps {
   createTempId: () => string
   isAuthenticated: boolean
   materialStocks: Map<string, number>
+  materialStockUnits: Map<string, string>
   masterStocksLoaded: boolean
-  onSetMaterialStock: (id: string, quantity: number) => Promise<void>
+  onSetMaterialStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
 }
 
-export function MaterialListSection({ data, actions, createTempId, isAuthenticated, materialStocks, masterStocksLoaded, onSetMaterialStock, onAdjustMaterialStock }: MaterialListSectionProps) {
+export function MaterialListSection({ data, actions, createTempId, isAuthenticated, materialStocks, materialStockUnits, masterStocksLoaded, onSetMaterialStock, onAdjustMaterialStock }: MaterialListSectionProps) {
   const [editingMaterial, setEditingMaterial] = useState<Omit<Material, "id"> & { id: string | null }>({
     id: null,
     name: "",
@@ -39,7 +40,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
     note: "",
   })
 
-  const [editingStock, setEditingStock] = useState<{ id: string; value: string } | null>(null)
+  const [editingStock, setEditingStock] = useState<{ id: string; value: string; unit: string } | null>(null)
   const [savingStockId, setSavingStockId] = useState<string | null>(null)
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
@@ -49,10 +50,12 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
   const handleStockSave = async (material: Material) => {
     if (!editingStock || editingStock.id !== material.id) return
     const quantity = Math.max(0, parseFloat(editingStock.value) || 0)
+    const stockUnit = editingStock.unit.trim()
+    const displayUnit = stockUnit || material.unit
     setSavingStockId(material.id)
     try {
-      await onSetMaterialStock(material.id, quantity)
-      toast.success("残数を保存しました", { description: `${material.name}: ${quantity} ${material.unit}` })
+      await onSetMaterialStock(material.id, quantity, stockUnit)
+      toast.success("残数を保存しました", { description: `${material.name}: ${quantity} ${displayUnit}` })
       setEditingStock(null)
     } catch {
       toast.error("残数の保存に失敗しました")
@@ -193,6 +196,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
               <TableBody>
                 {data.materials.map((material) => {
                   const isEditing = editingMaterial.id === material.id
+                  const displayStockUnit = materialStockUnits.get(material.id)?.trim() || material.unit
                   return (
                     <TableRow key={material.id}>
                       <TableCell>
@@ -287,10 +291,27 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                               min={0}
                               step="any"
                               value={editingStock.value}
-                              onChange={(e) => setEditingStock({ id: material.id, value: e.target.value })}
+                              onChange={(e) =>
+                                setEditingStock((prev) =>
+                                  prev && prev.id === material.id
+                                    ? { ...prev, value: e.target.value }
+                                    : { id: material.id, value: e.target.value, unit: displayStockUnit }
+                                )
+                              }
                               className="h-8 w-24"
                             />
-                            <span className="text-xs text-muted-foreground">{material.unit}</span>
+                            <Input
+                              value={editingStock.unit}
+                              onChange={(e) =>
+                                setEditingStock((prev) =>
+                                  prev && prev.id === material.id
+                                    ? { ...prev, unit: e.target.value }
+                                    : { id: material.id, value: String(materialStocks.get(material.id) ?? 0), unit: e.target.value }
+                                )
+                              }
+                              className="h-8 w-20"
+                              placeholder="単位"
+                            />
                             <Button
                               type="button"
                               size="sm"
@@ -312,13 +333,14 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                               setEditingStock({
                                 id: material.id,
                                 value: String(materialStocks.get(material.id) ?? 0),
+                                unit: displayStockUnit,
                               })
                             }}
                           >
                             {!masterStocksLoaded
                               ? <span className="text-muted-foreground">-</span>
                               : materialStocks.has(material.id)
-                                ? `${materialStocks.get(material.id)} ${material.unit}`
+                                ? `${materialStocks.get(material.id)} ${displayStockUnit}`
                                 : <span className="text-muted-foreground">-</span>}
                           </button>
                         )}

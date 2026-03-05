@@ -196,12 +196,14 @@ export type ProductStock = {
 export type MaterialStock = {
   materialId: string
   quantity: number
+  stockUnit?: string
   updatedAt: string
 }
 
 export type PackagingStock = {
   packagingItemId: string
   quantity: number
+  stockUnit?: string
   updatedAt: string
 }
 

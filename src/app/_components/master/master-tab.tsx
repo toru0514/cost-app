@@ -14,15 +14,17 @@ interface MasterTabProps {
   actions: AppActions
   isAuthenticated: boolean
   materialStocks: Map<string, number>
+  materialStockUnits: Map<string, string>
   packagingStocks: Map<string, number>
+  packagingStockUnits: Map<string, string>
   masterStocksLoaded: boolean
-  onSetMaterialStock: (id: string, quantity: number) => Promise<void>
-  onSetPackagingStock: (id: string, quantity: number) => Promise<void>
+  onSetMaterialStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
+  onSetPackagingStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
 }
 
-export function MasterTab({ data, actions, isAuthenticated, materialStocks, packagingStocks, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterTabProps) {
+export function MasterTab({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterTabProps) {
   const [view, setView] = useState<"register" | "list">(() => {
     if (typeof window === "undefined") return "register"
     const stored = window.localStorage.getItem("cost-app-master-view")
@@ -69,7 +71,9 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, pack
           actions={actions}
           isAuthenticated={isAuthenticated}
           materialStocks={materialStocks}
+          materialStockUnits={materialStockUnits}
           packagingStocks={packagingStocks}
+          packagingStockUnits={packagingStockUnits}
           masterStocksLoaded={masterStocksLoaded}
           onSetMaterialStock={onSetMaterialStock}
           onSetPackagingStock={onSetPackagingStock}
