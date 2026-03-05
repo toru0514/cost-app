@@ -18,9 +18,11 @@ interface MasterTabProps {
   masterStocksLoaded: boolean
   onSetMaterialStock: (id: string, quantity: number) => Promise<void>
   onSetPackagingStock: (id: string, quantity: number) => Promise<void>
+  onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
+  onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
 }
 
-export function MasterTab({ data, actions, isAuthenticated, materialStocks, packagingStocks, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock }: MasterTabProps) {
+export function MasterTab({ data, actions, isAuthenticated, materialStocks, packagingStocks, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterTabProps) {
   const [view, setView] = useState<"register" | "list">(() => {
     if (typeof window === "undefined") return "register"
     const stored = window.localStorage.getItem("cost-app-master-view")
@@ -65,6 +67,8 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, pack
           masterStocksLoaded={masterStocksLoaded}
           onSetMaterialStock={onSetMaterialStock}
           onSetPackagingStock={onSetPackagingStock}
+          onAdjustMaterialStock={onAdjustMaterialStock}
+          onAdjustPackagingStock={onAdjustPackagingStock}
         />
       )}
     </div>

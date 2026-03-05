@@ -65,6 +65,8 @@ export default function Home() {
     masterStocksLoaded,
     setMaterialStock,
     setPackagingStock,
+    adjustMaterialStock,
+    adjustPackagingStock,
   } = useAppData()
   const handleAuditFiltersChange = useCallback(
     (next: AuditFilters) => {
@@ -805,6 +807,8 @@ export default function Home() {
             masterStocksLoaded={masterStocksLoaded}
             onSetMaterialStock={setMaterialStock}
             onSetPackagingStock={setPackagingStock}
+            onAdjustMaterialStock={adjustMaterialStock}
+            onAdjustPackagingStock={adjustPackagingStock}
           />
         </TabsContent>
 

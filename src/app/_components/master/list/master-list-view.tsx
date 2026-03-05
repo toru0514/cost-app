@@ -21,6 +21,8 @@ interface MasterListViewProps {
   masterStocksLoaded: boolean
   onSetMaterialStock: (id: string, quantity: number) => Promise<void>
   onSetPackagingStock: (id: string, quantity: number) => Promise<void>
+  onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
+  onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
 }
 
 const createTempId = () =>
@@ -28,7 +30,7 @@ const createTempId = () =>
     ? crypto.randomUUID()
     : Math.random().toString(36).substring(2, 11)
 
-export function MasterListView({ data, actions, isAuthenticated, materialStocks, packagingStocks, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock }: MasterListViewProps) {
+export function MasterListView({ data, actions, isAuthenticated, materialStocks, packagingStocks, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterListViewProps) {
   return (
     <div className="space-y-6">
       <CategoryListSection data={data} actions={actions} createTempId={createTempId} />
@@ -42,6 +44,7 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
           materialStocks={materialStocks}
           masterStocksLoaded={masterStocksLoaded}
           onSetMaterialStock={onSetMaterialStock}
+          onAdjustMaterialStock={onAdjustMaterialStock}
         />
 
         <PackagingListSection
@@ -52,6 +55,7 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
           packagingStocks={packagingStocks}
           masterStocksLoaded={masterStocksLoaded}
           onSetPackagingStock={onSetPackagingStock}
+          onAdjustPackagingStock={onAdjustPackagingStock}
         />
         <OptionPresetListSection data={data} actions={actions} createTempId={createTempId} />
       </div>
