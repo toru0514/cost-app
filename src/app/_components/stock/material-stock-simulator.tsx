@@ -22,15 +22,18 @@ export function MaterialStockSimulator({ data, materialStocks, masterStocksLoade
   const [productionCount, setProductionCount] = useState<number | "">(1)
 
   const productsWithMaterials = useMemo(() => {
-    const ids = new Set(data.costEntries.materials.map((e) => e.productId))
+    const ids = new Set(
+      data.costEntries.materials.filter((e) => e.usageRatio !== undefined).map((e) => e.productId)
+    )
     return data.products.filter((p) => ids.has(p.id))
   }, [data])
 
+  const displayCount = typeof productionCount === "number" && productionCount > 0 ? productionCount : 1
+
   const rows = useMemo(() => {
     if (!selectedProductId) return []
-    const count = typeof productionCount === "number" && productionCount > 0 ? productionCount : 1
-    return calcMaterialConsumption(selectedProductId, count, data, materialStocks)
-  }, [selectedProductId, productionCount, data, materialStocks])
+    return calcMaterialConsumption(selectedProductId, displayCount, data, materialStocks)
+  }, [selectedProductId, displayCount, data, materialStocks])
 
   const lowCount = rows.filter((r) => r.isLow).length
 
@@ -88,7 +91,7 @@ export function MaterialStockSimulator({ data, materialStocks, masterStocksLoade
                   <TableHead>材料</TableHead>
                   <TableHead className="text-right">使用率</TableHead>
                   <TableHead className="text-right">1個分消費量</TableHead>
-                  <TableHead className="text-right">{typeof productionCount === "number" && productionCount > 0 ? productionCount : 1}個分消費量</TableHead>
+                  <TableHead className="text-right">{displayCount}個分消費量</TableHead>
                   {isAuthenticated && (
                     <>
                       <TableHead className="text-right">現在残数</TableHead>

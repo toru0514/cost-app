@@ -45,7 +45,9 @@ export function calcMaterialConsumption(
     const remainingStock = currentStock !== null ? currentStock - totalConsumption : null
     const remainingPercent =
       currentStock !== null && currentStock > 0 ? (remainingStock! / currentStock) * 100 : null
-    const isLow = remainingPercent !== null && remainingPercent < MATERIAL_STOCK_LOW_THRESHOLD
+    const isLow =
+      (remainingPercent !== null && remainingPercent < MATERIAL_STOCK_LOW_THRESHOLD) ||
+      (currentStock === 0 && totalConsumption > 0)
 
     return {
       materialId: material.id,
