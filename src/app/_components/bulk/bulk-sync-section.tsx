@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react"
 import { ExternalLink, History } from "lucide-react"
-
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"

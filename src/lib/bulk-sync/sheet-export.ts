@@ -13,7 +13,9 @@ const serializeVariants = (variants: ProductSizeVariant[]) => {
 
 type StockMaps = {
   materialStocks?: Map<string, number>
+  materialStockUnits?: Map<string, string>
   packagingStocks?: Map<string, number>
+  packagingStockUnits?: Map<string, string>
   productStocks?: Map<string, number>
 }
 
@@ -59,6 +61,7 @@ export const buildBulkSyncSheetRows = (data: AppData, stocks?: StockMaps) => {
       item.supplier ?? "",
       item.note ?? "",
       stocks?.materialStocks?.get(item.id) ?? "",
+      stocks?.materialStockUnits?.get(item.id) ?? "",
       "",
     ]),
     packaging_items: data.packagingItems.map((item) => [
@@ -71,6 +74,7 @@ export const buildBulkSyncSheetRows = (data: AppData, stocks?: StockMaps) => {
       item.unitsPerBatch ?? "",
       item.note ?? "",
       stocks?.packagingStocks?.get(item.id) ?? "",
+      stocks?.packagingStockUnits?.get(item.id) ?? "",
       "",
     ]),
     shipping_methods: data.shippingMethods.map((item) => [

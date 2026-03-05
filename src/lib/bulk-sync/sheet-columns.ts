@@ -29,6 +29,7 @@ export const SHEET_COLUMNS: Record<BulkSyncEntity, string[]> = {
     "supplier",
     "note",
     "stock",
+    "stock_unit",
     "is_deleted",
   ],
   packaging_items: [
@@ -41,6 +42,7 @@ export const SHEET_COLUMNS: Record<BulkSyncEntity, string[]> = {
     "units_per_batch",
     "note",
     "stock",
+    "stock_unit",
     "is_deleted",
   ],
   shipping_methods: ["id", "name", "description", "unit_cost", "currency", "note", "is_deleted"],

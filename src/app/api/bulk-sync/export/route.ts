@@ -103,22 +103,32 @@ export async function POST(request: Request) {
   try {
     const [appData, materialStocksResult, packagingStocksResult, productStocksResult] = await Promise.all([
       loadUserAppDataServer(supabase, user.id),
-      supabase.from("material_stock").select("material_id, quantity").eq("user_id", user.id),
-      supabase.from("packaging_stock").select("packaging_item_id, quantity").eq("user_id", user.id),
+      supabase.from("material_stock").select("material_id, quantity, stock_unit").eq("user_id", user.id),
+      supabase.from("packaging_stock").select("packaging_item_id, quantity, stock_unit").eq("user_id", user.id),
       supabase.from("product_stock").select("product_id, quantity").eq("user_id", user.id),
     ])
 
     const materialStocks = new Map(
       (materialStocksResult.data ?? []).map((r) => [r.material_id as string, Number(r.quantity)])
     )
+    const materialStockUnits = new Map(
+      (materialStocksResult.data ?? [])
+        .filter((r) => r.stock_unit)
+        .map((r) => [r.material_id as string, r.stock_unit as string])
+    )
     const packagingStocks = new Map(
       (packagingStocksResult.data ?? []).map((r) => [r.packaging_item_id as string, Number(r.quantity)])
+    )
+    const packagingStockUnits = new Map(
+      (packagingStocksResult.data ?? [])
+        .filter((r) => r.stock_unit)
+        .map((r) => [r.packaging_item_id as string, r.stock_unit as string])
     )
     const productStocks = new Map(
       (productStocksResult.data ?? []).map((r) => [r.product_id as string, Number(r.quantity)])
     )
 
-    const sheetRows = buildBulkSyncSheetRows(appData, { materialStocks, packagingStocks, productStocks })
+    const sheetRows = buildBulkSyncSheetRows(appData, { materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, productStocks })
 
     const targets: (keyof typeof sheetRows)[] =
       body.target === "master"
