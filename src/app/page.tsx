@@ -61,7 +61,9 @@ export default function Home() {
     setStock,
     adjustStock,
     materialStocks,
+    materialStockUnits,
     packagingStocks,
+    packagingStockUnits,
     masterStocksLoaded,
     setMaterialStock,
     setPackagingStock,
@@ -808,7 +810,9 @@ export default function Home() {
             actions={actions}
             isAuthenticated={isAuthenticated}
             materialStocks={materialStocks}
+            materialStockUnits={materialStockUnits}
             packagingStocks={packagingStocks}
+            packagingStockUnits={packagingStockUnits}
             masterStocksLoaded={masterStocksLoaded}
             onSetMaterialStock={setMaterialStock}
             onSetPackagingStock={setPackagingStock}

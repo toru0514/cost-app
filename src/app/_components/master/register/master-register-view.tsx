@@ -21,8 +21,8 @@ interface MasterRegisterViewProps {
   data: AppData
   actions: AppActions
   isAuthenticated: boolean
-  onSetMaterialStock: (id: string, quantity: number) => Promise<void>
-  onSetPackagingStock: (id: string, quantity: number) => Promise<void>
+  onSetMaterialStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
+  onSetPackagingStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
 }
 
 export function MasterRegisterView({ data, actions, isAuthenticated, onSetMaterialStock, onSetPackagingStock }: MasterRegisterViewProps) {

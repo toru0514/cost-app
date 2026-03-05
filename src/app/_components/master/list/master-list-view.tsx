@@ -18,15 +18,17 @@ interface MasterListViewProps {
   actions: AppActions
   isAuthenticated: boolean
   materialStocks: Map<string, number>
+  materialStockUnits: Map<string, string>
   packagingStocks: Map<string, number>
+  packagingStockUnits: Map<string, string>
   masterStocksLoaded: boolean
-  onSetMaterialStock: (id: string, quantity: number) => Promise<void>
-  onSetPackagingStock: (id: string, quantity: number) => Promise<void>
+  onSetMaterialStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
+  onSetPackagingStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
 }
 
-export function MasterListView({ data, actions, isAuthenticated, materialStocks, packagingStocks, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterListViewProps) {
+export function MasterListView({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterListViewProps) {
   return (
     <div className="space-y-6">
       <CategoryListSection data={data} actions={actions} createTempId={createTempId} />
@@ -38,6 +40,7 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
           createTempId={createTempId}
           isAuthenticated={isAuthenticated}
           materialStocks={materialStocks}
+          materialStockUnits={materialStockUnits}
           masterStocksLoaded={masterStocksLoaded}
           onSetMaterialStock={onSetMaterialStock}
           onAdjustMaterialStock={onAdjustMaterialStock}
@@ -49,6 +52,7 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
           createTempId={createTempId}
           isAuthenticated={isAuthenticated}
           packagingStocks={packagingStocks}
+          packagingStockUnits={packagingStockUnits}
           masterStocksLoaded={masterStocksLoaded}
           onSetPackagingStock={onSetPackagingStock}
           onAdjustPackagingStock={onAdjustPackagingStock}

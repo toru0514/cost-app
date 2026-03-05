@@ -21,12 +21,13 @@ interface PackagingListSectionProps {
   createTempId: () => string
   isAuthenticated: boolean
   packagingStocks: Map<string, number>
+  packagingStockUnits: Map<string, string>
   masterStocksLoaded: boolean
-  onSetPackagingStock: (id: string, quantity: number) => Promise<void>
+  onSetPackagingStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
 }
 
-export function PackagingListSection({ data, actions, createTempId, isAuthenticated, packagingStocks, masterStocksLoaded, onSetPackagingStock, onAdjustPackagingStock }: PackagingListSectionProps) {
+export function PackagingListSection({ data, actions, createTempId, isAuthenticated, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetPackagingStock, onAdjustPackagingStock }: PackagingListSectionProps) {
   const [editingPackaging, setEditingPackaging] = useState<Omit<PackagingItem, "id"> & { id: string | null }>({
     id: null,
     name: "",
@@ -38,7 +39,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
     note: "",
   })
 
-  const [editingStock, setEditingStock] = useState<{ id: string; value: string } | null>(null)
+  const [editingStock, setEditingStock] = useState<{ id: string; value: string; unit: string } | null>(null)
   const [savingStockId, setSavingStockId] = useState<string | null>(null)
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
@@ -48,10 +49,11 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
   const handleStockSave = async (item: PackagingItem) => {
     if (!editingStock || editingStock.id !== item.id) return
     const quantity = Math.max(0, parseFloat(editingStock.value) || 0)
+    const stockUnit = editingStock.unit.trim() || item.unit
     setSavingStockId(item.id)
     try {
-      await onSetPackagingStock(item.id, quantity)
-      toast.success("残数を保存しました", { description: `${item.name}: ${quantity} ${item.unit}` })
+      await onSetPackagingStock(item.id, quantity, stockUnit)
+      toast.success("残数を保存しました", { description: `${item.name}: ${quantity} ${stockUnit}` })
       setEditingStock(null)
     } catch {
       toast.error("残数の保存に失敗しました")
@@ -189,6 +191,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
               <TableBody>
                 {data.packagingItems.map((item) => {
                   const isEditing = editingPackaging.id === item.id
+                  const displayStockUnit = packagingStockUnits.get(item.id)?.trim() || item.unit
                   return (
                     <TableRow key={item.id}>
                       <TableCell>
@@ -283,10 +286,27 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                               min={0}
                               step="any"
                               value={editingStock.value}
-                              onChange={(e) => setEditingStock({ id: item.id, value: e.target.value })}
+                              onChange={(e) =>
+                                setEditingStock((prev) =>
+                                  prev && prev.id === item.id
+                                    ? { ...prev, value: e.target.value }
+                                    : { id: item.id, value: e.target.value, unit: displayStockUnit }
+                                )
+                              }
                               className="h-8 w-24"
                             />
-                            <span className="text-xs text-muted-foreground">{item.unit}</span>
+                            <Input
+                              value={editingStock.unit}
+                              onChange={(e) =>
+                                setEditingStock((prev) =>
+                                  prev && prev.id === item.id
+                                    ? { ...prev, unit: e.target.value }
+                                    : { id: item.id, value: String(packagingStocks.get(item.id) ?? 0), unit: e.target.value }
+                                )
+                              }
+                              className="h-8 w-20"
+                              placeholder="単位"
+                            />
                             <Button
                               type="button"
                               size="sm"
@@ -308,13 +328,14 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                               setEditingStock({
                                 id: item.id,
                                 value: String(packagingStocks.get(item.id) ?? 0),
+                                unit: displayStockUnit,
                               })
                             }}
                           >
                             {!masterStocksLoaded
                               ? <span className="text-muted-foreground">-</span>
                               : packagingStocks.has(item.id)
-                                ? `${packagingStocks.get(item.id)} ${item.unit}`
+                                ? `${packagingStocks.get(item.id)} ${displayStockUnit}`
                                 : <span className="text-muted-foreground">-</span>}
                           </button>
                         )}

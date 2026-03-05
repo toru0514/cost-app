@@ -141,8 +141,10 @@ export function useAppData() {
   const stocksRef = useRef<Map<string, number>>(new Map())
   const [materialStocks, setMaterialStocks] = useState<Map<string, number>>(new Map())
   const materialStocksRef = useRef<Map<string, number>>(new Map())
+  const [materialStockUnits, setMaterialStockUnits] = useState<Map<string, string>>(new Map())
   const [packagingStocks, setPackagingStocks] = useState<Map<string, number>>(new Map())
   const packagingStocksRef = useRef<Map<string, number>>(new Map())
+  const [packagingStockUnits, setPackagingStockUnits] = useState<Map<string, string>>(new Map())
   const [masterStocksLoaded, setMasterStocksLoaded] = useState(false)
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
@@ -239,7 +241,9 @@ export function useAppData() {
       setStocks(new Map())
       setStocksLoaded(false)
       setMaterialStocks(new Map())
+      setMaterialStockUnits(new Map())
       setPackagingStocks(new Map())
+      setPackagingStockUnits(new Map())
       setMasterStocksLoaded(false)
     }
   }, [authState.status])
@@ -280,7 +284,25 @@ export function useAppData() {
         loadPackagingStocks(authState.user.id),
       ])
       setMaterialStocks(new Map(materials.map((s) => [s.materialId, s.quantity])))
+      setMaterialStockUnits(
+        new Map(
+          materials
+            .flatMap((s) => {
+              const unit = typeof s.stockUnit === "string" ? s.stockUnit.trim() : ""
+              return unit.length > 0 ? [[s.materialId, unit] as const] : []
+            })
+        )
+      )
       setPackagingStocks(new Map(packaging.map((s) => [s.packagingItemId, s.quantity])))
+      setPackagingStockUnits(
+        new Map(
+          packaging
+            .flatMap((s) => {
+              const unit = typeof s.stockUnit === "string" ? s.stockUnit.trim() : ""
+              return unit.length > 0 ? [[s.packagingItemId, unit] as const] : []
+            })
+        )
+      )
       setMasterStocksLoaded(true)
     } catch (error) {
       console.error("Failed to load master stocks", error)
@@ -288,27 +310,45 @@ export function useAppData() {
   }, [authState])
 
   const setMaterialStock = useCallback(
-    async (materialId: string, quantity: number) => {
+    async (materialId: string, quantity: number, stockUnit?: string) => {
       if (authState.status !== "authenticated") return
-      await upsertMaterialStock(authState.user.id, materialId, quantity)
+      const normalizedStockUnit =
+        typeof stockUnit === "string" ? stockUnit.trim() : undefined
+      await upsertMaterialStock(authState.user.id, materialId, quantity, normalizedStockUnit)
       setMaterialStocks((prev) => {
         const next = new Map(prev)
         next.set(materialId, quantity)
         return next
       })
+      if (typeof normalizedStockUnit === "string" && normalizedStockUnit.length > 0) {
+        setMaterialStockUnits((prev) => {
+          const next = new Map(prev)
+          next.set(materialId, normalizedStockUnit)
+          return next
+        })
+      }
     },
     [authState]
   )
 
   const setPackagingStock = useCallback(
-    async (packagingItemId: string, quantity: number) => {
+    async (packagingItemId: string, quantity: number, stockUnit?: string) => {
       if (authState.status !== "authenticated") return
-      await upsertPackagingStock(authState.user.id, packagingItemId, quantity)
+      const normalizedStockUnit =
+        typeof stockUnit === "string" ? stockUnit.trim() : undefined
+      await upsertPackagingStock(authState.user.id, packagingItemId, quantity, normalizedStockUnit)
       setPackagingStocks((prev) => {
         const next = new Map(prev)
         next.set(packagingItemId, quantity)
         return next
       })
+      if (typeof normalizedStockUnit === "string" && normalizedStockUnit.length > 0) {
+        setPackagingStockUnits((prev) => {
+          const next = new Map(prev)
+          next.set(packagingItemId, normalizedStockUnit)
+          return next
+        })
+      }
     },
     [authState]
   )
@@ -666,6 +706,11 @@ export function useAppData() {
       next.delete(id)
       return next
     })
+    setMaterialStockUnits((prev) => {
+      const next = new Map(prev)
+      next.delete(id)
+      return next
+    })
     if (authState.status === "authenticated") {
       void deleteMaterialStock(authState.user.id, id).catch((error) => {
         console.warn("Failed to delete material stock on removal", error)
@@ -705,6 +750,11 @@ export function useAppData() {
       },
     }))
     setPackagingStocks((prev) => {
+      const next = new Map(prev)
+      next.delete(id)
+      return next
+    })
+    setPackagingStockUnits((prev) => {
       const next = new Map(prev)
       next.delete(id)
       return next
@@ -1117,7 +1167,9 @@ export function useAppData() {
     setStock,
     adjustStock,
     materialStocks,
+    materialStockUnits,
     packagingStocks,
+    packagingStockUnits,
     masterStocksLoaded,
     setMaterialStock,
     setPackagingStock,
