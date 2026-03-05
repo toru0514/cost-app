@@ -10,6 +10,7 @@ interface ProductTabProps {
   data: AppData
   actions: AppActions
   stocks: Map<string, number>
+  stocksLoaded: boolean
   isAuthenticated: boolean
   onAdjustStock: (productId: string, delta: number) => Promise<void>
   onSetStock: (productId: string, quantity: number) => Promise<void>
@@ -20,7 +21,7 @@ interface ProductTabProps {
 }
 
 export function ProductTab(props: ProductTabProps) {
-  const { data, stocks, isAuthenticated, onAdjustStock, onSetStock } = props
+  const { data, stocks, stocksLoaded, isAuthenticated, onAdjustStock, onSetStock } = props
 
   return (
     <div className="space-y-6">
@@ -28,6 +29,7 @@ export function ProductTab(props: ProductTabProps) {
       <RegisteredProductsSection
         data={data}
         stocks={stocks}
+        stocksLoaded={stocksLoaded}
         isAuthenticated={isAuthenticated}
         onAdjust={onAdjustStock}
         onSet={onSetStock}

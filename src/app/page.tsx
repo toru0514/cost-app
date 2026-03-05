@@ -791,6 +791,7 @@ export default function Home() {
             data={data}
             actions={actions}
             stocks={stocks}
+            stocksLoaded={stocksLoaded}
             isAuthenticated={isAuthenticated}
             onAdjustStock={adjustStock}
             onSetStock={setStock}

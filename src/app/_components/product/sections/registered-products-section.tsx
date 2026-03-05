@@ -13,12 +13,20 @@ import { toast } from "sonner"
 interface RegisteredProductsSectionProps {
   data: AppData
   stocks: Map<string, number>
+  stocksLoaded: boolean
   isAuthenticated: boolean
   onAdjust: (productId: string, delta: number) => Promise<void>
   onSet: (productId: string, quantity: number) => Promise<void>
 }
 
-export function RegisteredProductsSection({ data, stocks, isAuthenticated, onAdjust, onSet }: RegisteredProductsSectionProps) {
+export function RegisteredProductsSection({
+  data,
+  stocks,
+  stocksLoaded,
+  isAuthenticated,
+  onAdjust,
+  onSet,
+}: RegisteredProductsSectionProps) {
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
   const [editingStock, setEditingStock] = useState<{ productId: string; value: string } | null>(null)
@@ -121,6 +129,8 @@ export function RegisteredProductsSection({ data, stocks, isAuthenticated, onAdj
                     <TableCell className="text-right">
                       {!isAuthenticated ? (
                         "-"
+                      ) : !stocksLoaded ? (
+                        "..."
                       ) : isEditing ? (
                         <div className="flex items-center justify-end gap-1">
                           <Input
@@ -156,20 +166,23 @@ export function RegisteredProductsSection({ data, stocks, isAuthenticated, onAdj
                       )}
                     </TableCell>
                     <TableCell>
-                      <Input
-                        type="number"
-                        min={1}
-                        value={adjustAmounts.get(product.id) ?? "1"}
-                        onChange={(event) =>
-                          setAdjustAmounts((prev) => {
-                            const next = new Map(prev)
-                            next.set(product.id, event.target.value)
-                            return next
-                          })
-                        }
-                        className="h-8 w-20"
-                        disabled={!isAuthenticated}
-                      />
+                      {isAuthenticated ? (
+                        <Input
+                          type="number"
+                          min={1}
+                          value={adjustAmounts.get(product.id) ?? "1"}
+                          onChange={(event) =>
+                            setAdjustAmounts((prev) => {
+                              const next = new Map(prev)
+                              next.set(product.id, event.target.value)
+                              return next
+                            })
+                          }
+                          className="h-8 w-20"
+                        />
+                      ) : (
+                        "-"
+                      )}
                     </TableCell>
                     <TableCell>
                       {isAuthenticated ? (
@@ -186,7 +199,7 @@ export function RegisteredProductsSection({ data, stocks, isAuthenticated, onAdj
                             size="sm"
                             variant="outline"
                             onClick={() => handleUse(product.id)}
-                            disabled={isBusy || isEditing || quantity === 0}
+                            disabled={isBusy || isEditing || !stocksLoaded || quantity === 0}
                           >
                             −使用
                           </Button>
