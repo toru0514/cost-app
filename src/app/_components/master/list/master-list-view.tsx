@@ -2,6 +2,7 @@
 
 import type { AppActions } from "@/lib/app-data"
 import type { AppData } from "@/lib/types"
+import { createTempId } from "@/lib/utils"
 
 import { CategoryListSection } from "../sections/category"
 import { EquipmentListSection } from "../sections/equipment"
@@ -24,11 +25,6 @@ interface MasterListViewProps {
   onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
 }
-
-const createTempId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).substring(2, 11)
 
 export function MasterListView({ data, actions, isAuthenticated, materialStocks, packagingStocks, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterListViewProps) {
   return (

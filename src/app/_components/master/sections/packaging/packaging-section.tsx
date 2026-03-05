@@ -12,6 +12,7 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, PackagingItem } from "@/lib/types"
+import { createTempId } from "@/lib/utils"
 import { toast } from "sonner"
 import { FieldHint, FormSection, RegisteredList, type FormSectionOpenSignal } from "../../../shared/ui"
 
@@ -33,15 +34,11 @@ const INITIAL_FORM: Omit<PackagingItem, "id"> = {
   note: "",
 }
 
-const createTempId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).substring(2, 11)
-
 export function PackagingSection({ data, actions, isAuthenticated, onSetPackagingStock, openSignal }: PackagingSectionProps) {
   const [packagingForm, setPackagingForm] = useState<Omit<PackagingItem, "id">>(INITIAL_FORM)
   const [initialStock, setInitialStock] = useState<number>(INITIAL_FORM.unitsPerBatch ?? 1)
   const [initialStockOverridden, setInitialStockOverridden] = useState(false)
+  const [submitting, setSubmitting] = useState(false)
   const { addPackagingItem } = actions
 
   return (
@@ -56,22 +53,29 @@ export function PackagingSection({ data, actions, isAuthenticated, onSetPackagin
           className="grid gap-2"
           onSubmit={async (event) => {
             event.preventDefault()
+            if (submitting) return
             const name = packagingForm.name.trim()
             if (!name) return
-            const id = createTempId()
-            addPackagingItem({ ...packagingForm, id, name })
-            const normalizedInitialStock = Math.max(0, Number(initialStock) || 0)
-            if (isAuthenticated && normalizedInitialStock > 0) {
-              try {
-                await onSetPackagingStock(id, normalizedInitialStock)
-              } catch (error) {
-                console.error("Failed to save initial packaging stock", error)
-                toast.error("初期在庫数の保存に失敗しました")
+            setSubmitting(true)
+            try {
+              const id = createTempId()
+              addPackagingItem({ ...packagingForm, id, name })
+              const normalizedInitialStock = Math.max(0, Number(initialStock) || 0)
+              if (isAuthenticated && normalizedInitialStock > 0) {
+                try {
+                  // packaging_stock は FK を持たない設計のため、マスタ同期前でも先に upsert できる。
+                  await onSetPackagingStock(id, normalizedInitialStock)
+                } catch (error) {
+                  console.error("Failed to save initial packaging stock", error)
+                  toast.error("初期在庫数の保存に失敗しました")
+                }
               }
+              setPackagingForm(INITIAL_FORM)
+              setInitialStock(INITIAL_FORM.unitsPerBatch ?? 1)
+              setInitialStockOverridden(false)
+            } finally {
+              setSubmitting(false)
             }
-            setPackagingForm(INITIAL_FORM)
-            setInitialStock(INITIAL_FORM.unitsPerBatch ?? 1)
-            setInitialStockOverridden(false)
           }}
         >
           <div className="space-y-1">
@@ -166,7 +170,7 @@ export function PackagingSection({ data, actions, isAuthenticated, onSetPackagin
             </div>
           ) : null}
           <div className="flex justify-end pt-2">
-            <Button type="submit" size="sm">
+            <Button type="submit" size="sm" disabled={submitting}>
               追加
             </Button>
           </div>
