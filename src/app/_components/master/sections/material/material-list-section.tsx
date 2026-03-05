@@ -23,9 +23,10 @@ interface MaterialListSectionProps {
   materialStocks: Map<string, number>
   masterStocksLoaded: boolean
   onSetMaterialStock: (id: string, quantity: number) => Promise<void>
+  onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
 }
 
-export function MaterialListSection({ data, actions, createTempId, isAuthenticated, materialStocks, masterStocksLoaded, onSetMaterialStock }: MaterialListSectionProps) {
+export function MaterialListSection({ data, actions, createTempId, isAuthenticated, materialStocks, masterStocksLoaded, onSetMaterialStock, onAdjustMaterialStock }: MaterialListSectionProps) {
   const [editingMaterial, setEditingMaterial] = useState<Omit<Material, "id"> & { id: string | null }>({
     id: null,
     name: "",
@@ -40,6 +41,8 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
 
   const [editingStock, setEditingStock] = useState<{ id: string; value: string } | null>(null)
   const [savingStockId, setSavingStockId] = useState<string | null>(null)
+  const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
+  const [busy, setBusy] = useState<string | null>(null)
 
   const { updateMaterial, removeMaterial, addMaterial } = actions
 
@@ -55,6 +58,30 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
       toast.error("残数の保存に失敗しました")
     } finally {
       setSavingStockId(null)
+    }
+  }
+
+  const getAdjustAmount = (id: string) => Math.max(1, parseInt(adjustAmounts.get(id) ?? "1", 10) || 1)
+
+  const handleAdd = async (material: Material) => {
+    setBusy(material.id + "_add")
+    try {
+      await onAdjustMaterialStock(material.id, getAdjustAmount(material.id))
+    } catch {
+      toast.error("残数の追加に失敗しました")
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleUse = async (material: Material) => {
+    setBusy(material.id + "_use")
+    try {
+      await onAdjustMaterialStock(material.id, -getAdjustAmount(material.id))
+    } catch {
+      toast.error("残数の使用に失敗しました")
+    } finally {
+      setBusy(null)
     }
   }
 
@@ -146,7 +173,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
           <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="min-w-[900px]">
+            <Table className="min-w-[1100px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>名称</TableHead>
@@ -156,6 +183,8 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                   <TableHead>仕入先</TableHead>
                   <TableHead>備考</TableHead>
                   <TableHead>現在残数</TableHead>
+                  <TableHead>増減量</TableHead>
+                  <TableHead></TableHead>
                   <TableHead className="w-48 text-right">
                     <span className="sr-only">操作</span>
                   </TableHead>
@@ -292,6 +321,47 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                                 ? `${materialStocks.get(material.id)} ${material.unit}`
                                 : <span className="text-muted-foreground">-</span>}
                           </button>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isAuthenticated && (
+                          <Input
+                            type="number"
+                            min={1}
+                            value={adjustAmounts.get(material.id) ?? "1"}
+                            onChange={(e) =>
+                              setAdjustAmounts((prev) => {
+                                const next = new Map(prev)
+                                next.set(material.id, e.target.value)
+                                return next
+                              })
+                            }
+                            className="h-8 w-20"
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isAuthenticated && (
+                          <div className="flex gap-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAdd(material)}
+                              disabled={busy !== null || editingStock?.id === material.id}
+                            >
+                              +追加
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUse(material)}
+                              disabled={busy !== null || editingStock?.id === material.id || (materialStocks.get(material.id) ?? 0) === 0}
+                            >
+                              −使用
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                       <TableCell className="text-right">

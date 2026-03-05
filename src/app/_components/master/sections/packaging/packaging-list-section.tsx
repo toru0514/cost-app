@@ -23,9 +23,10 @@ interface PackagingListSectionProps {
   packagingStocks: Map<string, number>
   masterStocksLoaded: boolean
   onSetPackagingStock: (id: string, quantity: number) => Promise<void>
+  onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
 }
 
-export function PackagingListSection({ data, actions, createTempId, isAuthenticated, packagingStocks, masterStocksLoaded, onSetPackagingStock }: PackagingListSectionProps) {
+export function PackagingListSection({ data, actions, createTempId, isAuthenticated, packagingStocks, masterStocksLoaded, onSetPackagingStock, onAdjustPackagingStock }: PackagingListSectionProps) {
   const [editingPackaging, setEditingPackaging] = useState<Omit<PackagingItem, "id"> & { id: string | null }>({
     id: null,
     name: "",
@@ -39,6 +40,8 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
 
   const [editingStock, setEditingStock] = useState<{ id: string; value: string } | null>(null)
   const [savingStockId, setSavingStockId] = useState<string | null>(null)
+  const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
+  const [busy, setBusy] = useState<string | null>(null)
 
   const { updatePackagingItem, removePackagingItem, addPackagingItem } = actions
 
@@ -54,6 +57,30 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
       toast.error("残数の保存に失敗しました")
     } finally {
       setSavingStockId(null)
+    }
+  }
+
+  const getAdjustAmount = (id: string) => Math.max(1, parseInt(adjustAmounts.get(id) ?? "1", 10) || 1)
+
+  const handleAdd = async (item: PackagingItem) => {
+    setBusy(item.id + "_add")
+    try {
+      await onAdjustPackagingStock(item.id, getAdjustAmount(item.id))
+    } catch {
+      toast.error("残数の追加に失敗しました")
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleUse = async (item: PackagingItem) => {
+    setBusy(item.id + "_use")
+    try {
+      await onAdjustPackagingStock(item.id, -getAdjustAmount(item.id))
+    } catch {
+      toast.error("残数の使用に失敗しました")
+    } finally {
+      setBusy(null)
     }
   }
 
@@ -142,7 +169,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
           <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="min-w-[900px]">
+            <Table className="min-w-[1100px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>名称</TableHead>
@@ -152,6 +179,8 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                   <TableHead>仕様</TableHead>
                   <TableHead>備考</TableHead>
                   <TableHead>現在残数</TableHead>
+                  <TableHead>増減量</TableHead>
+                  <TableHead></TableHead>
                   <TableHead className="w-48 text-right">
                     <span className="sr-only">操作</span>
                   </TableHead>
@@ -288,6 +317,47 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                                 ? `${packagingStocks.get(item.id)} ${item.unit}`
                                 : <span className="text-muted-foreground">-</span>}
                           </button>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isAuthenticated && (
+                          <Input
+                            type="number"
+                            min={1}
+                            value={adjustAmounts.get(item.id) ?? "1"}
+                            onChange={(e) =>
+                              setAdjustAmounts((prev) => {
+                                const next = new Map(prev)
+                                next.set(item.id, e.target.value)
+                                return next
+                              })
+                            }
+                            className="h-8 w-20"
+                          />
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isAuthenticated && (
+                          <div className="flex gap-1">
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAdd(item)}
+                              disabled={busy !== null || editingStock?.id === item.id}
+                            >
+                              +追加
+                            </Button>
+                            <Button
+                              type="button"
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleUse(item)}
+                              disabled={busy !== null || editingStock?.id === item.id || (packagingStocks.get(item.id) ?? 0) === 0}
+                            >
+                              −使用
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                       <TableCell className="text-right">

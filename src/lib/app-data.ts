@@ -140,7 +140,9 @@ export function useAppData() {
   const [stocksLoaded, setStocksLoaded] = useState(false)
   const stocksRef = useRef<Map<string, number>>(new Map())
   const [materialStocks, setMaterialStocks] = useState<Map<string, number>>(new Map())
+  const materialStocksRef = useRef<Map<string, number>>(new Map())
   const [packagingStocks, setPackagingStocks] = useState<Map<string, number>>(new Map())
+  const packagingStocksRef = useRef<Map<string, number>>(new Map())
   const [masterStocksLoaded, setMasterStocksLoaded] = useState(false)
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
@@ -250,6 +252,14 @@ export function useAppData() {
     stocksRef.current = stocks
   }, [stocks])
 
+  useEffect(() => {
+    materialStocksRef.current = materialStocks
+  }, [materialStocks])
+
+  useEffect(() => {
+    packagingStocksRef.current = packagingStocks
+  }, [packagingStocks])
+
   const refreshStocks = useCallback(async () => {
     if (authState.status !== "authenticated") return
     try {
@@ -298,6 +308,36 @@ export function useAppData() {
         const next = new Map(prev)
         next.set(packagingItemId, quantity)
         return next
+      })
+    },
+    [authState]
+  )
+
+  const adjustMaterialStock = useCallback(
+    async (materialId: string, delta: number) => {
+      if (authState.status !== "authenticated") return
+      const current = materialStocksRef.current.get(materialId) ?? 0
+      const next = Math.max(0, current + delta)
+      await upsertMaterialStock(authState.user.id, materialId, next)
+      setMaterialStocks((prev) => {
+        const map = new Map(prev)
+        map.set(materialId, next)
+        return map
+      })
+    },
+    [authState]
+  )
+
+  const adjustPackagingStock = useCallback(
+    async (packagingItemId: string, delta: number) => {
+      if (authState.status !== "authenticated") return
+      const current = packagingStocksRef.current.get(packagingItemId) ?? 0
+      const next = Math.max(0, current + delta)
+      await upsertPackagingStock(authState.user.id, packagingItemId, next)
+      setPackagingStocks((prev) => {
+        const map = new Map(prev)
+        map.set(packagingItemId, next)
+        return map
       })
     },
     [authState]
@@ -1081,6 +1121,8 @@ export function useAppData() {
     masterStocksLoaded,
     setMaterialStock,
     setPackagingStock,
+    adjustMaterialStock,
+    adjustPackagingStock,
     actions: {
       addLargeCategory,
       updateLargeCategory,
