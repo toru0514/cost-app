@@ -19,7 +19,7 @@ export type BulkSyncApplySummary = DiffSummary & {
   failed: number
 }
 
-export type StockUpsert = { id: string; quantity: number }
+export type StockUpsert = { id: string; quantity: number; stockUnit?: string }
 
 export type BulkSyncApplyResult = {
   payload: Record<string, unknown>
@@ -399,7 +399,10 @@ export const prepareBulkSyncApply = (
         })
         if (id) {
           const stock = getNumber(record.data.stock)
-          if (stock !== undefined && stock >= 0) stockUpserts.materials.push({ id, quantity: stock })
+          const stockUnit = typeof record.data.stock_unit === "string" ? record.data.stock_unit : undefined
+          if (stock !== undefined && stock >= 0) {
+            stockUpserts.materials.push({ id, quantity: stock, stockUnit })
+          }
         }
         if (resolvedId) updateCount += 1
         else createCount += 1
@@ -417,7 +420,10 @@ export const prepareBulkSyncApply = (
         })
         if (id) {
           const stock = getNumber(record.data.stock)
-          if (stock !== undefined && stock >= 0) stockUpserts.packagingItems.push({ id, quantity: stock })
+          const stockUnit = typeof record.data.stock_unit === "string" ? record.data.stock_unit : undefined
+          if (stock !== undefined && stock >= 0) {
+            stockUpserts.packagingItems.push({ id, quantity: stock, stockUnit })
+          }
         }
         if (resolvedId) updateCount += 1
         else createCount += 1

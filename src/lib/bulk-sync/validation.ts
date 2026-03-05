@@ -344,6 +344,7 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
     }
 
     const materialStock = asNumber(item.stock)
+    const materialStockUnit = asOptionalString(item.stock_unit)
 
     pushRecord({
       entity: "materials",
@@ -360,6 +361,7 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
         supplier,
         note: asOptionalString(item.note),
         stock: Number.isFinite(materialStock) ? materialStock : undefined,
+        stock_unit: materialStockUnit,
       },
       rowIndex: index,
     })
@@ -387,6 +389,7 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
     }
 
     const packagingStock = asNumber(item.stock)
+    const packagingStockUnit = asOptionalString(item.stock_unit)
 
     pushRecord({
       entity: "packaging_items",
@@ -402,6 +405,7 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
         units_per_batch: Number.isFinite(unitsPerBatch) ? unitsPerBatch : undefined,
         note: asOptionalString(item.note),
         stock: Number.isFinite(packagingStock) ? packagingStock : undefined,
+        stock_unit: packagingStockUnit,
       },
       rowIndex: index,
     })
