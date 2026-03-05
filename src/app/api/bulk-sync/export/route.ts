@@ -101,8 +101,24 @@ export async function POST(request: Request) {
   }
 
   try {
-    const appData = await loadUserAppDataServer(supabase, user.id)
-    const sheetRows = buildBulkSyncSheetRows(appData)
+    const [appData, materialStocksResult, packagingStocksResult, productStocksResult] = await Promise.all([
+      loadUserAppDataServer(supabase, user.id),
+      supabase.from("material_stock").select("material_id, quantity").eq("user_id", user.id),
+      supabase.from("packaging_stock").select("packaging_item_id, quantity").eq("user_id", user.id),
+      supabase.from("product_stock").select("product_id, quantity").eq("user_id", user.id),
+    ])
+
+    const materialStocks = new Map(
+      (materialStocksResult.data ?? []).map((r) => [r.material_id as string, Number(r.quantity)])
+    )
+    const packagingStocks = new Map(
+      (packagingStocksResult.data ?? []).map((r) => [r.packaging_item_id as string, Number(r.quantity)])
+    )
+    const productStocks = new Map(
+      (productStocksResult.data ?? []).map((r) => [r.product_id as string, Number(r.quantity)])
+    )
+
+    const sheetRows = buildBulkSyncSheetRows(appData, { materialStocks, packagingStocks, productStocks })
 
     const targets: (keyof typeof sheetRows)[] =
       body.target === "master"

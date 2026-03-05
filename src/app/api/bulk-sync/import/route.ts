@@ -6,6 +6,7 @@ import { prepareBulkSyncApply } from "@/lib/bulk-sync/apply"
 import { validateBulkSyncPayload, buildBulkSyncDiff } from "@/lib/bulk-sync"
 import { buildBulkSyncAuditChanges } from "@/lib/bulk-sync/audit"
 import { loadUserAppDataServer } from "@/lib/server/load-app-data"
+import { applyStockUpserts } from "@/lib/server/apply-stock-upserts"
 import { fetchBulkSyncSheetPayload } from "@/lib/bulk-sync/sheet-payload"
 
 export const runtime = "nodejs"
@@ -131,6 +132,8 @@ export async function POST(request: Request) {
         console.error("Failed to apply bulk sync import", error)
         return NextResponse.json({ error: "Failed to apply bulk sync import" }, { status: 500 })
       }
+
+      await applyStockUpserts(supabase, user.id, prepared.stockUpserts)
 
       if (options.recordAuditLog) {
         const { error: auditError } = await supabase.from("sync_audit_logs").insert({

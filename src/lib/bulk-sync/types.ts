@@ -61,6 +61,7 @@ export type MaterialInput = {
   units_per_batch?: number | string
   supplier?: string
   note?: string
+  stock?: number | string
   is_deleted?: boolean
 }
 
@@ -73,6 +74,7 @@ export type PackagingInput = {
   unit_cost?: number | string
   units_per_batch?: number | string
   note?: string
+  stock?: number | string
   is_deleted?: boolean
 }
 
@@ -138,6 +140,7 @@ export type ProductInput = {
   production_lot_size?: number | string
   equipment_names?: string
   notes?: string
+  stock?: number | string
   is_deleted?: boolean
 }
 

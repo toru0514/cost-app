@@ -11,7 +11,13 @@ const serializeVariants = (variants: ProductSizeVariant[]) => {
   return variants.map((variant) => `${variant.label}:${variant.quantity}`).join("|")
 }
 
-export const buildBulkSyncSheetRows = (data: AppData) => {
+type StockMaps = {
+  materialStocks?: Map<string, number>
+  packagingStocks?: Map<string, number>
+  productStocks?: Map<string, number>
+}
+
+export const buildBulkSyncSheetRows = (data: AppData, stocks?: StockMaps) => {
   const categoryLargeById = new Map(data.categories.large.map((item) => [item.id, item.name]))
   const categoryMediumById = new Map(data.categories.medium.map((item) => [item.id, item.name]))
   const categoryMediumToLargeId = new Map(data.categories.medium.map((item) => [item.id, item.largeId]))
@@ -52,6 +58,7 @@ export const buildBulkSyncSheetRows = (data: AppData) => {
       item.unitsPerBatch ?? "",
       item.supplier ?? "",
       item.note ?? "",
+      stocks?.materialStocks?.get(item.id) ?? "",
       "",
     ]),
     packaging_items: data.packagingItems.map((item) => [
@@ -63,6 +70,7 @@ export const buildBulkSyncSheetRows = (data: AppData) => {
       item.unitCost,
       item.unitsPerBatch ?? "",
       item.note ?? "",
+      stocks?.packagingStocks?.get(item.id) ?? "",
       "",
     ]),
     shipping_methods: data.shippingMethods.map((item) => [
@@ -123,6 +131,7 @@ export const buildBulkSyncSheetRows = (data: AppData) => {
       item.productionLotSize,
       (item.equipmentIds ?? []).map((id) => equipmentById.get(id)).filter(Boolean).join("|"),
       item.notes ?? "",
+      stocks?.productStocks?.get(item.id) ?? "",
       "",
     ]),
   }

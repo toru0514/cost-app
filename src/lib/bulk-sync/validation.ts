@@ -343,6 +343,8 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
       addIssue(issues, "materials", key, "units_per_batch は数値で入力してください", "units_per_batch")
     }
 
+    const materialStock = asNumber(item.stock)
+
     pushRecord({
       entity: "materials",
       id,
@@ -357,6 +359,7 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
         units_per_batch: Number.isFinite(unitsPerBatch) ? unitsPerBatch : undefined,
         supplier,
         note: asOptionalString(item.note),
+        stock: Number.isFinite(materialStock) ? materialStock : undefined,
       },
       rowIndex: index,
     })
@@ -383,6 +386,8 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
       addIssue(issues, "packaging_items", key, "units_per_batch は数値で入力してください", "units_per_batch")
     }
 
+    const packagingStock = asNumber(item.stock)
+
     pushRecord({
       entity: "packaging_items",
       id,
@@ -396,6 +401,7 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
         unit_cost: Number.isFinite(unitCost) ? unitCost : undefined,
         units_per_batch: Number.isFinite(unitsPerBatch) ? unitsPerBatch : undefined,
         note: asOptionalString(item.note),
+        stock: Number.isFinite(packagingStock) ? packagingStock : undefined,
       },
       rowIndex: index,
     })
@@ -613,6 +619,7 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
     }
 
     const sizeVariants = parseVariants(item.size_variants, issues, "products", key, "size_variants")
+    const productStock = asNumber(item.stock)
 
     pushRecord({
       entity: "products",
@@ -633,6 +640,7 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
         production_lot_size: Number.isFinite(productionLotSize) ? productionLotSize : 1,
         equipment_names: asOptionalString(item.equipment_names),
         notes: asOptionalString(item.notes),
+        stock: Number.isFinite(productStock) ? productStock : undefined,
       },
       rowIndex: index,
     })

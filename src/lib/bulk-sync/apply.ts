@@ -19,10 +19,17 @@ export type BulkSyncApplySummary = DiffSummary & {
   failed: number
 }
 
+export type StockUpsert = { id: string; quantity: number }
+
 export type BulkSyncApplyResult = {
   payload: Record<string, unknown>
   summary: BulkSyncApplySummary
   errors: BulkSyncApplyError[]
+  stockUpserts: {
+    materials: StockUpsert[]
+    packagingItems: StockUpsert[]
+    products: StockUpsert[]
+  }
 }
 
 const issueKey = (entity: BulkSyncEntity, record: NormalizedRecord) => `${entity}#${record.id ?? record.naturalKey}`
@@ -273,6 +280,12 @@ export const prepareBulkSyncApply = (
   let updateCount = 0
   let deleteCount = 0
 
+  const stockUpserts: BulkSyncApplyResult["stockUpserts"] = {
+    materials: [],
+    packagingItems: [],
+    products: [],
+  }
+
   const addDelete = (entity: BulkSyncEntity, record: NormalizedRecord) => {
     const resolvedId = resolveExistingId(existingIndex, entity, record)
     if (!resolvedId) {
@@ -384,6 +397,10 @@ export const prepareBulkSyncApply = (
           note: record.data.note ?? null,
           units_per_batch: record.data.units_per_batch ?? null,
         })
+        if (id) {
+          const stock = getNumber(record.data.stock)
+          if (stock !== undefined && stock >= 0) stockUpserts.materials.push({ id, quantity: stock })
+        }
         if (resolvedId) updateCount += 1
         else createCount += 1
         break
@@ -398,6 +415,10 @@ export const prepareBulkSyncApply = (
           note: record.data.note ?? null,
           units_per_batch: record.data.units_per_batch ?? null,
         })
+        if (id) {
+          const stock = getNumber(record.data.stock)
+          if (stock !== undefined && stock >= 0) stockUpserts.packagingItems.push({ id, quantity: stock })
+        }
         if (resolvedId) updateCount += 1
         else createCount += 1
         break
@@ -480,6 +501,10 @@ export const prepareBulkSyncApply = (
           expected_production_quantity: record.data.expected_quantity ?? null,
           equipment_ids: equipmentIds,
         })
+        if (id) {
+          const stock = getNumber(record.data.stock)
+          if (stock !== undefined && stock >= 0) stockUpserts.products.push({ id, quantity: stock })
+        }
         if (resolvedId) updateCount += 1
         else createCount += 1
         break
@@ -502,5 +527,6 @@ export const prepareBulkSyncApply = (
       delete: deleteCount,
     },
     errors,
+    stockUpserts,
   }
 }
