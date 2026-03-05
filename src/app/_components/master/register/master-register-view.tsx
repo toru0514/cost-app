@@ -20,9 +20,12 @@ import type { FormSectionOpenSignal } from "../../shared/ui"
 interface MasterRegisterViewProps {
   data: AppData
   actions: AppActions
+  isAuthenticated: boolean
+  onSetMaterialStock: (id: string, quantity: number) => Promise<void>
+  onSetPackagingStock: (id: string, quantity: number) => Promise<void>
 }
 
-export function MasterRegisterView({ data, actions }: MasterRegisterViewProps) {
+export function MasterRegisterView({ data, actions, isAuthenticated, onSetMaterialStock, onSetPackagingStock }: MasterRegisterViewProps) {
   const [sectionOpenSignal, setSectionOpenSignal] = useState<FormSectionOpenSignal | null>(null)
 
   const triggerSectionOpenState = (value: boolean) => {
@@ -43,11 +46,23 @@ export function MasterRegisterView({ data, actions }: MasterRegisterViewProps) {
       <div className="space-y-6">
         <CategorySection data={data} actions={actions} openSignal={sectionOpenSignal} />
 
-        <MaterialSection data={data} actions={actions} openSignal={sectionOpenSignal} />
+        <MaterialSection
+          data={data}
+          actions={actions}
+          isAuthenticated={isAuthenticated}
+          onSetMaterialStock={onSetMaterialStock}
+          openSignal={sectionOpenSignal}
+        />
       </div>
 
       <div className="space-y-6">
-        <PackagingSection data={data} actions={actions} openSignal={sectionOpenSignal} />
+        <PackagingSection
+          data={data}
+          actions={actions}
+          isAuthenticated={isAuthenticated}
+          onSetPackagingStock={onSetPackagingStock}
+          openSignal={sectionOpenSignal}
+        />
 
         <ShippingSection data={data} actions={actions} openSignal={sectionOpenSignal} />
 

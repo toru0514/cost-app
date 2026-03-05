@@ -12,11 +12,14 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, Material } from "@/lib/types"
+import { toast } from "sonner"
 import { FieldHint, FormSection, RegisteredList, type FormSectionOpenSignal } from "../../../shared/ui"
 
 interface MaterialSectionProps {
   data: AppData
   actions: AppActions
+  isAuthenticated: boolean
+  onSetMaterialStock: (id: string, quantity: number) => Promise<void>
   openSignal?: FormSectionOpenSignal | null
 }
 
@@ -31,8 +34,15 @@ const INITIAL_FORM: Omit<Material, "id"> = {
   note: "",
 }
 
-export function MaterialSection({ data, actions, openSignal }: MaterialSectionProps) {
+const createTempId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).substring(2, 11)
+
+export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialStock, openSignal }: MaterialSectionProps) {
   const [materialForm, setMaterialForm] = useState<Omit<Material, "id">>(INITIAL_FORM)
+  const [initialStock, setInitialStock] = useState<number>(INITIAL_FORM.unitsPerBatch ?? 1)
+  const [initialStockOverridden, setInitialStockOverridden] = useState(false)
   const { addMaterial } = actions
 
   return (
@@ -45,11 +55,24 @@ export function MaterialSection({ data, actions, openSignal }: MaterialSectionPr
       <div className="space-y-2">
         <form
           className="grid gap-2"
-          onSubmit={(event) => {
+          onSubmit={async (event) => {
             event.preventDefault()
-            if (!materialForm.name.trim()) return
-            addMaterial({ ...materialForm })
+            const name = materialForm.name.trim()
+            if (!name) return
+            const id = createTempId()
+            addMaterial({ ...materialForm, id, name })
+            const normalizedInitialStock = Math.max(0, Number(initialStock) || 0)
+            if (isAuthenticated && normalizedInitialStock > 0) {
+              try {
+                await onSetMaterialStock(id, normalizedInitialStock)
+              } catch (error) {
+                console.error("Failed to save initial material stock", error)
+                toast.error("初期在庫数の保存に失敗しました")
+              }
+            }
             setMaterialForm(INITIAL_FORM)
+            setInitialStock(INITIAL_FORM.unitsPerBatch ?? 1)
+            setInitialStockOverridden(false)
           }}
         >
           <div className="space-y-1">
@@ -91,12 +114,33 @@ export function MaterialSection({ data, actions, openSignal }: MaterialSectionPr
               placeholder="例: 100"
               value={materialForm.unitsPerBatch ?? 1}
               min={1}
-              onValueChange={(next) =>
-                setMaterialForm((prev) => ({ ...prev, unitsPerBatch: next === "" ? 1 : Number(next) }))
-              }
+              onValueChange={(next) => {
+                const unitsPerBatch = next === "" ? 1 : Number(next)
+                setMaterialForm((prev) => ({ ...prev, unitsPerBatch }))
+                if (!initialStockOverridden) {
+                  setInitialStock(unitsPerBatch)
+                }
+              }}
             />
             <FieldHint>仕入れ単位が1ロール=50mなどの場合の個数。1個売りなら1。</FieldHint>
           </div>
+          {isAuthenticated ? (
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">初期在庫数</Label>
+              <NumberInput
+                placeholder="例: 100"
+                value={initialStock}
+                min={0}
+                onValueChange={(next) => {
+                  setInitialStock(next === "" ? 0 : Number(next))
+                  setInitialStockOverridden(true)
+                }}
+              />
+              <FieldHint>
+                初期値はセット数量と同じです。手動で上書きできます。0 の場合は在庫テーブルへ保存しません。
+              </FieldHint>
+            </div>
+          ) : null}
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">基準単価</Label>
             <NumberInput

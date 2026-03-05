@@ -56,7 +56,13 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, pack
       </div>
 
       {view === "register" ? (
-        <MasterRegisterView data={data} actions={actions} />
+        <MasterRegisterView
+          data={data}
+          actions={actions}
+          isAuthenticated={isAuthenticated}
+          onSetMaterialStock={onSetMaterialStock}
+          onSetPackagingStock={onSetPackagingStock}
+        />
       ) : (
         <MasterListView
           data={data}
