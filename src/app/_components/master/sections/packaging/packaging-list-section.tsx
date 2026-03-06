@@ -365,19 +365,21 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                               type="button"
                               size="sm"
                               variant="outline"
+                              title="追加"
                               onClick={() => handleAdd(item)}
                               disabled={(busy?.startsWith(item.id) ?? false) || editingStock?.id === item.id || editingPackaging.id === item.id}
                             >
-                              +追加
+                              +
                             </Button>
                             <Button
                               type="button"
                               size="sm"
                               variant="outline"
+                              title="使用（減算）"
                               onClick={() => handleUse(item)}
                               disabled={(busy?.startsWith(item.id) ?? false) || editingStock?.id === item.id || editingPackaging.id === item.id || (packagingStocks.get(item.id) ?? 0) === 0}
                             >
-                              −使用
+                              −
                             </Button>
                           </div>
                         )}
