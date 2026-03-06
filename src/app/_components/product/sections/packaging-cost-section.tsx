@@ -83,7 +83,7 @@ export function PackagingCostSection({ items, drafts, onAdd, onUpdate, onRemove 
                       })
                     }
                   />
-                  <FieldHint>1商品あたりに必要な点数。箱1つなら1、緩衝材を2枚使うなら2。</FieldHint>
+                  <FieldHint>1商品に使う点数・個数（箱なら1、テープなら1本分など）</FieldHint>
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">梱包材単価: {unitCostLabel}</p>

@@ -5,7 +5,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { NumberInput } from "@/components/ui/number-input"
 
-import { DraftCard, HintList, FormSection } from "../../shared/ui"
+import { DraftCard, FieldHint, HintList, FormSection } from "../../shared/ui"
 import type { DevelopmentCostDraft } from "../types"
 
 interface DevelopmentCostSectionProps {
@@ -64,6 +64,7 @@ export function DevelopmentCostSection({ drafts, onAdd, onUpdate, onRemove }: De
                     })
                   }
                 />
+                <FieldHint>試作・サンプル制作にかかった人件費の合計額</FieldHint>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">試作用材料費</Label>
@@ -76,6 +77,7 @@ export function DevelopmentCostSection({ drafts, onAdd, onUpdate, onRemove }: De
                     })
                   }
                 />
+                <FieldHint>試作で消費した素材・副資材の費用</FieldHint>
               </div>
             </div>
             <div className="grid gap-2 md:grid-cols-2">
@@ -90,6 +92,7 @@ export function DevelopmentCostSection({ drafts, onAdd, onUpdate, onRemove }: De
                     })
                   }
                 />
+                <FieldHint>型・治具など、この商品専用に購入したもの（1回限りのコスト）</FieldHint>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs text-muted-foreground">償却年数</Label>
@@ -102,6 +105,9 @@ export function DevelopmentCostSection({ drafts, onAdd, onUpdate, onRemove }: De
                     })
                   }
                 />
+                <FieldHint>
+                  上記費用を何年で均等に原価計上するか（例: 2年なら毎年半額を原価に算入）
+                </FieldHint>
               </div>
             </div>
           </DraftCard>
