@@ -114,8 +114,8 @@ export function MaterialCostSection({
                     />
                     <FieldHint>
                       {usePercentageMode
-                        ? "100%で1単位消費します。例: 5%入力で0.05単位を消費。"
-                        : "1商品あたりの使用単位数を入力します。例: 2で2単位消費。"}
+                        ? "仕入れたロット全体のうち、1商品で使用する割合を % で入力（例: 1ロールの25%なら 25）"
+                        : "1商品あたりの使用単位数を入力します。"}
                     </FieldHint>
                   </div>
                   <div className="space-y-1">

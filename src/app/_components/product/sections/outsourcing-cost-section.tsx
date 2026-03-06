@@ -66,7 +66,7 @@ export function OutsourcingCostSection({ drafts, onAdd, onUpdate, onRemove }: Ou
                       })
                     }
                   />
-                  <FieldHint>1商品あたりの外注費。ロット費用を個数で割った値など。</FieldHint>
+                  <FieldHint>1商品を外注加工するときの費用（消費税の扱いを統一して入力）</FieldHint>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs text-muted-foreground">通貨</Label>
