@@ -819,14 +819,15 @@ export async function saveUserAppData(userId: string, data: AppData, previousDat
     }
 
     const materialModeRows = data.materials.map((item) => ({
-      user_id: userId,
       id: item.id,
       use_percentage_mode: Boolean(item.usePercentageMode ?? false),
     }))
-    if (materialModeRows.length > 0) {
+    for (const item of materialModeRows) {
       const { error: modeError } = await supabaseClient
         .from("materials")
-        .upsert(materialModeRows, { onConflict: "user_id,id" })
+        .update({ use_percentage_mode: item.use_percentage_mode })
+        .eq("user_id", userId)
+        .eq("id", item.id)
       if (modeError) throw modeError
     }
 

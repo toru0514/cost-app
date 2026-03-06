@@ -135,15 +135,19 @@ export async function POST(request: Request) {
 
       const materialModes = (prepared.payload.materials as Array<{ id?: string; use_percentage_mode?: boolean }> | undefined)
         ?.flatMap((item) =>
-          item.id
-            ? [{ user_id: user.id, id: item.id, use_percentage_mode: Boolean(item.use_percentage_mode ?? false) }]
-            : []
+          item.id ? [{ id: item.id, use_percentage_mode: Boolean(item.use_percentage_mode ?? false) }] : []
         ) ?? []
       if (materialModes.length > 0) {
-        const { error: modeError } = await supabase.from("materials").upsert(materialModes, { onConflict: "user_id,id" })
-        if (modeError) {
-          console.error("Failed to apply material mode flags (import)", modeError)
-          return NextResponse.json({ error: "Failed to apply material mode flags" }, { status: 500 })
+        for (const item of materialModes) {
+          const { error: modeError } = await supabase
+            .from("materials")
+            .update({ use_percentage_mode: item.use_percentage_mode })
+            .eq("user_id", user.id)
+            .eq("id", item.id)
+          if (modeError) {
+            console.error("Failed to apply material mode flags (import)", modeError)
+            return NextResponse.json({ error: "Failed to apply material mode flags" }, { status: 500 })
+          }
         }
       }
 
