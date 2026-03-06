@@ -22,6 +22,7 @@ import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
 import type { AppData, AuditFilters, Product } from "@/lib/types"
 import { MasterTab } from "./_components/master/master-tab"
 import { ProductTab } from "./_components/product/product-tab"
+import { RegisteredProductsSection } from "./_components/product/sections/registered-products-section"
 import { CostTab } from "./_components/cost/cost-tab"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
 import { AuditTab } from "./_components/audit/audit-tab"
@@ -798,11 +799,6 @@ export default function Home() {
           <ProductTab
             data={data}
             actions={actions}
-            stocks={stocks}
-            stocksLoaded={stocksLoaded}
-            isAuthenticated={isAuthenticated}
-            onAdjustStock={adjustStock}
-            onSetStock={setStock}
             editingProductId={editingProductId}
             onRequestEditClear={() => setEditingProductId(null)}
             copySourceProductId={copyProductId}
@@ -828,6 +824,15 @@ export default function Home() {
         </TabsContent>
 
         <TabsContent value="list" className="space-y-6">
+          <RegisteredProductsSection
+            data={data}
+            stocks={stocks}
+            stocksLoaded={stocksLoaded}
+            isAuthenticated={isAuthenticated}
+            onAdjust={adjustStock}
+            onSet={setStock}
+          />
+
           <Card>
             <CardHeader className="space-y-4">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">

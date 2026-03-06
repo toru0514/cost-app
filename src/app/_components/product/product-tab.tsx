@@ -9,11 +9,6 @@ import { ProductFormPanel } from "./product-form-panel"
 interface ProductTabProps {
   data: AppData
   actions: AppActions
-  stocks: Map<string, number>
-  stocksLoaded: boolean
-  isAuthenticated: boolean
-  onAdjustStock: (productId: string, delta: number) => Promise<void>
-  onSetStock: (productId: string, quantity: number) => Promise<void>
   editingProductId?: string | null
   onRequestEditClear?: () => void
   copySourceProductId?: string | null
@@ -21,19 +16,12 @@ interface ProductTabProps {
 }
 
 export function ProductTab(props: ProductTabProps) {
-  const { data, stocks, stocksLoaded, isAuthenticated, onAdjustStock, onSetStock } = props
+  const { data } = props
 
   return (
     <div className="space-y-6">
       <ProductFormPanel {...props} />
-      <RegisteredProductsSection
-        data={data}
-        stocks={stocks}
-        stocksLoaded={stocksLoaded}
-        isAuthenticated={isAuthenticated}
-        onAdjust={onAdjustStock}
-        onSet={onSetStock}
-      />
+      <RegisteredProductsSection data={data} readOnly />
     </div>
   )
 }
