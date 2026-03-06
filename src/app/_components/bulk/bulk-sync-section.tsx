@@ -297,9 +297,11 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
         const error = await response.json().catch(() => ({}))
         throw new Error(error.error ?? "書き出しに失敗しました")
       }
-      toast.message("スプレッドシートへ書き出しました。")
+      toast.success("スプレッドシートへ書き出しました。")
     } catch (error) {
-      setErrorMessage(error instanceof Error ? error.message : "書き出しに失敗しました")
+      const message = error instanceof Error ? error.message : "書き出しに失敗しました"
+      setErrorMessage(message)
+      toast.error(message)
     } finally {
       setBusy(null)
     }
