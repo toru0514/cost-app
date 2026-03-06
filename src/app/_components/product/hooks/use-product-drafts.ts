@@ -52,6 +52,8 @@ export interface ProductDraftStateResult {
   editingProduct: Product | null
   productForm: Omit<Product, "id">
   setProductForm: Dispatch<SetStateAction<Omit<Product, "id">>>
+  initialStock: number
+  setInitialStock: (quantity: number) => void
   materialDrafts: MaterialCostDraft[]
   packagingDrafts: PackagingCostDraft[]
   laborDrafts: LaborCostDraft[]
@@ -306,6 +308,8 @@ export function useProductDraftState({
   const [electricityDrafts, setElectricityDrafts] = useState<ElectricityCostDraft[]>(buildInitialElectricityDrafts)
   const [feeDrafts, setFeeDrafts] = useState<FeeCostDraft[]>(buildInitialFeeDrafts)
   const [productForm, setProductForm] = useState<Omit<Product, "id">>(createEmptyProductForm)
+  const [initialStock, setInitialStockValue] = useState<number>(1)
+  const [initialStockOverridden, setInitialStockOverridden] = useState(false)
 
   const handleAddMaterialDraft = useCallback(
     () => addDraft(setMaterialDrafts, createMaterialDraft()),
@@ -402,7 +406,8 @@ export function useProductDraftState({
   const handleRemoveFeeDraft = useCallback((id: string) => removeDraft(setFeeDrafts, id), [])
 
   const resetFormState = useCallback(() => {
-    setProductForm(createEmptyProductForm())
+    const emptyProductForm = createEmptyProductForm()
+    setProductForm(emptyProductForm)
     setMaterialDrafts([createMaterialDraft()])
     setPackagingDrafts([createPackagingDraft()])
     setLaborDrafts([createLaborDraft()])
@@ -412,6 +417,8 @@ export function useProductDraftState({
     setLogisticsDrafts([createLogisticsDraft()])
     setElectricityDrafts([createElectricityDraft()])
     setFeeDrafts(data.fees.length ? [createFeeDraft()] : [])
+    setInitialStockValue(emptyProductForm.productionLotSize)
+    setInitialStockOverridden(false)
   }, [
     createDevelopmentDraft,
     createElectricityDraft,
@@ -481,6 +488,8 @@ export function useProductDraftState({
         expectedProduction: product.expectedProduction,
         equipmentIds: product.equipmentIds ?? [],
       })
+      setInitialStockValue(Math.max(0, Number(product.productionLotSize) || 0))
+      setInitialStockOverridden(false)
 
       setMaterialDrafts(
         mapOrFallback(
@@ -679,6 +688,18 @@ export function useProductDraftState({
     autoLaborHoursRef.current = nextHours
   }, [productForm.baseManHours])
 
+  useEffect(() => {
+    if (initialStockOverridden) return
+    const normalizedLotSize = Math.max(0, Number(productForm.productionLotSize) || 0)
+    if (initialStock === normalizedLotSize) return
+    setInitialStockValue(normalizedLotSize)
+  }, [initialStock, initialStockOverridden, productForm.productionLotSize])
+
+  const setInitialStock = useCallback((quantity: number) => {
+    setInitialStockValue(Math.max(0, Number(quantity) || 0))
+    setInitialStockOverridden(true)
+  }, [])
+
   const handleCancelEdit = useCallback(() => {
     resetFormState()
     onRequestEditClear?.()
@@ -694,6 +715,8 @@ export function useProductDraftState({
     editingProduct,
     productForm,
     setProductForm,
+    initialStock,
+    setInitialStock,
     materialDrafts,
     packagingDrafts,
     laborDrafts,

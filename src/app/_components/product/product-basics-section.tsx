@@ -15,10 +15,19 @@ interface ProductBasicsSectionProps {
   data: AppData
   productForm: Omit<Product, "id">
   setProductForm: Dispatch<SetStateAction<Omit<Product, "id">>>
+  initialStock: number
+  onInitialStockChange: (quantity: number) => void
   handleToggleEquipment: (equipmentId: string, checked: boolean) => void
 }
 
-export function ProductBasicsSection({ data, productForm, setProductForm, handleToggleEquipment }: ProductBasicsSectionProps) {
+export function ProductBasicsSection({
+  data,
+  productForm,
+  setProductForm,
+  initialStock,
+  onInitialStockChange,
+  handleToggleEquipment,
+}: ProductBasicsSectionProps) {
   const CATEGORY_NONE_VALUE = "__category-none__"
   const { large: largeCategories, medium: mediumCategories, small: smallCategories } = data.categories
   const categoryOptions = useMemo(() => {
@@ -306,7 +315,7 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
           <FieldHint>上記の「期間内生産予定数」と組み合わせて年間生産数を決定します。</FieldHint>
         </div>
       </div>
-      <div className="grid gap-2 md:grid-cols-2">
+      <div className="grid gap-2 md:grid-cols-3">
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">期間内生産予定数</Label>
           <NumberInput
@@ -337,6 +346,15 @@ export function ProductBasicsSection({ data, productForm, setProductForm, handle
             }
           />
           <FieldHint>材料使用量サマリで使用する1ロット当たりの個数。サイズ展開の合計値で自動更新されます。</FieldHint>
+        </div>
+        <div className="space-y-1">
+          <Label className="text-xs text-muted-foreground">初期在庫数</Label>
+          <NumberInput
+            placeholder="例: 20"
+            value={initialStock}
+            onValueChange={(next) => onInitialStockChange(next === "" ? 0 : next)}
+          />
+          <FieldHint>制作個数の値が初期反映されます。必要に応じて変更できます。</FieldHint>
         </div>
       </div>
       <div className="space-y-1">

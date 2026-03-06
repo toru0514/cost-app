@@ -16,6 +16,7 @@ const createTempId = () =>
 interface UseProductFormStateArgs {
   data: AppData
   actions: AppActions
+  onSetStock?: (productId: string, quantity: number) => Promise<void>
   editingProductId?: string | null
   onRequestEditClear?: () => void
   copySourceProductId?: string | null
@@ -33,6 +34,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
   const {
     shippingMethods,
     productForm,
+    initialStock,
     materialDrafts,
     packagingDrafts,
     laborDrafts,
@@ -187,7 +189,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
   }, [productForm])
 
   const handleSubmit = useCallback(
-    (event: FormEvent<HTMLFormElement>) => {
+    async (event: FormEvent<HTMLFormElement>) => {
       event.preventDefault()
       const missingFields = validateProductForm()
       if (missingFields.length > 0) {
@@ -239,6 +241,15 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
         removeCostEntriesByProduct(args.editingProductId)
       } else {
         addProduct({ id: targetProductId, ...normalizedProduct })
+        if (args.onSetStock) {
+          try {
+            const normalizedInitialStock = Math.max(0, Number(initialStock) || 0)
+            await args.onSetStock(targetProductId, normalizedInitialStock)
+          } catch (error) {
+            console.error("Failed to save initial product stock", error)
+            toast.error("初期在庫数の保存に失敗しました")
+          }
+        }
       }
 
       // cost entries
@@ -388,6 +399,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
       outsourcingDrafts,
       packagingDrafts,
       productForm,
+      initialStock,
       resetFormState,
       shippingMethods,
       developmentDrafts,
