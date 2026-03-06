@@ -196,7 +196,7 @@ export function StockTab({ data, products, stocks, stocksLoaded, materialStocks,
                               onClick={() => handleAdd(product.id)}
                               disabled={isBusy || isEditing}
                             >
-                              +追加
+                              +
                             </Button>
                             <Button
                               size="sm"
@@ -204,7 +204,7 @@ export function StockTab({ data, products, stocks, stocksLoaded, materialStocks,
                               onClick={() => handleUse(product.id)}
                               disabled={isBusy || isEditing || quantity === 0}
                             >
-                              −使用
+                              -
                             </Button>
                           </div>
                         </TableCell>

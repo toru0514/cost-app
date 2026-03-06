@@ -21,6 +21,7 @@ import { FeeCostSection } from "./sections/fee-cost-section"
 interface ProductFormPanelProps {
   data: AppData
   actions: AppActions
+  onSetStock?: (productId: string, quantity: number) => Promise<void>
   editingProductId?: string | null
   onRequestEditClear?: () => void
   copySourceProductId?: string | null
@@ -38,6 +39,8 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
     editingProduct,
     productForm,
     setProductForm,
+    initialStock,
+    setInitialStock,
     materialDrafts,
     packagingDrafts,
     laborDrafts,
@@ -103,6 +106,8 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
                   data={data}
                   productForm={productForm}
                   setProductForm={setProductForm}
+                  initialStock={initialStock}
+                  onInitialStockChange={setInitialStock}
                   handleToggleEquipment={handleToggleEquipment}
                 />
               </FormSection>
