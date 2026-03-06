@@ -7,6 +7,14 @@ import { toast } from "sonner"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Textarea } from "@/components/ui/textarea"
@@ -91,6 +99,8 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
   const [exportMode, setExportMode] = useState<"overwrite" | "append">("overwrite")
   const [useManualJson, setUseManualJson] = useState(false)
   const [openingSheet, setOpeningSheet] = useState(false)
+  const [exportConfirmOpen, setExportConfirmOpen] = useState(false)
+  const [importConfirmOpen, setImportConfirmOpen] = useState(false)
 
   const parsedPayload = useMemo(() => parsePayloadJson(payloadInput), [payloadInput])
 
@@ -404,10 +414,10 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
             <Button onClick={handleDiff} disabled={busy !== null}>
               差分を確認
             </Button>
-            <Button onClick={handleExport} disabled={busy !== null} variant="outline">
+            <Button onClick={() => setExportConfirmOpen(true)} disabled={busy !== null} variant="outline">
               シートへ書き出し
             </Button>
-            <Button onClick={handleApply} disabled={busy !== null} variant="default">
+            <Button onClick={() => setImportConfirmOpen(true)} disabled={busy !== null} variant="default">
               シートから読み込み
             </Button>
             <Button onClick={() => handleRollback()} disabled={busy !== null} variant="outline">
@@ -420,6 +430,59 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
             {errorMessage && <p className="text-sm text-destructive">{errorMessage}</p>}
           </div>
         </div>
+
+        <Dialog open={exportConfirmOpen} onOpenChange={setExportConfirmOpen}>
+          <DialogContent className="border-sky-200">
+            <DialogHeader>
+              <DialogTitle className="text-sky-700">シートへ書き出しを実行しますか？</DialogTitle>
+              <DialogDescription>
+                現在のアプリデータをスプレッドシートへ書き出します。書き出しモードは
+                「{exportMode === "overwrite" ? "上書き" : "追記"}」です。
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setExportConfirmOpen(false)} disabled={busy !== null}>
+                キャンセル
+              </Button>
+              <Button
+                className="bg-sky-600 hover:bg-sky-700"
+                onClick={async () => {
+                  setExportConfirmOpen(false)
+                  await handleExport()
+                }}
+                disabled={busy !== null}
+              >
+                書き出しを実行
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
+        <Dialog open={importConfirmOpen} onOpenChange={setImportConfirmOpen}>
+          <DialogContent className="border-amber-200">
+            <DialogHeader>
+              <DialogTitle className="text-amber-700">シートから読み込みを実行しますか？</DialogTitle>
+              <DialogDescription>
+                スプレッドシートの内容を読み込み、アプリデータへ反映します。既存データが更新される可能性があります。
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setImportConfirmOpen(false)} disabled={busy !== null}>
+                キャンセル
+              </Button>
+              <Button
+                className="bg-amber-600 hover:bg-amber-700"
+                onClick={async () => {
+                  setImportConfirmOpen(false)
+                  await handleApply()
+                }}
+                disabled={busy !== null}
+              >
+                読み込みを実行
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="space-y-2 rounded-lg border border-dashed p-3">
           <label className="flex items-center gap-2 text-sm">
