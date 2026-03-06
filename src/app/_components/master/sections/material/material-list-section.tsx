@@ -369,19 +369,21 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                               type="button"
                               size="sm"
                               variant="outline"
+                              title="追加"
                               onClick={() => handleAdd(material)}
                               disabled={(busy?.startsWith(material.id) ?? false) || editingStock?.id === material.id || editingMaterial.id === material.id}
                             >
-                              +追加
+                              +
                             </Button>
                             <Button
                               type="button"
                               size="sm"
                               variant="outline"
+                              title="使用（減算）"
                               onClick={() => handleUse(material)}
                               disabled={(busy?.startsWith(material.id) ?? false) || editingStock?.id === material.id || editingMaterial.id === material.id || (materialStocks.get(material.id) ?? 0) === 0}
                             >
-                              −使用
+                              −
                             </Button>
                           </div>
                         )}
