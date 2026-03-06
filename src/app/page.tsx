@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useMemo, useRef, useState, type ChangeEvent } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState, type ChangeEvent } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,9 +15,9 @@ import {
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppData } from "@/lib/app-data"
+import { loadProductListColumnSettings, upsertProductListColumnSettings } from "@/lib/app-data-sync"
 import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
 import type { AppData, AuditFilters, Product } from "@/lib/types"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
@@ -25,10 +25,16 @@ import { AuditTab } from "./_components/audit/audit-tab"
 import { BulkTab } from "./_components/bulk/bulk-tab"
 import { CostTab } from "./_components/cost/cost-tab"
 import { MasterTab } from "./_components/master/master-tab"
+import {
+  CustomizableProductTable,
+  defaultProductTableColumnSettings,
+  normalizeProductTableColumnSettings,
+  type ProductTableColumnSettings,
+} from "./_components/product-list/customizable-product-table"
 import { ProductTab } from "./_components/product/product-tab"
 import { RegisteredProductsSection } from "./_components/product/sections/registered-products-section"
 import { StockTab } from "./_components/stock/stock-tab"
-import { Copy, Edit3, FileDown, FileUp, Menu, Plus, Trash2 } from "lucide-react"
+import { FileDown, FileUp, Menu, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
 
@@ -100,8 +106,12 @@ export default function Home() {
   const [isSendingReset, setIsSendingReset] = useState(false)
   const [pendingDeleteProduct, setPendingDeleteProduct] = useState<Product | null>(null)
   const [pendingBackupRestore, setPendingBackupRestore] = useState<{ fileName: string; data: Partial<AppData> } | null>(null)
+  const [productTableColumnSettings, setProductTableColumnSettings] = useState<ProductTableColumnSettings>(
+    () => defaultProductTableColumnSettings()
+  )
   const backupImportInputRef = useRef<HTMLInputElement | null>(null)
   const importGuestData = actions.importGuestData
+  const authUserId = authState.status === "authenticated" ? authState.user.id : null
   const productCostMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateProductUnitCosts>>()
     data.products.forEach((product) => {
@@ -569,6 +579,49 @@ export default function Home() {
     setProductCategorySmallFilter(value === "all" ? null : value)
   }, [])
 
+  const handleProductTableColumnSettingsChange = useCallback(
+    (next: ProductTableColumnSettings) => {
+      const normalized = normalizeProductTableColumnSettings(next)
+      setProductTableColumnSettings(normalized)
+      if (!authUserId) return
+      void upsertProductListColumnSettings(authUserId, normalized.columnOrder, normalized.hiddenColumns).catch((error) => {
+        console.error("Failed to save product list column settings", error)
+        toast.error("カラム設定の保存に失敗しました")
+      })
+    },
+    [authUserId]
+  )
+
+  useEffect(() => {
+    let cancelled = false
+    if (!authUserId) {
+      setProductTableColumnSettings(defaultProductTableColumnSettings())
+      return () => {
+        cancelled = true
+      }
+    }
+    ;(async () => {
+      try {
+        const loaded = await loadProductListColumnSettings(authUserId)
+        if (cancelled) return
+        if (!loaded) {
+          setProductTableColumnSettings(defaultProductTableColumnSettings())
+          return
+        }
+        setProductTableColumnSettings(normalizeProductTableColumnSettings(loaded))
+      } catch (error) {
+        console.error("Failed to load product list column settings", error)
+        if (!cancelled) {
+          setProductTableColumnSettings(defaultProductTableColumnSettings())
+          toast.error("カラム設定の読み込みに失敗しました")
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [authUserId])
+
   const renderLoading = () => (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center gap-4 p-10 text-muted-foreground">
       <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-transparent" />
@@ -937,85 +990,15 @@ export default function Home() {
               ) : filteredProductEntries.length === 0 ? (
                 <p className="text-sm text-muted-foreground">条件に一致する商品がありません。</p>
               ) : (
-                <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow>
-                      <TableHead>商品</TableHead>
-                      <TableHead>カテゴリ</TableHead>
-                    <TableHead>オプション/個数</TableHead>
-                    <TableHead>配送方法</TableHead>
-                    <TableHead>使用設備</TableHead>
-                    <TableHead>制作ロット数</TableHead>
-                    <TableHead>想定生産数</TableHead>
-                    <TableHead>販売価格</TableHead>
-                    <TableHead>利益</TableHead>
-                    <TableHead>備考</TableHead>
-                    <TableHead />
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {filteredProductEntries.map(({ product, salePrice, profit, categoryPath, shippingText, equipmentText }) => {
-                      const optionText = (product.sizeVariants ?? [])
-                        .filter((variant) => variant.label?.trim())
-                        .map((variant) => `${variant.label}: ${variant.quantity}個`)
-                        .join(" / ") || "-"
-                      const notesText = product.notes?.trim() || "-"
-
-                      return (
-                        <TableRow key={product.id}>
-                          <TableCell className="font-medium">{product.name}</TableCell>
-                          <TableCell>{categoryPath}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{optionText}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{shippingText}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{equipmentText}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{product.productionLotSize ?? 0}</TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{product.expectedProduction?.quantity ?? 0}</TableCell>
-                          <TableCell>{formatCurrency(salePrice)}</TableCell>
-                          <TableCell className={profit >= 0 ? "text-green-600" : "text-red-600"}>
-                            {formatCurrency(profit)}
-                          </TableCell>
-                          <TableCell className="text-xs text-muted-foreground">{notesText}</TableCell>
-                          <TableCell className="w-48 text-right">
-                            <div className="flex flex-wrap justify-end gap-2">
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="outline"
-                                className="w-full sm:w-auto"
-                                onClick={() => handleEditProduct(product.id)}
-                              >
-                                <Edit3 className="mr-1 h-4 w-4" />
-                                編集
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="secondary"
-                                className="w-full sm:w-auto"
-                                onClick={() => handleCopyProduct(product.id)}
-                              >
-                                <Copy className="mr-1 h-4 w-4" />
-                                コピー
-                              </Button>
-                              <Button
-                                type="button"
-                                size="sm"
-                                variant="destructive"
-                                className="w-full sm:w-auto"
-                                onClick={() => handleDeleteProduct(product)}
-                              >
-                                <Trash2 className="mr-1 h-4 w-4" />
-                                削除
-                              </Button>
-                            </div>
-                          </TableCell>
-                        </TableRow>
-                      )
-                    })}
-                  </TableBody>
-                  </Table>
-                </div>
+                <CustomizableProductTable
+                  entries={filteredProductEntries}
+                  isAuthenticated={isAuthenticated}
+                  columnSettings={productTableColumnSettings}
+                  onColumnSettingsChange={handleProductTableColumnSettingsChange}
+                  onEdit={handleEditProduct}
+                  onCopy={handleCopyProduct}
+                  onDelete={handleDeleteProduct}
+                />
               )}
             </CardContent>
           </Card>
