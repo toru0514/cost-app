@@ -984,6 +984,45 @@ export async function deletePackagingStock(userId: string, packagingItemId: stri
   if (error) throw error
 }
 
+type ProductListColumnSettingsRow = {
+  column_order: string[] | null
+  hidden_columns: string[] | null
+}
+
+export async function loadProductListColumnSettings(
+  userId: string
+): Promise<{ columnOrder: string[]; hiddenColumns: string[] } | null> {
+  const { data, error } = await supabaseClient
+    .from("product_list_column_settings")
+    .select("column_order, hidden_columns")
+    .eq("user_id", userId)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  const row = data as ProductListColumnSettingsRow
+  return {
+    columnOrder: Array.isArray(row.column_order) ? row.column_order : [],
+    hiddenColumns: Array.isArray(row.hidden_columns) ? row.hidden_columns : [],
+  }
+}
+
+export async function upsertProductListColumnSettings(
+  userId: string,
+  columnOrder: string[],
+  hiddenColumns: string[]
+): Promise<void> {
+  const { error } = await supabaseClient.from("product_list_column_settings").upsert(
+    {
+      user_id: userId,
+      column_order: columnOrder,
+      hidden_columns: hiddenColumns,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  )
+  if (error) throw error
+}
+
 export async function loadAuditLogs(
   userId: string,
   limit = 50,
