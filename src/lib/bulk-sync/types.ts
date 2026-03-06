@@ -59,9 +59,11 @@ export type MaterialInput = {
   currency?: string
   unit_cost?: number | string
   units_per_batch?: number | string
+  use_percentage_mode?: boolean | string
   supplier?: string
   note?: string
   stock?: number | string
+  stock_unit?: string
   is_deleted?: boolean
 }
 

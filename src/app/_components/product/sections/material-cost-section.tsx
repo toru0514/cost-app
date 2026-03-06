@@ -13,17 +13,29 @@ import type { MaterialCostDraft } from "../types"
 
 interface MaterialCostSectionProps {
   materials: Material[]
+  materialStocks: Map<string, number>
+  masterStocksLoaded: boolean
+  isAuthenticated: boolean
   drafts: MaterialCostDraft[]
   onAdd: () => void
   onUpdate: (id: string, patch: Partial<MaterialCostDraft>) => void
   onRemove: (id: string) => void
 }
 
-export function MaterialCostSection({ materials, drafts, onAdd, onUpdate, onRemove }: MaterialCostSectionProps) {
+export function MaterialCostSection({
+  materials,
+  materialStocks,
+  masterStocksLoaded,
+  isAuthenticated,
+  drafts,
+  onAdd,
+  onUpdate,
+  onRemove,
+}: MaterialCostSectionProps) {
   return (
     <FormSection
       title="材料費"
-      description="材料マスタから選択し、使用率だけ入力すれば単価を自動参照"
+      description="材料マスタから選択し、使用量（単位数 or %）を入力して単価を自動参照"
       defaultOpen
       action={
         <Button type="button" variant="outline" size="sm" onClick={onAdd} disabled={materials.length === 0}>
@@ -34,7 +46,7 @@ export function MaterialCostSection({ materials, drafts, onAdd, onUpdate, onRemo
       <HintList
         items={[
           "材料マスタ: 事前登録した素材を選択（単価・通貨はマスタ値を使用）",
-          "使用率(%): 仕入れたロットのうち1個あたりで使う割合",
+          "使用量: 材料マスタのモードに応じて単位数または%で入力",
           "用途: 本体用・持ち手用などのメモ",
         ]}
       />
@@ -48,6 +60,16 @@ export function MaterialCostSection({ materials, drafts, onAdd, onUpdate, onRemo
           const unitCostLabel = selectedMaterial
             ? `${formatCurrency(selectedMaterial.unitCost, selectedMaterial.currency)} / ${selectedMaterial.unit ?? "任意単位"}`
             : "材料マスタで単価を登録すると自動計算されます。"
+          const usePercentageMode = Boolean(selectedMaterial?.usePercentageMode)
+          const stockQuantity = selectedMaterial ? materialStocks.get(selectedMaterial.id) : undefined
+          const stockText =
+            !isAuthenticated
+              ? "在庫表示はログイン中のみ利用できます。"
+              : !masterStocksLoaded
+                ? "在庫: 読み込み中..."
+                : stockQuantity === undefined
+                  ? "在庫: 未設定"
+                  : `在庫: ${stockQuantity} ${selectedMaterial?.unit ?? ""}`.trim()
           return (
             <DraftCard key={draft.id} onRemove={() => onRemove(draft.id)}>
               <div className="space-y-3">
@@ -78,9 +100,11 @@ export function MaterialCostSection({ materials, drafts, onAdd, onUpdate, onRemo
                 </div>
                 <div className="grid gap-2 md:grid-cols-2">
                   <div className="space-y-1">
-                    <Label className="text-xs text-muted-foreground">使用率 (%)</Label>
+                    <Label className="text-xs text-muted-foreground">
+                      {usePercentageMode ? "使用量 (%)" : `使用量 (${selectedMaterial?.unit ?? "単位"})`}
+                    </Label>
                     <NumberInput
-                      placeholder="例: 75"
+                      placeholder={usePercentageMode ? "例: 5" : "例: 2"}
                       value={draft.usageRatio}
                       onValueChange={(next) =>
                         onUpdate(draft.id, {
@@ -88,7 +112,11 @@ export function MaterialCostSection({ materials, drafts, onAdd, onUpdate, onRemo
                         })
                       }
                     />
-                    <FieldHint>仕入れたロットのうち1商品あたりで使う割合。例: 1ロールの25%なら25。</FieldHint>
+                    <FieldHint>
+                      {usePercentageMode
+                        ? "100%で1単位消費します。例: 5%入力で0.05単位を消費。"
+                        : "1商品あたりの使用単位数を入力します。例: 2で2単位消費。"}
+                    </FieldHint>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs text-muted-foreground">用途メモ</Label>
@@ -104,6 +132,7 @@ export function MaterialCostSection({ materials, drafts, onAdd, onUpdate, onRemo
                   </div>
                 </div>
                 <p className="text-xs text-muted-foreground">材料単価: {unitCostLabel}</p>
+                <p className="text-xs text-muted-foreground">{stockText}</p>
               </div>
             </DraftCard>
           )

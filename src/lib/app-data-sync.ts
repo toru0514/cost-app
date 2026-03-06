@@ -67,6 +67,7 @@ type MaterialRow = {
   size_description: string | null
   currency: string | null
   unit_cost: number | null
+  use_percentage_mode: boolean | null
   supplier: string | null
   note: string | null
   units_per_batch: number | null
@@ -297,6 +298,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       sizeDescription: row.size_description ?? "",
       currency: row.currency ?? "JPY",
       unitCost: Number(row.unit_cost ?? 0),
+      usePercentageMode: Boolean(row.use_percentage_mode ?? false),
       supplier: row.supplier ?? undefined,
       note: row.note ?? undefined,
       unitsPerBatch: row.units_per_batch ?? undefined,
@@ -526,6 +528,7 @@ function buildSyncPayload(data: AppData, previous?: AppData) {
       size_description: item.sizeDescription,
       currency: item.currency,
       unit_cost: item.unitCost,
+      use_percentage_mode: Boolean(item.usePercentageMode ?? false),
       supplier: item.supplier ?? null,
       note: item.note ?? null,
       units_per_batch: item.unitsPerBatch ?? null,
@@ -813,6 +816,18 @@ export async function saveUserAppData(userId: string, data: AppData, previousDat
     })
     if (error) {
       throw error
+    }
+
+    const materialModeRows = data.materials.map((item) => ({
+      user_id: userId,
+      id: item.id,
+      use_percentage_mode: Boolean(item.usePercentageMode ?? false),
+    }))
+    if (materialModeRows.length > 0) {
+      const { error: modeError } = await supabaseClient
+        .from("materials")
+        .upsert(materialModeRows, { onConflict: "user_id,id" })
+      if (modeError) throw modeError
     }
 
     const audit = buildAuditMetadata(data, previousData)

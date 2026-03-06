@@ -65,6 +65,7 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       currency: row.currency ?? "JPY",
       unitCost: row.unit_cost ?? 0,
       unitsPerBatch: row.units_per_batch ?? undefined,
+      usePercentageMode: Boolean(row.use_percentage_mode ?? false),
       supplier: row.supplier ?? undefined,
       note: row.note ?? undefined,
     })),

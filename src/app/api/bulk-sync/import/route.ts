@@ -133,6 +133,20 @@ export async function POST(request: Request) {
         return NextResponse.json({ error: "Failed to apply bulk sync import" }, { status: 500 })
       }
 
+      const materialModes = (prepared.payload.materials as Array<{ id?: string; use_percentage_mode?: boolean }> | undefined)
+        ?.flatMap((item) =>
+          item.id
+            ? [{ user_id: user.id, id: item.id, use_percentage_mode: Boolean(item.use_percentage_mode ?? false) }]
+            : []
+        ) ?? []
+      if (materialModes.length > 0) {
+        const { error: modeError } = await supabase.from("materials").upsert(materialModes, { onConflict: "user_id,id" })
+        if (modeError) {
+          console.error("Failed to apply material mode flags (import)", modeError)
+          return NextResponse.json({ error: "Failed to apply material mode flags" }, { status: 500 })
+        }
+      }
+
       await applyStockUpserts(supabase, user.id, prepared.stockUpserts)
 
       if (options.recordAuditLog) {

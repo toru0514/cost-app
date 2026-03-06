@@ -26,6 +26,7 @@ export const SHEET_COLUMNS: Record<BulkSyncEntity, string[]> = {
     "currency",
     "unit_cost",
     "units_per_batch",
+    "use_percentage_mode",
     "supplier",
     "note",
     "stock",

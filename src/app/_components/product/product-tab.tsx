@@ -9,6 +9,9 @@ import { RegisteredProductsSection } from "./sections/registered-products-sectio
 interface ProductTabProps {
   data: AppData
   actions: AppActions
+  materialStocks: Map<string, number>
+  masterStocksLoaded: boolean
+  isAuthenticated: boolean
   onSetStock?: (productId: string, quantity: number) => Promise<void>
   editingProductId?: string | null
   onRequestEditClear?: () => void

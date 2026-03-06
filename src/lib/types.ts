@@ -26,6 +26,7 @@ export type Material = {
   currency: string
   unitCost: number
   unitsPerBatch?: number
+  usePercentageMode?: boolean
   supplier?: string
   note?: string
 }

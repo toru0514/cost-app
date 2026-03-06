@@ -21,6 +21,9 @@ import { FeeCostSection } from "./sections/fee-cost-section"
 interface ProductFormPanelProps {
   data: AppData
   actions: AppActions
+  materialStocks: Map<string, number>
+  masterStocksLoaded: boolean
+  isAuthenticated: boolean
   onSetStock?: (productId: string, quantity: number) => Promise<void>
   editingProductId?: string | null
   onRequestEditClear?: () => void
@@ -31,6 +34,9 @@ interface ProductFormPanelProps {
 export function ProductFormPanel(props: ProductFormPanelProps) {
   const {
     data,
+    materialStocks,
+    masterStocksLoaded,
+    isAuthenticated,
     editingProductId,
   } = props
 
@@ -122,6 +128,9 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
 
                 <MaterialCostSection
                   materials={data.materials}
+                  materialStocks={materialStocks}
+                  masterStocksLoaded={masterStocksLoaded}
+                  isAuthenticated={isAuthenticated}
                   drafts={materialDrafts}
                   onAdd={handleAddMaterialDraft}
                   onUpdate={handleUpdateMaterialDraft}

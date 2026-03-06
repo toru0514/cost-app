@@ -345,6 +345,7 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
 
     const materialStock = asNumber(item.stock)
     const materialStockUnit = asOptionalString(item.stock_unit)
+    const usePercentageMode = asBoolean(item.use_percentage_mode)
 
     pushRecord({
       entity: "materials",
@@ -358,6 +359,7 @@ export const validateBulkSyncPayload = (payload: BulkSyncPayload, existing: AppD
         currency: asOptionalString(item.currency) ?? "JPY",
         unit_cost: Number.isFinite(unitCost) ? unitCost : undefined,
         units_per_batch: Number.isFinite(unitsPerBatch) ? unitsPerBatch : undefined,
+        use_percentage_mode: usePercentageMode,
         supplier,
         note: asOptionalString(item.note),
         stock: Number.isFinite(materialStock) ? materialStock : undefined,

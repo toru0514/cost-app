@@ -77,6 +77,7 @@ export const buildSyncPayloadFromAppData = (data: AppData, previous?: AppData): 
       size_description: item.sizeDescription,
       currency: item.currency,
       unit_cost: item.unitCost,
+      use_percentage_mode: Boolean(item.usePercentageMode ?? false),
       supplier: item.supplier ?? null,
       note: item.note ?? null,
       units_per_batch: item.unitsPerBatch ?? null,

@@ -393,6 +393,7 @@ export const prepareBulkSyncApply = (
           size_description: record.data.size_description ?? null,
           currency: record.data.currency ?? "JPY",
           unit_cost: record.data.unit_cost ?? null,
+          use_percentage_mode: Boolean(record.data.use_percentage_mode ?? false),
           supplier: record.data.supplier ?? null,
           note: record.data.note ?? null,
           units_per_batch: record.data.units_per_batch ?? null,

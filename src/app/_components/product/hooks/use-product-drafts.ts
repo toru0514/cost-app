@@ -110,7 +110,7 @@ export function useProductDraftState({
   const createMaterialDraft = useCallback((): MaterialCostDraft => ({
     id: createTempId(),
     materialId: data.materials[0]?.id ?? "",
-    usageRatio: 100,
+    usageRatio: 1,
     description: "",
   }), [data.materials])
 
