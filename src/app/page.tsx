@@ -47,6 +47,7 @@ export default function Home() {
   const {
     data,
     hydrated,
+    isSaving,
     actions,
     auditLogs,
     auditLogsLoading,
@@ -631,6 +632,11 @@ export default function Home() {
           <Badge variant={isAuthenticated ? "default" : "outline"}>
             {isAuthenticated ? `ログイン中: ${authState.user.name ?? authState.user.email}` : "ゲストモード"}
           </Badge>
+          {isSaving && (
+            <Badge variant="outline" className="text-muted-foreground">
+              保存中...
+            </Badge>
+          )}
           {!isAuthenticated ? (
             <Button type="button" size="sm" onClick={() => setLoginPanelOpen((prev) => !prev)}>
               ログイン

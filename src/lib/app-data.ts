@@ -148,6 +148,7 @@ export function useAppData() {
   const [masterStocksLoaded, setMasterStocksLoaded] = useState(false)
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
+  const [isSaving, setIsSaving] = useState(false)
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
   const previousAuthStatus = authStatusRef.current
   const saveRetryRef = useRef<{ attempts: number; timeoutId: ReturnType<typeof setTimeout> | null }>({ attempts: 0, timeoutId: null })
@@ -199,11 +200,13 @@ export function useAppData() {
     const attemptSave = async () => {
       if (authState.status !== "authenticated") return
       if (!hasMeaningfulData(dataRef.current)) return
+      setIsSaving(true)
       try {
         await saveUserAppData(authState.user.id, dataRef.current, lastSyncedDataRef.current)
         lastSyncedDataRef.current = cloneAppData(dataRef.current)
         await refreshAuditLogs()
         clearSaveRetry()
+        setIsSaving(false)
       } catch (error) {
         console.error("Failed to save data to Supabase", error)
         const nextAttempts = saveRetryRef.current.attempts + 1
@@ -211,6 +214,7 @@ export function useAppData() {
         if (nextAttempts >= MAX_SAVE_RETRIES) {
           toast.error("Supabase への保存に失敗しました。接続を確認して再同期してください。")
           clearSaveRetry()
+          setIsSaving(false)
         } else {
           saveRetryRef.current.timeoutId = setTimeout(() => {
             void attemptSave()
@@ -227,6 +231,15 @@ export function useAppData() {
       clearSaveRetry()
     }
   }, [clearSaveRetry])
+
+  useEffect(() => {
+    if (!isSaving) return
+    const handler = (e: BeforeUnloadEvent) => {
+      e.preventDefault()
+    }
+    window.addEventListener("beforeunload", handler)
+    return () => window.removeEventListener("beforeunload", handler)
+  }, [isSaving])
 
   useEffect(() => {
     dataRef.current = data
@@ -1166,6 +1179,7 @@ export function useAppData() {
   return {
     data,
     hydrated,
+    isSaving,
     auditLogs,
     auditLogsLoading,
     auditHasMore,
