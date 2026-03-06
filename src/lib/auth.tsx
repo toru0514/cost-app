@@ -69,8 +69,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     }
     void init()
-    const { data: subscription } = supabaseClient.auth.onAuthStateChange((_event, session) => {
+    const { data: subscription } = supabaseClient.auth.onAuthStateChange((event, session) => {
       if (!mounted) return
+      // TOKEN_REFRESHED only refreshes the JWT silently — the user identity doesn't change.
+      // Skipping it avoids unnecessary authState object re-creation, which would otherwise
+      // trigger a full DB reload in useAppData and risk a race condition with in-flight saves.
+      if (event === "TOKEN_REFRESHED") return
       if (session?.user) {
         void fetchProfile(session.user.id, session.user.email ?? "")
       } else {
