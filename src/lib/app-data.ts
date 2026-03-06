@@ -149,6 +149,9 @@ export function useAppData() {
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  // Stable primitives derived from authState — used as deps instead of the full object
+  // to prevent load effect re-runs when only the object reference changes (e.g. TOKEN_REFRESHED).
+  const authUserId = authState.status === "authenticated" ? authState.user.id : null
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
   const previousAuthStatus = authStatusRef.current
   const saveRetryRef = useRef<{ attempts: number; timeoutId: ReturnType<typeof setTimeout> | null }>({ attempts: 0, timeoutId: null })
@@ -162,10 +165,10 @@ export function useAppData() {
   }, [])
 
   const refreshAuditLogs = useCallback(async () => {
-    if (authState.status !== "authenticated") return
+    if (!authUserId) return
     setAuditLogsLoading(true)
     try {
-      const logs = await loadAuditLogs(authState.user.id, 50, 0, auditFilters)
+      const logs = await loadAuditLogs(authUserId, 50, 0, auditFilters)
       auditLogsIndexRef.current = logs.length
       setAuditLogs(logs)
       setAuditHasMore(logs.length === 50)
@@ -174,7 +177,7 @@ export function useAppData() {
     } finally {
       setAuditLogsLoading(false)
     }
-  }, [authState, auditFilters])
+  }, [authUserId, auditFilters])
 
   const loadMoreAuditLogs = useCallback(async () => {
     if (authState.status !== "authenticated") return
@@ -486,7 +489,7 @@ export function useAppData() {
 
   useEffect(() => {
     if (!hydrated) return
-    if (authState.status !== "authenticated") {
+    if (!authUserId) {
       setRemoteLoadCompleted(true)
       setRemoteLoadFailed(false)
       return
@@ -496,7 +499,7 @@ export function useAppData() {
     setRemoteLoadFailed(false)
     ;(async () => {
       try {
-        const remote = await loadUserAppData(authState.user.id)
+        const remote = await loadUserAppData(authUserId)
         if (cancelled) return
         if (!remote) {
           setRemoteLoadFailed(false)
@@ -526,7 +529,7 @@ export function useAppData() {
     return () => {
       cancelled = true
     }
-  }, [authState, hydrated, clearSaveRetry, refreshAuditLogs])
+  }, [authUserId, hydrated, clearSaveRetry, refreshAuditLogs])
 
   useEffect(() => {
     if (!hydrated || !remoteLoadCompleted) return
