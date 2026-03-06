@@ -21,7 +21,8 @@ export function MaterialUsageSection({ data }: MaterialUsageSectionProps) {
         unit?: string
         currency?: string
         baseUnitCost?: number
-        totalUsageRatio?: number
+        totalUsageInput?: number
+        usePercentageMode?: boolean
         supplier?: string
         entries: {
           productName: string
@@ -40,7 +41,8 @@ export function MaterialUsageSection({ data }: MaterialUsageSectionProps) {
           unit: material.unit,
           currency: material.currency,
           baseUnitCost: material.unitCost,
-          totalUsageRatio: undefined,
+          totalUsageInput: undefined,
+          usePercentageMode: material.usePercentageMode,
           supplier: material.supplier,
           entries: [],
         })
@@ -57,7 +59,7 @@ export function MaterialUsageSection({ data }: MaterialUsageSectionProps) {
       const group = ensureGroup(material)
       group.currency = entry.currency ?? group.currency
       if (entry.usageRatio !== undefined) {
-        group.totalUsageRatio = (group.totalUsageRatio ?? 0) + entry.usageRatio
+        group.totalUsageInput = (group.totalUsageInput ?? 0) + entry.usageRatio
       }
       group.entries.push({
         productName,
@@ -86,7 +88,7 @@ export function MaterialUsageSection({ data }: MaterialUsageSectionProps) {
                 <TableRow>
                   <TableHead>材料</TableHead>
                   <TableHead>仕入先</TableHead>
-                  <TableHead>総使用率</TableHead>
+                  <TableHead>総使用量</TableHead>
                   <TableHead>単価</TableHead>
                   <TableHead>内訳</TableHead>
                 </TableRow>
@@ -96,7 +98,13 @@ export function MaterialUsageSection({ data }: MaterialUsageSectionProps) {
                   <TableRow key={`summary-${group.materialId}`}>
                     <TableCell>{group.materialName}</TableCell>
                     <TableCell>{group.supplier ?? "-"}</TableCell>
-                    <TableCell>{group.totalUsageRatio !== undefined ? `${group.totalUsageRatio}%` : "-"}</TableCell>
+                    <TableCell>
+                      {group.totalUsageInput !== undefined
+                        ? group.usePercentageMode
+                          ? `${group.totalUsageInput}%`
+                          : `${group.totalUsageInput}${group.unit ?? ""}`
+                        : "-"}
+                    </TableCell>
                     <TableCell>
                       {group.baseUnitCost !== undefined
                         ? formatCurrency(group.baseUnitCost, group.currency ?? "JPY")
@@ -107,7 +115,12 @@ export function MaterialUsageSection({ data }: MaterialUsageSectionProps) {
                         ? "-"
                         : group.entries
                             .map((entry) => {
-                              const ratioText = entry.usageRatio !== undefined ? `${entry.usageRatio}%` : "-"
+                              const ratioText =
+                                entry.usageRatio !== undefined
+                                  ? group.usePercentageMode
+                                    ? `${entry.usageRatio}%`
+                                    : `${entry.usageRatio}${group.unit ?? ""}`
+                                  : "-"
                               const costText =
                                 entry.costShare !== undefined
                                   ? formatCurrency(entry.costShare, group.currency ?? "JPY")

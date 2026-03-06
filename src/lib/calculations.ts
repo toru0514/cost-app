@@ -6,7 +6,8 @@ export type MaterialConsumptionRow = {
   materialId: string
   materialName: string
   unit: string
-  usageRatioTotal: number | null
+  usageInputTotal: number | null
+  usePercentageMode: boolean
   usagePerProduct: number | null
   totalConsumption: number | null
   currentStock: number | null
@@ -21,7 +22,7 @@ export function calcMaterialConsumption(
   data: AppData,
   materialStocks: Map<string, number>
 ): MaterialConsumptionRow[] {
-  const grouped = new Map<string, { usageRatioTotal: number; material: (typeof data.materials)[0] }>()
+  const grouped = new Map<string, { usageInputTotal: number; material: (typeof data.materials)[0] }>()
 
   data.costEntries.materials
     .filter((entry) => entry.productId === productId && entry.usageRatio !== undefined)
@@ -30,15 +31,14 @@ export function calcMaterialConsumption(
       if (!material) return
       const existing = grouped.get(material.id)
       if (existing) {
-        existing.usageRatioTotal += entry.usageRatio!
+        existing.usageInputTotal += entry.usageRatio!
       } else {
-        grouped.set(material.id, { usageRatioTotal: entry.usageRatio!, material })
+        grouped.set(material.id, { usageInputTotal: entry.usageRatio!, material })
       }
     })
 
-  return Array.from(grouped.values()).map(({ usageRatioTotal, material }) => {
-    const unitsPerBatch = material.unitsPerBatch ?? 1
-    const usagePerProduct = (usageRatioTotal / 100) * unitsPerBatch
+  return Array.from(grouped.values()).map(({ usageInputTotal, material }) => {
+    const usagePerProduct = material.usePercentageMode ? usageInputTotal / 100 : usageInputTotal
     const totalConsumption = productionCount * usagePerProduct
     const hasStock = materialStocks.has(material.id)
     const currentStock = hasStock ? (materialStocks.get(material.id) ?? 0) : null
@@ -53,7 +53,8 @@ export function calcMaterialConsumption(
       materialId: material.id,
       materialName: material.name,
       unit: material.unit,
-      usageRatioTotal,
+      usageInputTotal,
+      usePercentageMode: Boolean(material.usePercentageMode),
       usagePerProduct,
       totalConsumption,
       currentStock,

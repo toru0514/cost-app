@@ -82,14 +82,14 @@ export function MaterialStockSimulator({ data, materialStocks, masterStocksLoade
         {!selectedProductId ? (
           <p className="text-sm text-muted-foreground">商品を選択してください。</p>
         ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">この商品に使用率が設定された材料費明細がありません。</p>
+          <p className="text-sm text-muted-foreground">この商品に使用量が設定された材料費明細がありません。</p>
         ) : (
           <div className="relative w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="min-w-[640px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>材料</TableHead>
-                  <TableHead className="text-right">使用率</TableHead>
+                  <TableHead className="text-right">使用量入力値</TableHead>
                   <TableHead className="text-right">1個分消費量</TableHead>
                   <TableHead className="text-right">{displayCount}個分消費量</TableHead>
                   {isAuthenticated && (
@@ -109,7 +109,11 @@ export function MaterialStockSimulator({ data, materialStocks, masterStocksLoade
                     <TableRow key={row.materialId} className={row.isLow ? "bg-destructive/5" : undefined}>
                       <TableCell className="font-medium">{row.materialName}</TableCell>
                       <TableCell className="text-right text-muted-foreground">
-                        {row.usageRatioTotal !== null ? `${row.usageRatioTotal}%` : "-"}
+                        {row.usageInputTotal !== null
+                          ? row.usePercentageMode
+                            ? `${row.usageInputTotal}%`
+                            : `${row.usageInputTotal} ${row.unit}`
+                          : "-"}
                       </TableCell>
                       <TableCell className="text-right">
                         {row.usagePerProduct !== null

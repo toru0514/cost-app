@@ -65,10 +65,11 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
     const material = materialDrafts.reduce((sum, draft) => {
       const material = data.materials.find((item) => item.id === draft.materialId)
       if (!material) return sum
-      const usageRatio = Math.max(Number(draft.usageRatio) || 0, 0)
+      const usageInput = Math.max(Number(draft.usageRatio) || 0, 0)
+      const consumptionPerProduct = material.usePercentageMode ? usageInput / 100 : usageInput
       const batchSize = Math.max(material.unitsPerBatch ?? 1, 1)
       const baseUnitCost = (material.unitCost || 0) / batchSize
-      return sum + baseUnitCost * (usageRatio / 100)
+      return sum + baseUnitCost * consumptionPerProduct
     }, 0)
 
     const packaging = packagingDrafts.reduce((sum, draft) => {
@@ -241,15 +242,6 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
         removeCostEntriesByProduct(args.editingProductId)
       } else {
         addProduct({ id: targetProductId, ...normalizedProduct })
-        if (args.onSetStock) {
-          try {
-            const normalizedInitialStock = Math.max(0, Number(initialStock) || 0)
-            await args.onSetStock(targetProductId, normalizedInitialStock)
-          } catch (error) {
-            console.error("Failed to save initial product stock", error)
-            toast.error("初期在庫数の保存に失敗しました")
-          }
-        }
       }
 
       // cost entries
@@ -259,9 +251,10 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
           const material = data.materials.find((item) => item.id === draft.materialId)
           if (!material) return
           const usageRatio = Math.max(Number(draft.usageRatio) || 0, 0)
+          const consumptionPerProduct = material.usePercentageMode ? usageRatio / 100 : usageRatio
           const batchSize = Math.max(material.unitsPerBatch ?? 1, 1)
           const baseUnitCost = (material.unitCost || 0) / batchSize
-          const costPerUnit = baseUnitCost * (usageRatio / 100)
+          const costPerUnit = baseUnitCost * consumptionPerProduct
           addMaterialCostEntry({
             productId: targetProductId,
             materialId: draft.materialId,
@@ -377,6 +370,16 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
             currency: fee.currency,
           })
         })
+
+      if (!isEditing && args.onSetStock) {
+        try {
+          const normalizedInitialStock = Math.max(0, Number(initialStock) || 0)
+          await args.onSetStock(targetProductId, normalizedInitialStock)
+        } catch (error) {
+          console.error("Failed to save initial product stock", error)
+          toast.error("初期在庫数の保存に失敗しました")
+        }
+      }
 
       toast.success(isEditing ? "商品を更新しました" : "商品を登録しました", {
         description: `「${normalizedProduct.name || "商品"}」の原価情報を保存しました。`,

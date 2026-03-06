@@ -36,6 +36,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
     currency: "JPY",
     unitCost: 0,
     unitsPerBatch: 1,
+    usePercentageMode: false,
     supplier: "",
     note: "",
   })
@@ -97,6 +98,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
       currency: "JPY",
       unitCost: 0,
       unitsPerBatch: 1,
+      usePercentageMode: false,
       supplier: "",
       note: "",
     })
@@ -149,6 +151,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
       currency: material.currency,
       unitCost: material.unitCost,
       unitsPerBatch: material.unitsPerBatch ?? 1,
+      usePercentageMode: material.usePercentageMode ?? false,
       supplier: material.supplier,
       note: material.note,
     })
@@ -161,6 +164,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
       currency: material.currency,
       unitCost: material.unitCost,
       unitsPerBatch: material.unitsPerBatch ?? 1,
+      usePercentageMode: material.usePercentageMode ?? false,
       supplier: material.supplier ?? "",
       note: material.note ?? "",
     })
@@ -183,6 +187,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                   <TableHead>単位</TableHead>
                   <TableHead>単価</TableHead>
                   <TableHead>セット数</TableHead>
+                  <TableHead>入力モード</TableHead>
                   <TableHead>仕入先</TableHead>
                   <TableHead>備考</TableHead>
                   <TableHead>現在残数</TableHead>
@@ -261,6 +266,24 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                           `${material.unitsPerBatch}単位/セット`
                         ) : (
                           "1単位/セット"
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isEditing ? (
+                          <label className="inline-flex items-center gap-2 text-xs">
+                            <input
+                              type="checkbox"
+                              checked={Boolean(editingMaterial.usePercentageMode)}
+                              onChange={(event) =>
+                                setEditingMaterial((prev) => ({ ...prev, usePercentageMode: event.target.checked }))
+                              }
+                            />
+                            %入力
+                          </label>
+                        ) : material.usePercentageMode ? (
+                          "%入力"
+                        ) : (
+                          "単位数"
                         )}
                       </TableCell>
                       <TableCell>

@@ -419,24 +419,60 @@ export function useAppData() {
     }
   }, [remoteLoadCompleted, authState.status, refreshStocks, refreshMasterStocks])
 
-  const setStock = useCallback(
-    async (productId: string, quantity: number) => {
+  const consumeMaterialsForProductIncrease = useCallback(
+    async (productId: string, deltaQuantity: number) => {
       if (authState.status !== "authenticated") return
-      await upsertProductStock(authState.user.id, productId, quantity)
-      setStocks((prev) => {
-        const next = new Map(prev)
-        next.set(productId, quantity)
-        return next
+      if (deltaQuantity <= 0) return
+
+      const productEntries = dataRef.current.costEntries.materials.filter((entry) => entry.productId === productId)
+      if (productEntries.length === 0) return
+
+      const materialById = new Map(dataRef.current.materials.map((item) => [item.id, item]))
+      const consumeMap = new Map<string, number>()
+      productEntries.forEach((entry) => {
+        const material = materialById.get(entry.materialId)
+        if (!material) return
+        const usage = Math.max(Number(entry.usageRatio) || 0, 0)
+        const perProduct = material.usePercentageMode ? usage / 100 : usage
+        if (perProduct <= 0) return
+        consumeMap.set(entry.materialId, (consumeMap.get(entry.materialId) ?? 0) + perProduct * deltaQuantity)
       })
+      if (consumeMap.size === 0) return
+
+      const insufficient: string[] = []
+      for (const [materialId, consumeAmount] of consumeMap.entries()) {
+        const current = materialStocksRef.current.get(materialId) ?? 0
+        const next = current - consumeAmount
+        const material = materialById.get(materialId)
+        if (next < 0 && material) {
+          insufficient.push(material.name)
+        }
+        await upsertMaterialStock(authState.user.id, materialId, next)
+        setMaterialStocks((prev) => {
+          const map = new Map(prev)
+          map.set(materialId, next)
+          return map
+        })
+      }
+
+      if (insufficient.length > 0) {
+        toast.warning("材料在庫が不足しています", {
+          description: `${insufficient.join("、")} が不足しています。マイナス在庫で継続しました。`,
+        })
+      }
     },
     [authState]
   )
 
-  const adjustStock = useCallback(
-    async (productId: string, delta: number) => {
+  const setStock = useCallback(
+    async (productId: string, quantity: number) => {
       if (authState.status !== "authenticated") return
       const current = stocksRef.current.get(productId) ?? 0
-      const next = Math.max(0, current + delta)
+      const next = Math.max(0, quantity)
+      const increase = Math.max(0, next - current)
+      if (increase > 0) {
+        await consumeMaterialsForProductIncrease(productId, increase)
+      }
       await upsertProductStock(authState.user.id, productId, next)
       setStocks((prev) => {
         const map = new Map(prev)
@@ -444,7 +480,26 @@ export function useAppData() {
         return map
       })
     },
-    [authState]
+    [authState, consumeMaterialsForProductIncrease]
+  )
+
+  const adjustStock = useCallback(
+    async (productId: string, delta: number) => {
+      if (authState.status !== "authenticated") return
+      const current = stocksRef.current.get(productId) ?? 0
+      const next = Math.max(0, current + delta)
+      const increase = Math.max(0, next - current)
+      if (increase > 0) {
+        await consumeMaterialsForProductIncrease(productId, increase)
+      }
+      await upsertProductStock(authState.user.id, productId, next)
+      setStocks((prev) => {
+        const map = new Map(prev)
+        map.set(productId, next)
+        return map
+      })
+    },
+    [authState, consumeMaterialsForProductIncrease]
   )
 
   useEffect(() => {

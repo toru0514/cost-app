@@ -58,6 +58,7 @@ export const buildBulkSyncSheetRows = (data: AppData, stocks?: StockMaps) => {
       item.currency,
       item.unitCost,
       item.unitsPerBatch ?? "",
+      item.usePercentageMode ? "true" : "false",
       item.supplier ?? "",
       item.note ?? "",
       stocks?.materialStocks?.get(item.id) ?? "",

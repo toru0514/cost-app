@@ -31,6 +31,7 @@ const INITIAL_FORM: Omit<Material, "id"> = {
   currency: "JPY",
   unitCost: 0,
   unitsPerBatch: 1,
+  usePercentageMode: false,
   supplier: "",
   note: "",
 }
@@ -127,6 +128,20 @@ export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialS
               }}
             />
             <FieldHint>仕入れ単位が1ロール=50mなどの場合の個数。1個売りなら1。</FieldHint>
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">材料使用量の入力モード</Label>
+            <label className="flex items-center gap-2 text-sm">
+              <input
+                type="checkbox"
+                checked={Boolean(materialForm.usePercentageMode)}
+                onChange={(event) =>
+                  setMaterialForm((prev) => ({ ...prev, usePercentageMode: event.target.checked }))
+                }
+              />
+              パーセント指定モード（ONで商品登録時に%入力）
+            </label>
+            <FieldHint>OFFの場合は「使用量=単位数」で入力、ONの場合は「使用量=%」で入力します。</FieldHint>
           </div>
           {isAuthenticated ? (
             <div className="space-y-1">
