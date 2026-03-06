@@ -172,7 +172,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
           <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="min-w-[1100px]">
+            <Table className="min-w-[980px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>名称</TableHead>
@@ -184,7 +184,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                   <TableHead>現在残数</TableHead>
                   <TableHead>増減量</TableHead>
                   <TableHead></TableHead>
-                  <TableHead className="w-48 text-right">
+                  <TableHead className="w-40 text-right">
                     <span className="sr-only">操作</span>
                   </TableHead>
                 </TableRow>
@@ -202,7 +202,9 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                             onChange={(event) => setEditingPackaging((prev) => ({ ...prev, name: event.target.value }))}
                           />
                         ) : (
-                          item.name
+                          <span className="block max-w-[140px] truncate" title={item.name}>
+                            {item.name}
+                          </span>
                         )}
                       </TableCell>
                       <TableCell>
@@ -264,7 +266,13 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                             onChange={(event) => setEditingPackaging((prev) => ({ ...prev, sizeDescription: event.target.value }))}
                           />
                         ) : (
-                          item.sizeDescription || "-"
+                          item.sizeDescription ? (
+                            <span className="block max-w-[120px] truncate" title={item.sizeDescription}>
+                              {item.sizeDescription}
+                            </span>
+                          ) : (
+                            "-"
+                          )
                         )}
                       </TableCell>
                       <TableCell>
@@ -274,7 +282,13 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                             onChange={(event) => setEditingPackaging((prev) => ({ ...prev, note: event.target.value }))}
                           />
                         ) : (
-                          item.note || "-"
+                          item.note ? (
+                            <span className="block max-w-[120px] truncate" title={item.note}>
+                              {item.note}
+                            </span>
+                          ) : (
+                            "-"
+                          )
                         )}
                       </TableCell>
                       <TableCell>
@@ -294,7 +308,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                                     : { id: item.id, value: e.target.value, unit: displayStockUnit }
                                 )
                               }
-                              className="h-8 w-24"
+                              className="h-8 w-20"
                             />
                             <Input
                               value={editingStock.unit}
@@ -305,7 +319,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                                     : { id: item.id, value: String(packagingStocks.get(item.id) ?? 0), unit: e.target.value }
                                 )
                               }
-                              className="h-8 w-20"
+                              className="h-8 w-16"
                               placeholder="単位"
                             />
                             <Button
@@ -354,7 +368,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                                 return next
                               })
                             }
-                            className="h-8 w-20"
+                            className="h-8 w-16"
                           />
                         )}
                       </TableCell>
@@ -365,6 +379,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                               type="button"
                               size="sm"
                               variant="outline"
+                              className="h-8 w-8 px-0"
                               title="追加"
                               onClick={() => handleAdd(item)}
                               disabled={(busy?.startsWith(item.id) ?? false) || editingStock?.id === item.id || editingPackaging.id === item.id}
@@ -375,6 +390,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                               type="button"
                               size="sm"
                               variant="outline"
+                              className="h-8 w-8 px-0"
                               title="使用（減算）"
                               onClick={() => handleUse(item)}
                               disabled={(busy?.startsWith(item.id) ?? false) || editingStock?.id === item.id || editingPackaging.id === item.id || (packagingStocks.get(item.id) ?? 0) === 0}
