@@ -3,12 +3,15 @@
 import { useMemo, useState } from "react"
 import { Copy, Edit3, GripVertical, Trash2 } from "lucide-react"
 
+import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/calculations"
 import type { Product } from "@/lib/types"
+import { toast } from "sonner"
 
 export const CUSTOMIZABLE_PRODUCT_COLUMNS = [
+  "stock",
   "category",
   "options",
   "shipping",
@@ -39,14 +42,18 @@ export type ProductTableColumnSettings = {
 type Props = {
   entries: ProductListEntry[]
   isAuthenticated: boolean
+  stocks: Map<string, number>
+  stocksLoaded: boolean
   columnSettings: ProductTableColumnSettings
   onColumnSettingsChange: (next: ProductTableColumnSettings) => void
+  onAdjustStock: (productId: string, delta: number) => Promise<void>
   onEdit: (productId: string) => void
   onCopy: (productId: string) => void
   onDelete: (product: Product) => void
 }
 
 const COLUMN_LABELS: Record<CustomizableProductColumnKey, string> = {
+  stock: "在庫",
   category: "カテゴリ",
   options: "オプション/個数",
   shipping: "配送方法",
@@ -105,14 +112,18 @@ export function defaultProductTableColumnSettings(): ProductTableColumnSettings 
 export function CustomizableProductTable({
   entries,
   isAuthenticated,
+  stocks,
+  stocksLoaded,
   columnSettings,
   onColumnSettingsChange,
+  onAdjustStock,
   onEdit,
   onCopy,
   onDelete,
 }: Props) {
   const [draggingColumn, setDraggingColumn] = useState<CustomizableProductColumnKey | null>(null)
   const [showHiddenColumns, setShowHiddenColumns] = useState(false)
+  const [busyKey, setBusyKey] = useState<string | null>(null)
 
   const hiddenSet = useMemo(() => new Set(columnSettings.hiddenColumns), [columnSettings.hiddenColumns])
   const visibleColumns = useMemo(
@@ -145,9 +156,60 @@ export function CustomizableProductTable({
     })
   }
 
+  const adjustStock = async (productId: string, delta: number) => {
+    setBusyKey(`${productId}:${delta > 0 ? "add" : "use"}`)
+    try {
+      await onAdjustStock(productId, delta)
+    } catch {
+      toast.error("在庫の更新に失敗しました")
+    } finally {
+      setBusyKey(null)
+    }
+  }
+
   const renderColumnCell = (key: CustomizableProductColumnKey, entry: ProductListEntry) => {
     const { product, salePrice, profit, categoryPath, shippingText, equipmentText } = entry
+    const stockQuantity = stocks.get(product.id) ?? 0
+    const isBusy = busyKey?.startsWith(`${product.id}:`) ?? false
     switch (key) {
+      case "stock":
+        return (
+          <div className="flex items-center gap-2">
+            {isAuthenticated ? (
+              stocksLoaded ? (
+                <Badge variant={stockQuantity === 0 ? "outline" : "secondary"} className="min-w-10 justify-center text-sm">
+                  {stockQuantity}
+                </Badge>
+              ) : (
+                <span className="text-xs text-muted-foreground">読込中...</span>
+              )
+            ) : (
+              <span className="text-xs text-muted-foreground">-</span>
+            )}
+            <div className="flex gap-1">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 w-7 px-0"
+                onClick={() => adjustStock(product.id, 1)}
+                disabled={!isAuthenticated || !stocksLoaded || isBusy}
+              >
+                +
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-7 w-7 px-0"
+                onClick={() => adjustStock(product.id, -1)}
+                disabled={!isAuthenticated || !stocksLoaded || isBusy || stockQuantity === 0}
+              >
+                -
+              </Button>
+            </div>
+          </div>
+        )
       case "category":
         return categoryPath
       case "options": {

@@ -32,7 +32,6 @@ import {
   type ProductTableColumnSettings,
 } from "./_components/product-list/customizable-product-table"
 import { ProductTab } from "./_components/product/product-tab"
-import { RegisteredProductsSection } from "./_components/product/sections/registered-products-section"
 import { StockTab } from "./_components/stock/stock-tab"
 import { FileDown, FileUp, Menu, Plus } from "lucide-react"
 import { toast } from "sonner"
@@ -878,15 +877,6 @@ export default function Home() {
         </TabsContent>
 
         <TabsContent value="list" className="space-y-6">
-          <RegisteredProductsSection
-            data={data}
-            stocks={stocks}
-            stocksLoaded={stocksLoaded}
-            isAuthenticated={isAuthenticated}
-            onAdjust={adjustStock}
-            onSet={setStock}
-          />
-
           <Card>
             <CardHeader className="space-y-4">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
@@ -993,8 +983,11 @@ export default function Home() {
                 <CustomizableProductTable
                   entries={filteredProductEntries}
                   isAuthenticated={isAuthenticated}
+                  stocks={stocks}
+                  stocksLoaded={stocksLoaded}
                   columnSettings={productTableColumnSettings}
                   onColumnSettingsChange={handleProductTableColumnSettingsChange}
+                  onAdjustStock={adjustStock}
                   onEdit={handleEditProduct}
                   onCopy={handleCopyProduct}
                   onDelete={handleDeleteProduct}
