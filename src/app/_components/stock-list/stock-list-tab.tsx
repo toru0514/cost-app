@@ -1,6 +1,11 @@
 "use client"
 
+import { useState } from "react"
+import { toast } from "sonner"
+
+import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
@@ -13,6 +18,8 @@ type StockListTabProps = {
   packagingStockUnits: Map<string, string>
   masterStocksLoaded: boolean
   isAuthenticated: boolean
+  onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
+  onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
 }
 
 const formatRoundedQuantity = (quantity: number) => {
@@ -33,7 +40,58 @@ export function StockListTab({
   packagingStockUnits,
   masterStocksLoaded,
   isAuthenticated,
+  onAdjustMaterialStock,
+  onAdjustPackagingStock,
 }: StockListTabProps) {
+  const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
+  const [busy, setBusy] = useState<string | null>(null)
+
+  const getAdjustAmount = (key: string) => Math.max(1, parseInt(adjustAmounts.get(key) ?? "1", 10) || 1)
+
+  const handleAddMaterial = async (id: string) => {
+    setBusy(`material:${id}:add`)
+    try {
+      await onAdjustMaterialStock(id, getAdjustAmount(`material:${id}`))
+    } catch {
+      toast.error("材料在庫の追加に失敗しました")
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleUseMaterial = async (id: string) => {
+    setBusy(`material:${id}:use`)
+    try {
+      await onAdjustMaterialStock(id, -getAdjustAmount(`material:${id}`))
+    } catch {
+      toast.error("材料在庫の使用に失敗しました")
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleAddPackaging = async (id: string) => {
+    setBusy(`packaging:${id}:add`)
+    try {
+      await onAdjustPackagingStock(id, getAdjustAmount(`packaging:${id}`))
+    } catch {
+      toast.error("梱包材在庫の追加に失敗しました")
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const handleUsePackaging = async (id: string) => {
+    setBusy(`packaging:${id}:use`)
+    try {
+      await onAdjustPackagingStock(id, -getAdjustAmount(`packaging:${id}`))
+    } catch {
+      toast.error("梱包材在庫の使用に失敗しました")
+    } finally {
+      setBusy(null)
+    }
+  }
+
   const materialRows = data.materials.map((material) => ({
     id: material.id,
     name: material.name,
@@ -94,6 +152,10 @@ export function StockListTab({
                     <TableHead>仕入先</TableHead>
                     <TableHead>備考</TableHead>
                     <TableHead className="text-right">現在残数</TableHead>
+                    <TableHead>増減量</TableHead>
+                    <TableHead>
+                      <span className="sr-only">増減操作</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -107,6 +169,47 @@ export function StockListTab({
                       <TableCell>{row.supplier || "-"}</TableCell>
                       <TableCell>{row.note || "-"}</TableCell>
                       <TableCell className="text-right">{formatStock(row.stock, row.stockUnit)}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={adjustAmounts.get(`material:${row.id}`) ?? "1"}
+                          onChange={(e) =>
+                            setAdjustAmounts((prev) => {
+                              const next = new Map(prev)
+                              next.set(`material:${row.id}`, e.target.value)
+                              return next
+                            })
+                          }
+                          className="h-8 w-16"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 px-0"
+                            onClick={() => handleAddMaterial(row.id)}
+                            disabled={busy !== null}
+                            title="追加"
+                          >
+                            +
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 px-0"
+                            onClick={() => handleUseMaterial(row.id)}
+                            disabled={busy !== null || (row.stock ?? 0) === 0}
+                            title="使用（減算）"
+                          >
+                            −
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>
@@ -139,6 +242,10 @@ export function StockListTab({
                     <TableHead>仕様</TableHead>
                     <TableHead>備考</TableHead>
                     <TableHead className="text-right">現在残数</TableHead>
+                    <TableHead>増減量</TableHead>
+                    <TableHead>
+                      <span className="sr-only">増減操作</span>
+                    </TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -151,6 +258,47 @@ export function StockListTab({
                       <TableCell>{row.sizeDescription || "-"}</TableCell>
                       <TableCell>{row.note || "-"}</TableCell>
                       <TableCell className="text-right">{formatStock(row.stock, row.stockUnit)}</TableCell>
+                      <TableCell>
+                        <Input
+                          type="number"
+                          min={1}
+                          value={adjustAmounts.get(`packaging:${row.id}`) ?? "1"}
+                          onChange={(e) =>
+                            setAdjustAmounts((prev) => {
+                              const next = new Map(prev)
+                              next.set(`packaging:${row.id}`, e.target.value)
+                              return next
+                            })
+                          }
+                          className="h-8 w-16"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex gap-1">
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 px-0"
+                            onClick={() => handleAddPackaging(row.id)}
+                            disabled={busy !== null}
+                            title="追加"
+                          >
+                            +
+                          </Button>
+                          <Button
+                            type="button"
+                            size="sm"
+                            variant="outline"
+                            className="h-8 w-8 px-0"
+                            onClick={() => handleUsePackaging(row.id)}
+                            disabled={busy !== null || (row.stock ?? 0) === 0}
+                            title="使用（減算）"
+                          >
+                            −
+                          </Button>
+                        </div>
+                      </TableCell>
                     </TableRow>
                   ))}
                 </TableBody>

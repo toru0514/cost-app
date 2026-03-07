@@ -1126,6 +1126,8 @@ export default function Home() {
             packagingStockUnits={packagingStockUnits}
             masterStocksLoaded={masterStocksLoaded}
             isAuthenticated={isAuthenticated}
+            onAdjustMaterialStock={adjustMaterialStock}
+            onAdjustPackagingStock={adjustPackagingStock}
           />
         </TabsContent>
 
