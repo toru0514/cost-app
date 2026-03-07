@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent } from "react"
+import { useState, type FormEvent, type MouseEvent } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -103,16 +103,16 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
     setCurrentStep((prev) => Math.max(1, prev - 1))
   }
 
-  const handleStepNext = () => {
+  const handleStepNext = (event?: MouseEvent<HTMLButtonElement>) => {
+    event?.preventDefault()
     setCurrentStep((prev) => Math.min(totalSteps, prev + 1))
   }
 
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
-    if (currentStep < totalSteps) {
-      event.preventDefault()
-      handleStepNext()
-      return
-    }
+    event.preventDefault()
+    const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLElement | null
+    const isFinalSubmit = submitter?.getAttribute("data-submit-intent") === "final"
+    if (!isFinalSubmit || currentStep < totalSteps) return
     handleSubmit(event)
   }
 
@@ -273,7 +273,9 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
                     次へ
                   </Button>
                 ) : (
-                  <Button type="submit">{editingProductId ? "商品を更新" : "商品を登録"}</Button>
+                  <Button type="submit" data-submit-intent="final">
+                    {editingProductId ? "商品を更新" : "商品を登録"}
+                  </Button>
                 )}
               </div>
             </form>
