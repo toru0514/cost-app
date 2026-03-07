@@ -27,6 +27,11 @@ interface MaterialListSectionProps {
   onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
 }
 
+const formatStockQuantity = (quantity: number) => {
+  const rounded = Math.round((quantity + Number.EPSILON) * 10) / 10
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+}
+
 export function MaterialListSection({ data, actions, createTempId, isAuthenticated, materialStocks, materialStockUnits, masterStocksLoaded, onSetMaterialStock, onAdjustMaterialStock }: MaterialListSectionProps) {
   const [editingMaterial, setEditingMaterial] = useState<Omit<Material, "id"> & { id: string | null }>({
     id: null,
@@ -377,7 +382,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                             {!masterStocksLoaded
                               ? <span className="text-muted-foreground">-</span>
                               : materialStocks.has(material.id)
-                                ? `${materialStocks.get(material.id)} ${displayStockUnit}`
+                                ? `${formatStockQuantity(materialStocks.get(material.id) ?? 0)} ${displayStockUnit}`
                                 : <span className="text-muted-foreground">-</span>}
                           </button>
                         )}
