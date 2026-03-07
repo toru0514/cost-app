@@ -24,6 +24,8 @@ interface ProductFormPanelProps {
   data: AppData
   actions: AppActions
   materialStocks: Map<string, number>
+  packagingStocks: Map<string, number>
+  packagingStockUnits: Map<string, string>
   masterStocksLoaded: boolean
   isAuthenticated: boolean
   onSetStock?: (productId: string, quantity: number) => Promise<void>
@@ -37,6 +39,8 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
   const {
     data,
     materialStocks,
+    packagingStocks,
+    packagingStockUnits,
     masterStocksLoaded,
     isAuthenticated,
     editingProductId,
@@ -197,6 +201,10 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
                   />
                   <PackagingCostSection
                     items={data.packagingItems}
+                    packagingStocks={packagingStocks}
+                    packagingStockUnits={packagingStockUnits}
+                    masterStocksLoaded={masterStocksLoaded}
+                    isAuthenticated={isAuthenticated}
                     drafts={packagingDrafts}
                     onAdd={handleAddPackagingDraft}
                     onUpdate={handleUpdatePackagingDraft}

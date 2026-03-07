@@ -419,33 +419,46 @@ export function useAppData() {
     }
   }, [remoteLoadCompleted, authState.status, refreshStocks, refreshMasterStocks])
 
-  const consumeMaterialsForProductIncrease = useCallback(
+  const consumeMasterStocksForProductIncrease = useCallback(
     async (productId: string, deltaQuantity: number) => {
       if (authState.status !== "authenticated") return
       if (deltaQuantity <= 0) return
 
-      const productEntries = dataRef.current.costEntries.materials.filter((entry) => entry.productId === productId)
-      if (productEntries.length === 0) return
-
       const materialById = new Map(dataRef.current.materials.map((item) => [item.id, item]))
-      const consumeMap = new Map<string, number>()
-      productEntries.forEach((entry) => {
-        const material = materialById.get(entry.materialId)
-        if (!material) return
-        const usage = Math.max(Number(entry.usageRatio) || 0, 0)
-        const perProduct = material.usePercentageMode ? usage / 100 : usage
-        if (perProduct <= 0) return
-        consumeMap.set(entry.materialId, (consumeMap.get(entry.materialId) ?? 0) + perProduct * deltaQuantity)
-      })
-      if (consumeMap.size === 0) return
+      const materialConsumeMap = new Map<string, number>()
+      dataRef.current.costEntries.materials
+        .filter((entry) => entry.productId === productId)
+        .forEach((entry) => {
+          const material = materialById.get(entry.materialId)
+          if (!material) return
+          const usage = Math.max(Number(entry.usageRatio) || 0, 0)
+          const perProduct = material.usePercentageMode ? usage / 100 : usage
+          if (perProduct <= 0) return
+          materialConsumeMap.set(entry.materialId, (materialConsumeMap.get(entry.materialId) ?? 0) + perProduct * deltaQuantity)
+        })
 
-      const insufficient: string[] = []
-      for (const [materialId, consumeAmount] of consumeMap.entries()) {
+      const packagingById = new Map(dataRef.current.packagingItems.map((item) => [item.id, item]))
+      const packagingConsumeMap = new Map<string, number>()
+      dataRef.current.costEntries.packaging
+        .filter((entry) => entry.productId === productId)
+        .forEach((entry) => {
+          const item = packagingById.get(entry.packagingItemId)
+          if (!item) return
+          const perProduct = Math.max(Number(entry.quantity) || 0, 0)
+          if (perProduct <= 0) return
+          packagingConsumeMap.set(
+            entry.packagingItemId,
+            (packagingConsumeMap.get(entry.packagingItemId) ?? 0) + perProduct * deltaQuantity
+          )
+        })
+
+      const materialInsufficient: string[] = []
+      for (const [materialId, consumeAmount] of materialConsumeMap.entries()) {
         const current = materialStocksRef.current.get(materialId) ?? 0
         const next = current - consumeAmount
-        const material = materialById.get(materialId)
-        if (next < 0 && material) {
-          insufficient.push(material.name)
+        const resolvedMaterial = materialById.get(materialId)
+        if (next < 0 && resolvedMaterial) {
+          materialInsufficient.push(resolvedMaterial.name)
         }
         await upsertMaterialStock(authState.user.id, materialId, next)
         setMaterialStocks((prev) => {
@@ -455,9 +468,31 @@ export function useAppData() {
         })
       }
 
-      if (insufficient.length > 0) {
+      const packagingInsufficient: string[] = []
+      for (const [packagingItemId, consumeAmount] of packagingConsumeMap.entries()) {
+        const current = packagingStocksRef.current.get(packagingItemId) ?? 0
+        const next = current - consumeAmount
+        const packaging = packagingById.get(packagingItemId)
+        if (next < 0 && packaging) {
+          packagingInsufficient.push(packaging.name)
+        }
+        await upsertPackagingStock(authState.user.id, packagingItemId, next)
+        setPackagingStocks((prev) => {
+          const map = new Map(prev)
+          map.set(packagingItemId, next)
+          return map
+        })
+      }
+
+      if (materialInsufficient.length > 0) {
         toast.warning("材料在庫が不足しています", {
-          description: `${insufficient.join("、")} が不足しています。マイナス在庫で継続しました。`,
+          description: `${materialInsufficient.join("、")} が不足しています。マイナス在庫で継続しました。`,
+        })
+      }
+
+      if (packagingInsufficient.length > 0) {
+        toast.warning("梱包材在庫が不足しています", {
+          description: `${packagingInsufficient.join("、")} が不足しています。マイナス在庫で継続しました。`,
         })
       }
     },
@@ -471,7 +506,7 @@ export function useAppData() {
       const next = Math.max(0, quantity)
       const increase = Math.max(0, next - current)
       if (increase > 0) {
-        await consumeMaterialsForProductIncrease(productId, increase)
+        await consumeMasterStocksForProductIncrease(productId, increase)
       }
       await upsertProductStock(authState.user.id, productId, next)
       setStocks((prev) => {
@@ -480,7 +515,7 @@ export function useAppData() {
         return map
       })
     },
-    [authState, consumeMaterialsForProductIncrease]
+    [authState, consumeMasterStocksForProductIncrease]
   )
 
   const adjustStock = useCallback(
@@ -490,7 +525,7 @@ export function useAppData() {
       const next = Math.max(0, current + delta)
       const increase = Math.max(0, next - current)
       if (increase > 0) {
-        await consumeMaterialsForProductIncrease(productId, increase)
+        await consumeMasterStocksForProductIncrease(productId, increase)
       }
       await upsertProductStock(authState.user.id, productId, next)
       setStocks((prev) => {
@@ -499,7 +534,7 @@ export function useAppData() {
         return map
       })
     },
-    [authState, consumeMaterialsForProductIncrease]
+    [authState, consumeMasterStocksForProductIncrease]
   )
 
   useEffect(() => {

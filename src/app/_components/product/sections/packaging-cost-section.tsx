@@ -12,13 +12,27 @@ import type { PackagingCostDraft } from "../types"
 
 interface PackagingCostSectionProps {
   items: PackagingItem[]
+  packagingStocks: Map<string, number>
+  packagingStockUnits: Map<string, string>
+  masterStocksLoaded: boolean
+  isAuthenticated: boolean
   drafts: PackagingCostDraft[]
   onAdd: () => void
   onUpdate: (id: string, patch: Partial<PackagingCostDraft>) => void
   onRemove: (id: string) => void
 }
 
-export function PackagingCostSection({ items, drafts, onAdd, onUpdate, onRemove }: PackagingCostSectionProps) {
+export function PackagingCostSection({
+  items,
+  packagingStocks,
+  packagingStockUnits,
+  masterStocksLoaded,
+  isAuthenticated,
+  drafts,
+  onAdd,
+  onUpdate,
+  onRemove,
+}: PackagingCostSectionProps) {
   return (
     <FormSection
       title="梱包材費"
@@ -47,6 +61,16 @@ export function PackagingCostSection({ items, drafts, onAdd, onUpdate, onRemove 
           const unitCostLabel = selectedItem
             ? `${formatCurrency(selectedItem.unitCost, selectedItem.currency)} / ${selectedItem.unit}`
             : "梱包材マスタで単価を登録してください"
+          const stockQuantity = selectedItem ? packagingStocks.get(selectedItem.id) : undefined
+          const stockUnit = selectedItem ? packagingStockUnits.get(selectedItem.id)?.trim() || selectedItem.unit : ""
+          const stockText =
+            !isAuthenticated
+              ? "在庫表示はログイン中のみ利用できます。"
+              : !masterStocksLoaded
+                ? "在庫: 読み込み中..."
+                : stockQuantity === undefined
+                  ? "在庫: 未設定"
+                  : `在庫: ${stockQuantity} ${stockUnit}`.trim()
           return (
             <DraftCard key={draft.id} onRemove={() => onRemove(draft.id)}>
               <div className="grid gap-2 md:grid-cols-2">
@@ -87,6 +111,7 @@ export function PackagingCostSection({ items, drafts, onAdd, onUpdate, onRemove 
                 </div>
               </div>
               <p className="text-xs text-muted-foreground">梱包材単価: {unitCostLabel}</p>
+              <p className="text-xs text-muted-foreground">{stockText}</p>
             </DraftCard>
           )
         })
