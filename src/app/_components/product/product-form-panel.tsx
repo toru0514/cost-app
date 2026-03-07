@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, type FormEvent, type MouseEvent } from "react"
+import { useRef, useState, type FormEvent, type MouseEvent } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -91,6 +91,7 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
   } = useProductFormState(props)
 
   const [currentStep, setCurrentStep] = useState(1)
+  const formTopRef = useRef<HTMLDivElement | null>(null)
   const totalSteps = 4
   const stepDefinitions = [
     { id: 1, title: "商品基本情報" },
@@ -99,13 +100,19 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
     { id: 4, title: "物流・販売コスト" },
   ] as const
 
+  const scrollToFormTop = () => {
+    formTopRef.current?.scrollIntoView({ behavior: "smooth", block: "start" })
+  }
+
   const handleStepBack = () => {
     setCurrentStep((prev) => Math.max(1, prev - 1))
+    scrollToFormTop()
   }
 
   const handleStepNext = (event?: MouseEvent<HTMLButtonElement>) => {
     event?.preventDefault()
     setCurrentStep((prev) => Math.min(totalSteps, prev + 1))
+    scrollToFormTop()
   }
 
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
@@ -118,6 +125,7 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
 
   return (
     <div className="space-y-6">
+      <div ref={formTopRef} />
       {editingProductId && (
         <div className="flex flex-wrap items-center justify-between gap-2 rounded-md border border-dashed bg-muted/60 px-3 py-2 text-sm">
           <span>編集中: {editingProduct?.name ?? "選択中の商品"}</span>
