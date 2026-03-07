@@ -852,6 +852,8 @@ export default function Home() {
             data={data}
             actions={actions}
             materialStocks={materialStocks}
+            packagingStocks={packagingStocks}
+            packagingStockUnits={packagingStockUnits}
             masterStocksLoaded={masterStocksLoaded}
             isAuthenticated={isAuthenticated}
             onSetStock={setStock}

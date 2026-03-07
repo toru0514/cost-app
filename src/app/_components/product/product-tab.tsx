@@ -10,6 +10,8 @@ interface ProductTabProps {
   data: AppData
   actions: AppActions
   materialStocks: Map<string, number>
+  packagingStocks: Map<string, number>
+  packagingStockUnits: Map<string, string>
   masterStocksLoaded: boolean
   isAuthenticated: boolean
   onSetStock?: (productId: string, quantity: number) => Promise<void>
