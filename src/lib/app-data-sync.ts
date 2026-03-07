@@ -1005,6 +1005,10 @@ type ProductListColumnSettingsRow = {
   hidden_columns: string[] | null
 }
 
+type TabOrderSettingsRow = {
+  tab_order: string[] | null
+}
+
 export async function loadProductListColumnSettings(
   userId: string
 ): Promise<{ columnOrder: string[]; hiddenColumns: string[] } | null> {
@@ -1032,6 +1036,37 @@ export async function upsertProductListColumnSettings(
       user_id: userId,
       column_order: columnOrder,
       hidden_columns: hiddenColumns,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "user_id" }
+  )
+  if (error) throw error
+}
+
+export async function loadTabOrderSettings(
+  userId: string
+): Promise<{ tabOrder: string[] } | null> {
+  const { data, error } = await supabaseClient
+    .from("tab_order_settings")
+    .select("tab_order")
+    .eq("user_id", userId)
+    .maybeSingle()
+  if (error) throw error
+  if (!data) return null
+  const row = data as TabOrderSettingsRow
+  return {
+    tabOrder: Array.isArray(row.tab_order) ? row.tab_order : [],
+  }
+}
+
+export async function upsertTabOrderSettings(
+  userId: string,
+  tabOrder: string[]
+): Promise<void> {
+  const { error } = await supabaseClient.from("tab_order_settings").upsert(
+    {
+      user_id: userId,
+      tab_order: tabOrder,
       updated_at: new Date().toISOString(),
     },
     { onConflict: "user_id" }

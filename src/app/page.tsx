@@ -17,8 +17,13 @@ import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { useAppData } from "@/lib/app-data"
-import { loadProductListColumnSettings, upsertProductListColumnSettings } from "@/lib/app-data-sync"
-import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
+import {
+  loadProductListColumnSettings,
+  loadTabOrderSettings,
+  upsertProductListColumnSettings,
+  upsertTabOrderSettings,
+} from "@/lib/app-data-sync"
+import { calculateProductUnitCosts } from "@/lib/calculations"
 import type { AppData, AuditFilters, Product } from "@/lib/types"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
 import { AuditTab } from "./_components/audit/audit-tab"
@@ -32,7 +37,7 @@ import {
   type ProductTableColumnSettings,
 } from "./_components/product-list/customizable-product-table"
 import { ProductTab } from "./_components/product/product-tab"
-import { StockTab } from "./_components/stock/stock-tab"
+import { StockListTab } from "./_components/stock-list/stock-list-tab"
 import { FileDown, FileUp, Menu, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
@@ -43,10 +48,35 @@ const tabOptions = [
   { value: "product", label: "商品登録" },
   { value: "master", label: "マスタ登録" },
   { value: "list", label: "商品一覧" },
-  { value: "stock", label: "在庫" },
+  { value: "stock", label: "在庫一覧" },
   { value: "bulk", label: "一括処理" },
   { value: "audit", label: "監査ログ" },
-]
+] as const
+
+type TabValue = (typeof tabOptions)[number]["value"]
+
+const defaultTabOrder: TabValue[] = tabOptions.map((tab) => tab.value)
+
+const normalizeTabOrder = (raw: string[] | null | undefined): TabValue[] => {
+  const validSet = new Set<string>(defaultTabOrder)
+  const order = (Array.isArray(raw) ? raw : [])
+    .filter((value): value is TabValue => validSet.has(value))
+    .filter((value, index, array) => array.indexOf(value) === index)
+  defaultTabOrder.forEach((value) => {
+    if (!order.includes(value)) {
+      order.push(value)
+    }
+  })
+  return order
+}
+
+const moveTabBefore = (source: TabValue, target: TabValue, order: TabValue[]) => {
+  if (source === target) return order
+  const filtered = order.filter((value) => value !== source)
+  const index = filtered.indexOf(target)
+  if (index < 0) return order
+  return [...filtered.slice(0, index), source, ...filtered.slice(index)]
+}
 
 
 export default function Home() {
@@ -64,7 +94,6 @@ export default function Home() {
     updateAuditFilters,
     stocks,
     stocksLoaded,
-    refreshStocks,
     setStock,
     adjustStock,
     materialStocks,
@@ -96,6 +125,8 @@ export default function Home() {
   const [productCategorySmallFilter, setProductCategorySmallFilter] = useState<string | null>(null)
   const [productSortKey, setProductSortKey] = useState("registered-desc")
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const [tabOrder, setTabOrder] = useState<TabValue[]>(defaultTabOrder)
+  const [draggingTab, setDraggingTab] = useState<TabValue | null>(null)
   const { state: authState, login, logout, signup, resetPassword } = useAuth()
   const isAuthenticated = authState.status === "authenticated"
   const [loginPanelOpen, setLoginPanelOpen] = useState(false)
@@ -111,6 +142,13 @@ export default function Home() {
   const backupImportInputRef = useRef<HTMLInputElement | null>(null)
   const importGuestData = actions.importGuestData
   const authUserId = authState.status === "authenticated" ? authState.user.id : null
+  const orderedTabOptions = useMemo(
+    () =>
+      tabOrder
+        .map((value) => tabOptions.find((tab) => tab.value === value))
+        .filter((tab): tab is (typeof tabOptions)[number] => Boolean(tab)),
+    [tabOrder]
+  )
   const productCostMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateProductUnitCosts>>()
     data.products.forEach((product) => {
@@ -281,6 +319,11 @@ export default function Home() {
     }
     setMobileNavOpen(false)
   }, [])
+
+  useEffect(() => {
+    if (defaultTabOrder.includes(activeTab as TabValue)) return
+    handleTabChange("cost")
+  }, [activeTab, handleTabChange])
 
   const handleCreateProduct = useCallback(() => {
     setEditingProductId(null)
@@ -621,6 +664,53 @@ export default function Home() {
     }
   }, [authUserId])
 
+  useEffect(() => {
+    let cancelled = false
+    if (!authUserId) {
+      setTabOrder(defaultTabOrder)
+      return () => {
+        cancelled = true
+      }
+    }
+    ;(async () => {
+      try {
+        const loaded = await loadTabOrderSettings(authUserId)
+        if (cancelled) return
+        if (!loaded) {
+          setTabOrder(defaultTabOrder)
+          return
+        }
+        setTabOrder(normalizeTabOrder(loaded.tabOrder))
+      } catch (error) {
+        console.error("Failed to load tab order settings", error)
+        if (!cancelled) {
+          setTabOrder(defaultTabOrder)
+          toast.error("タブ順序の読み込みに失敗しました")
+        }
+      }
+    })()
+    return () => {
+      cancelled = true
+    }
+  }, [authUserId])
+
+  useEffect(() => {
+    if (!authUserId) return
+    void upsertTabOrderSettings(authUserId, tabOrder).catch((error) => {
+      console.error("Failed to save tab order settings", error)
+      toast.error("タブ順序の保存に失敗しました")
+    })
+  }, [authUserId, tabOrder])
+
+  const handleTabDrop = useCallback(
+    (target: TabValue) => {
+      if (!isAuthenticated || !draggingTab) return
+      setTabOrder((prev) => moveTabBefore(draggingTab, target, prev))
+      setDraggingTab(null)
+    },
+    [isAuthenticated, draggingTab]
+  )
+
   const renderLoading = () => (
     <main className="mx-auto flex min-h-screen max-w-4xl flex-col items-center justify-center gap-4 p-10 text-muted-foreground">
       <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-transparent" />
@@ -812,12 +902,24 @@ export default function Home() {
               </Button>
             </div>
             <div className="space-y-2">
-              {tabOptions.map((tab) => (
+              {orderedTabOptions.map((tab) => (
                 <Button
                   key={tab.value}
                   type="button"
                   variant={activeTab === tab.value ? "secondary" : "outline"}
                   className="w-full justify-between"
+                  draggable={isAuthenticated}
+                  onDragStart={() => isAuthenticated && setDraggingTab(tab.value)}
+                  onDragEnd={() => setDraggingTab(null)}
+                  onDragOver={(event) => {
+                    if (!isAuthenticated || !draggingTab) return
+                    event.preventDefault()
+                  }}
+                  onDrop={(event) => {
+                    if (!isAuthenticated || !draggingTab) return
+                    event.preventDefault()
+                    handleTabDrop(tab.value)
+                  }}
                   onClick={() => handleTabChange(tab.value)}
                 >
                   {tab.label}
@@ -830,13 +932,26 @@ export default function Home() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
         <TabsList className="hidden md:inline-flex">
-          <TabsTrigger value="cost">原価サマリ</TabsTrigger>
-          <TabsTrigger value="analytics">集計データ</TabsTrigger>
-          <TabsTrigger value="product">商品登録</TabsTrigger>
-          <TabsTrigger value="master">マスタ登録</TabsTrigger>
-          <TabsTrigger value="list">商品一覧</TabsTrigger>
-          <TabsTrigger value="bulk">一括処理</TabsTrigger>
-          <TabsTrigger value="audit">監査ログ</TabsTrigger>
+          {orderedTabOptions.map((tab) => (
+            <TabsTrigger
+              key={tab.value}
+              value={tab.value}
+              draggable={isAuthenticated}
+              onDragStart={() => isAuthenticated && setDraggingTab(tab.value)}
+              onDragEnd={() => setDraggingTab(null)}
+              onDragOver={(event) => {
+                if (!isAuthenticated || !draggingTab) return
+                event.preventDefault()
+              }}
+              onDrop={(event) => {
+                if (!isAuthenticated || !draggingTab) return
+                event.preventDefault()
+                handleTabDrop(tab.value)
+              }}
+            >
+              {tab.label}
+            </TabsTrigger>
+          ))}
         </TabsList>
 
         <TabsContent value="cost" className="space-y-6">
@@ -1003,17 +1118,14 @@ export default function Home() {
         </TabsContent>
 
         <TabsContent value="stock" className="space-y-6">
-          <StockTab
+          <StockListTab
             data={data}
-            products={data.products}
-            stocks={stocks}
-            stocksLoaded={stocksLoaded}
             materialStocks={materialStocks}
+            materialStockUnits={materialStockUnits}
+            packagingStocks={packagingStocks}
+            packagingStockUnits={packagingStockUnits}
             masterStocksLoaded={masterStocksLoaded}
             isAuthenticated={isAuthenticated}
-            onAdjust={adjustStock}
-            onSet={setStock}
-            onRefresh={refreshStocks}
           />
         </TabsContent>
 
