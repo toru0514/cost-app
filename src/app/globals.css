@@ -204,3 +204,9 @@
   border: 0 !important;
   border-radius: 0 !important;
 }
+
+.dashboard-table-style section.rounded-lg.border {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+}
