@@ -199,3 +199,8 @@
 .dashboard-table-style [data-slot="table-head"] {
   font-weight: 600 !important;
 }
+
+.dashboard-table-style .cost-summary-table[data-slot="table"] {
+  border: 0 !important;
+  border-radius: 0 !important;
+}

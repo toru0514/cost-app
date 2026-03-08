@@ -102,24 +102,24 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
           </p>
         ) : (
           <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain">
-            <Table className="w-auto min-w-max">
+            <Table className="cost-summary-table w-auto min-w-max">
               <TableHeader>
-                <TableRow>
-                  <TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="font-semibold">
                     <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("product")}>
                       商品{renderSortMark("product")}
                     </button>
                   </TableHead>
-                  <TableHead>材料</TableHead>
-                  <TableHead>梱包</TableHead>
-                  <TableHead>人件費</TableHead>
-                  <TableHead>外注</TableHead>
-                  <TableHead>開発</TableHead>
-                  <TableHead>設備</TableHead>
-                  <TableHead>物流</TableHead>
-                  <TableHead>電気</TableHead>
-                  <TableHead>手数料</TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="font-semibold">材料</TableHead>
+                  <TableHead className="font-semibold">梱包</TableHead>
+                  <TableHead className="font-semibold">人件費</TableHead>
+                  <TableHead className="font-semibold">外注</TableHead>
+                  <TableHead className="font-semibold">開発</TableHead>
+                  <TableHead className="font-semibold">設備</TableHead>
+                  <TableHead className="font-semibold">物流</TableHead>
+                  <TableHead className="font-semibold">電気</TableHead>
+                  <TableHead className="font-semibold">手数料</TableHead>
+                  <TableHead className="text-right font-semibold">
                     <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("amount")}>
                       合計{renderSortMark("amount")}
                     </button>
