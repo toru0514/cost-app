@@ -36,7 +36,7 @@ import {
 } from "./_components/product-list/customizable-product-table"
 import { ProductTab } from "./_components/product/product-tab"
 import { StockListTab } from "./_components/stock-list/stock-list-tab"
-import { FileDown, FileUp, Menu, PanelLeftClose, PanelLeftOpen, Plus } from "lucide-react"
+import { FileDown, FileUp, LogIn, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Plus, X } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
 import { useRouter } from "next/navigation"
@@ -660,297 +660,238 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
   const sidebarWidthClass = sidebarCollapsed ? "w-[76px]" : "w-[260px]"
 
   return (
-    <div className="min-h-screen md:flex">
-      <aside className={`hidden shrink-0 border-r bg-card p-3 md:flex md:flex-col ${sidebarWidthClass}`}>
-        <div className="mb-3 flex items-center justify-between gap-2 px-1">
-          {!sidebarCollapsed && <p className="text-sm font-semibold">Cost App</p>}
-          <Button type="button" variant="ghost" size="sm" onClick={() => setSidebarCollapsed((prev) => !prev)}>
-            {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </Button>
-        </div>
-        <nav className="space-y-1">
-          {tabOptions.map((tab) => (
+    <div className="min-h-screen bg-background">
+      <div className="flex min-h-screen">
+        {/* サイドバー */}
+        <aside className={`hidden border-r bg-card p-3 md:flex md:flex-col ${sidebarWidthClass}`}>
+          <div className="mb-3 flex items-center justify-between gap-2 px-1">
+            {!sidebarCollapsed && <p className="text-sm font-semibold">Cost App</p>}
+            <Button type="button" variant="ghost" size="sm" onClick={() => setSidebarCollapsed((prev) => !prev)}>
+              {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </Button>
+          </div>
+          <nav className="space-y-1">
+            {tabOptions.map((tab) => (
+              <button
+                key={tab.value}
+                type="button"
+                onClick={() => handleTabChange(tab.value)}
+                className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm ${
+                  activeTab === tab.value
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+                title={sidebarCollapsed ? tab.label : undefined}
+              >
+                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px]">{tab.label[0]}</span>
+                {!sidebarCollapsed && <span className="truncate">{tab.label}</span>}
+              </button>
+            ))}
+          </nav>
+          <div className="mt-auto space-y-1 border-t pt-3">
             <button
-              key={tab.value}
               type="button"
-              onClick={() => handleTabChange(tab.value)}
-              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm ${
-                activeTab === tab.value
-                  ? "bg-primary text-primary-foreground"
-                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+              onClick={actions.seedSample}
+              disabled={isAuthenticated}
+              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                isAuthenticated ? "cursor-not-allowed opacity-50" : "text-muted-foreground hover:bg-muted hover:text-foreground"
               }`}
-              title={sidebarCollapsed ? tab.label : undefined}
+              title={sidebarCollapsed ? "デモデータ投入" : undefined}
             >
-              <span className="inline-flex h-5 w-5 items-center justify-center rounded border text-[10px]">{tab.label[0]}</span>
-              {!sidebarCollapsed && <span className="truncate">{tab.label}</span>}
+              <Plus className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && <span className="truncate">デモデータ投入</span>}
             </button>
-          ))}
-        </nav>
-        <div className="mt-auto space-y-2 border-t pt-3">
-          <Button
-            type="button"
-            variant="outline"
-            size="sm"
-            className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
-            onClick={actions.seedSample}
-            disabled={isAuthenticated}
-            title={sidebarCollapsed ? "デモデータ投入" : undefined}
-          >
-            <Plus className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
-            {!sidebarCollapsed && "デモデータ投入"}
-          </Button>
-          <Button
-            type="button"
-            variant="ghost"
-            size="sm"
-            className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
-            onClick={handleResetLocalStorage}
-            disabled={isAuthenticated}
-            title={sidebarCollapsed ? "データクリア" : undefined}
-          >
-            <Menu className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
-            {!sidebarCollapsed && "データクリア"}
-          </Button>
-          {!isAuthenticated ? (
-            <>
-              <Button
+            {!isAuthenticated && (
+              <>
+                <button
+                  type="button"
+                  onClick={handleExportBackupJson}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  title={sidebarCollapsed ? "バックアップ" : undefined}
+                >
+                  <FileDown className="h-4 w-4 shrink-0" />
+                  {!sidebarCollapsed && <span className="truncate">バックアップ</span>}
+                </button>
+                <button
+                  type="button"
+                  onClick={handleOpenBackupImport}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  title={sidebarCollapsed ? "復元" : undefined}
+                >
+                  <FileUp className="h-4 w-4 shrink-0" />
+                  {!sidebarCollapsed && <span className="truncate">復元</span>}
+                </button>
+              </>
+            )}
+            <button
+              type="button"
+              onClick={handleResetLocalStorage}
+              disabled={isAuthenticated}
+              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                isAuthenticated
+                  ? "cursor-not-allowed opacity-50"
+                  : "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+              }`}
+              title={sidebarCollapsed ? "データクリア" : undefined}
+            >
+              <X className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && <span className="truncate">データクリア</span>}
+            </button>
+            {!isAuthenticated ? (
+              <button
                 type="button"
-                variant="outline"
-                size="sm"
-                className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
-                onClick={handleExportBackupJson}
-                title={sidebarCollapsed ? "バックアップ" : undefined}
-              >
-                <FileDown className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
-                {!sidebarCollapsed && "バックアップ"}
-              </Button>
-              <Button
-                type="button"
-                variant="outline"
-                size="sm"
-                className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
-                onClick={handleOpenBackupImport}
-                title={sidebarCollapsed ? "復元" : undefined}
-              >
-                <FileUp className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
-                {!sidebarCollapsed && "復元"}
-              </Button>
-              <Button
-                type="button"
-                variant="default"
-                size="sm"
-                className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
                 onClick={() => setLoginPanelOpen(true)}
+                className="flex w-full items-center gap-3 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
                 title={sidebarCollapsed ? "ログイン" : undefined}
               >
-                <PanelLeftOpen className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
-                {!sidebarCollapsed && "ログイン"}
-              </Button>
-            </>
-          ) : (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
-              onClick={handleLogout}
-              title={sidebarCollapsed ? "ログアウト" : undefined}
-            >
-              <PanelLeftClose className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
-              {!sidebarCollapsed && "ログアウト"}
-            </Button>
-          )}
-        </div>
-      </aside>
+                <LogIn className="h-4 w-4 shrink-0" />
+                {!sidebarCollapsed && <span>ログイン</span>}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={handleLogout}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title={sidebarCollapsed ? "ログアウト" : undefined}
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                {!sidebarCollapsed && <span>ログアウト</span>}
+              </button>
+            )}
+          </div>
+        </aside>
 
-      <input
-        ref={backupImportInputRef}
-        type="file"
-        accept="application/json,.json"
-        className="hidden"
-        onChange={handleImportBackupJson}
-      />
+        <input
+          ref={backupImportInputRef}
+          type="file"
+          accept="application/json,.json"
+          className="hidden"
+          onChange={handleImportBackupJson}
+        />
 
-      <main className={`mx-auto min-h-screen w-full ${mainMaxWidth} space-y-8 px-4 py-10`}>
-      <header className="flex flex-col gap-2">
-        <h1 className="text-3xl font-semibold">コスト設計ダッシュボード</h1>
-        <p className="text-muted-foreground">
-          マスタ登録から商品原価の入力、分析カードの確認までを一元管理できるダッシュボードです。
-        </p>
-        <div className="flex flex-wrap gap-2 text-sm text-muted-foreground">
-          <Badge variant="outline">マスタ {data.materials.length + data.packagingItems.length + data.laborRoles.length + data.equipments.length} 件</Badge>
-          <Badge variant="outline">商品 {data.products.length} 件</Badge>
-          <Badge variant="outline">コスト明細 {Object.values(data.costEntries).reduce((sum, list) => sum + list.length, 0)} 件</Badge>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
-          {isAuthenticated ? (
-            <Badge variant="default">{authState.user.email}</Badge>
-          ) : (
-            <Badge variant="outline">ゲストモード</Badge>
-          )}
-          {isSaving && (
-            <Badge variant="outline" className="text-muted-foreground">
-              保存中...
-            </Badge>
-          )}
-          {!isAuthenticated ? (
-            <Button type="button" size="sm" onClick={() => setLoginPanelOpen((prev) => !prev)}>
-              ログイン
-            </Button>
-          ) : null}
-        </div>
-        <Button type="button" variant="outline" className="mt-2 w-full md:hidden" onClick={() => setMobileNavOpen(true)}>
-          <Menu className="mr-2 h-4 w-4" />
-          メニューを開く
-        </Button>
-        {loginPanelOpen && authState.status !== "authenticated" && (
-          <Card className="mt-3 border-primary/50 bg-background/95 shadow-lg">
-            <CardHeader>
-              <CardTitle className="text-base">ログインして保存を共有</CardTitle>
-              <CardDescription>
-                {authMode === "login" ? "登録済みのメール・パスワードでログインします。" : "新規登録して Supabase 上にデータを保存します。"}
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <form className="space-y-3" onSubmit={handleLoginSubmit}>
-                {authMode === "signup" && (
-                  <div className="space-y-1">
-                    <label className="text-xs text-muted-foreground">氏名</label>
-                    <Input
-                      value={loginForm.name}
-                      onChange={(event) => setLoginForm((prev) => ({ ...prev, name: event.target.value }))}
-                      placeholder="例: コスト太郎"
-                    />
-                  </div>
-                )}
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">メールアドレス</label>
-                  <Input
-                    type="email"
-                    value={loginForm.email}
-                    onChange={(event) => setLoginForm((prev) => ({ ...prev, email: event.target.value }))}
-                    placeholder="example@example.com"
-                  />
-                </div>
-                <div className="space-y-1">
-                  <label className="text-xs text-muted-foreground">パスワード</label>
-                  <Input
-                    type="password"
-                    value={loginForm.password}
-                    onChange={(event) => setLoginForm((prev) => ({ ...prev, password: event.target.value }))}
-                    placeholder="8文字以上"
-                  />
-                </div>
-                <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
-                  <button
-                    type="button"
-                    className={`rounded border px-2 py-1 ${authMode === "login" ? "border-primary text-primary" : "border-transparent"}`}
-                    onClick={() => {
-                      setAuthMode("login")
-                      setResetPasswordOpen(false)
-                    }}
-                  >
-                    ログイン
-                  </button>
-                  <button
-                    type="button"
-                    className={`rounded border px-2 py-1 ${authMode === "signup" ? "border-primary text-primary" : "border-transparent"}`}
-                    onClick={() => {
-                      setAuthMode("signup")
-                      setResetPasswordOpen(false)
-                    }}
-                  >
-                    新規登録
-                  </button>
-                </div>
-                {authMode === "login" && (
-                  <div className="space-y-2">
-                    <button
-                      type="button"
-                      className="text-xs text-primary underline underline-offset-2"
-                      onClick={() => setResetPasswordOpen((prev) => !prev)}
-                    >
-                      パスワードを忘れた方はこちら
-                    </button>
-                    {resetPasswordOpen && (
-                      <div className="rounded-md border border-dashed p-3">
-                        <p className="mb-2 text-xs text-muted-foreground">
-                          入力したメールアドレス宛に、パスワードリセットメールを送信します。
-                        </p>
-                        <p className="mb-2 text-xs text-muted-foreground">
-                          上のメールアドレス欄を入力してから送信してください。
-                        </p>
-                        <Button type="button" size="sm" variant="outline" onClick={handlePasswordReset} disabled={isSendingReset}>
-                          {isSendingReset ? "送信中..." : "リセットメールを送信"}
-                        </Button>
-                      </div>
-                    )}
-                  </div>
-                )}
-                <div className="flex flex-wrap gap-2">
-                  <Button type="submit" size="sm">
-                    {authMode === "login" ? "ログイン" : "登録してログイン"}
-                  </Button>
-                  <Button type="button" size="sm" variant="ghost" onClick={() => setLoginPanelOpen(false)}>
-                    キャンセル
-                  </Button>
-                </div>
-              </form>
-            </CardContent>
-          </Card>
-        )}
-      </header>
-
-      {mobileNavOpen && (
-        <div className="fixed inset-0 z-50 bg-black/40 px-4 pb-8 pt-16 md:hidden">
-          <div className="mx-auto max-w-sm rounded-2xl bg-background p-4 shadow-lg">
-            <div className="mb-3 flex items-center justify-between">
-              <p className="text-sm font-semibold">移動先を選択</p>
-              <Button type="button" size="sm" variant="ghost" onClick={() => setMobileNavOpen(false)}>
-                閉じる
-              </Button>
-            </div>
-            <div className="space-y-2">
-              {tabOptions.map((tab) => (
-                <Button
-                  key={tab.value}
-                  type="button"
-                  variant={activeTab === tab.value ? "secondary" : "outline"}
-                  className="w-full justify-between"
-                  onClick={() => handleTabChange(tab.value)}
-                >
-                  {tab.label}
+        <div className="flex min-h-screen flex-1 flex-col">
+          {/* スティッキーヘッダー */}
+          <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
+            <div className="flex h-14 items-center justify-between gap-2 px-3 md:px-6">
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="ghost" size="sm" className="md:hidden" onClick={() => setMobileNavOpen(true)}>
+                  <Menu className="h-4 w-4" />
                 </Button>
-              ))}
-              <div className="mt-3 space-y-2 border-t pt-3">
-                <Button type="button" variant="outline" className="w-full justify-start" onClick={actions.seedSample} disabled={isAuthenticated}>
-                  デモデータ投入
-                </Button>
-                <Button type="button" variant="ghost" className="w-full justify-start" onClick={handleResetLocalStorage} disabled={isAuthenticated}>
-                  データクリア
-                </Button>
+                <span className="text-sm font-semibold">コスト設計ダッシュボード</span>
+                {isSaving && <Badge variant="outline" className="text-xs text-muted-foreground">保存中...</Badge>}
+              </div>
+              {/* ヘッダー右上: ゲスト時はログインボタン、ログイン時はメールアドレス */}
+              <div className="flex items-center gap-2">
                 {!isAuthenticated ? (
-                  <>
-                    <Button type="button" variant="outline" className="w-full justify-start" onClick={handleExportBackupJson}>
-                      バックアップ
-                    </Button>
-                    <Button type="button" variant="outline" className="w-full justify-start" onClick={handleOpenBackupImport}>
-                      復元
-                    </Button>
-                    <Button type="button" className="w-full justify-start" onClick={() => setLoginPanelOpen(true)}>
-                      ログイン
-                    </Button>
-                  </>
-                ) : (
-                  <Button type="button" variant="outline" className="w-full justify-start" onClick={handleLogout}>
-                    ログアウト
+                  <Button type="button" size="sm" onClick={() => setLoginPanelOpen(true)}>
+                    <LogIn className="mr-1.5 h-4 w-4" />
+                    ログイン
                   </Button>
+                ) : (
+                  <span className="text-sm text-muted-foreground">ログイン中: {authState.user.email}</span>
                 )}
               </div>
             </div>
-          </div>
-        </div>
-      )}
+          </header>
+
+          <main className={`flex-1 p-4 md:p-6 ${mainMaxWidth}`}>
+            {/* ログインパネル */}
+            {loginPanelOpen && authState.status !== "authenticated" && (
+              <Card className="mb-6 border-primary/50 bg-background/95 shadow-lg">
+                <CardHeader>
+                  <CardTitle className="text-base">ログインして保存を共有</CardTitle>
+                  <CardDescription>
+                    {authMode === "login" ? "登録済みのメール・パスワードでログインします。" : "新規登録して Supabase 上にデータを保存します。"}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <form className="space-y-3" onSubmit={handleLoginSubmit}>
+                    {authMode === "signup" && (
+                      <div className="space-y-1">
+                        <label className="text-xs text-muted-foreground">氏名</label>
+                        <Input
+                          value={loginForm.name}
+                          onChange={(event) => setLoginForm((prev) => ({ ...prev, name: event.target.value }))}
+                          placeholder="例: コスト太郎"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">メールアドレス</label>
+                      <Input
+                        type="email"
+                        value={loginForm.email}
+                        onChange={(event) => setLoginForm((prev) => ({ ...prev, email: event.target.value }))}
+                        placeholder="example@example.com"
+                      />
+                    </div>
+                    <div className="space-y-1">
+                      <label className="text-xs text-muted-foreground">パスワード</label>
+                      <Input
+                        type="password"
+                        value={loginForm.password}
+                        onChange={(event) => setLoginForm((prev) => ({ ...prev, password: event.target.value }))}
+                        placeholder="8文字以上"
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+                      <button
+                        type="button"
+                        className={`rounded border px-2 py-1 ${authMode === "login" ? "border-primary text-primary" : "border-transparent"}`}
+                        onClick={() => {
+                          setAuthMode("login")
+                          setResetPasswordOpen(false)
+                        }}
+                      >
+                        ログイン
+                      </button>
+                      <button
+                        type="button"
+                        className={`rounded border px-2 py-1 ${authMode === "signup" ? "border-primary text-primary" : "border-transparent"}`}
+                        onClick={() => {
+                          setAuthMode("signup")
+                          setResetPasswordOpen(false)
+                        }}
+                      >
+                        新規登録
+                      </button>
+                    </div>
+                    {authMode === "login" && (
+                      <div className="space-y-2">
+                        <button
+                          type="button"
+                          className="text-xs text-primary underline underline-offset-2"
+                          onClick={() => setResetPasswordOpen((prev) => !prev)}
+                        >
+                          パスワードを忘れた方はこちら
+                        </button>
+                        {resetPasswordOpen && (
+                          <div className="rounded-md border border-dashed p-3">
+                            <p className="mb-2 text-xs text-muted-foreground">
+                              入力したメールアドレス宛に、パスワードリセットメールを送信します。
+                            </p>
+                            <p className="mb-2 text-xs text-muted-foreground">
+                              上のメールアドレス欄を入力してから送信してください。
+                            </p>
+                            <Button type="button" size="sm" variant="outline" onClick={handlePasswordReset} disabled={isSendingReset}>
+                              {isSendingReset ? "送信中..." : "リセットメールを送信"}
+                            </Button>
+                          </div>
+                        )}
+                      </div>
+                    )}
+                    <div className="flex flex-wrap gap-2">
+                      <Button type="submit" size="sm">
+                        {authMode === "login" ? "ログイン" : "登録してログイン"}
+                      </Button>
+                      <Button type="button" size="sm" variant="ghost" onClick={() => setLoginPanelOpen(false)}>
+                        キャンセル
+                      </Button>
+                    </div>
+                  </form>
+                </CardContent>
+              </Card>
+            )}
 
       <Tabs value={activeTab} onValueChange={handleTabChange}>
 
@@ -1173,8 +1114,106 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+          </main>
+        </div>
+      </div>
 
-    </main>
+      {/* モバイルドロワーメニュー */}
+      {mobileNavOpen && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <button type="button" className="absolute inset-0 bg-black/40" onClick={() => setMobileNavOpen(false)} aria-label="メニューを閉じる" />
+          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col border-r bg-card p-3 shadow-lg">
+            <div className="mb-3 flex items-center justify-between">
+              <p className="text-sm font-semibold">Cost App</p>
+              <Button type="button" variant="ghost" size="sm" onClick={() => setMobileNavOpen(false)}>
+                <X className="h-4 w-4" />
+              </Button>
+            </div>
+            <nav className="space-y-1">
+              {tabOptions.map((tab) => (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => handleTabChange(tab.value)}
+                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm ${
+                    activeTab === tab.value
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px]">{tab.label[0]}</span>
+                  <span className="truncate">{tab.label}</span>
+                </button>
+              ))}
+            </nav>
+            <div className="mt-auto space-y-1 border-t pt-3">
+              <button
+                type="button"
+                onClick={() => { actions.seedSample(); setMobileNavOpen(false) }}
+                disabled={isAuthenticated}
+                className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                  isAuthenticated ? "cursor-not-allowed opacity-50" : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <Plus className="h-4 w-4 shrink-0" />
+                <span>デモデータ投入</span>
+              </button>
+              {!isAuthenticated && (
+                <>
+                  <button
+                    type="button"
+                    onClick={() => { handleExportBackupJson(); setMobileNavOpen(false) }}
+                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <FileDown className="h-4 w-4 shrink-0" />
+                    <span>バックアップ</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => { handleOpenBackupImport(); setMobileNavOpen(false) }}
+                    className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  >
+                    <FileUp className="h-4 w-4 shrink-0" />
+                    <span>復元</span>
+                  </button>
+                </>
+              )}
+              <button
+                type="button"
+                onClick={() => { handleResetLocalStorage(); setMobileNavOpen(false) }}
+                disabled={isAuthenticated}
+                className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                  isAuthenticated
+                    ? "cursor-not-allowed opacity-50"
+                    : "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+                }`}
+              >
+                <X className="h-4 w-4 shrink-0" />
+                <span>データクリア</span>
+              </button>
+              {!isAuthenticated ? (
+                <button
+                  type="button"
+                  onClick={() => { setLoginPanelOpen(true); setMobileNavOpen(false) }}
+                  className="flex w-full items-center gap-3 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  <LogIn className="h-4 w-4 shrink-0" />
+                  <span>ログイン</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { handleLogout(); setMobileNavOpen(false) }}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <LogOut className="h-4 w-4 shrink-0" />
+                  <span>ログアウト</span>
+                </button>
+              )}
+            </div>
+          </aside>
+        </div>
+      )}
     </div>
   )
 }
