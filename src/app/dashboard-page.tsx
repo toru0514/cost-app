@@ -36,7 +36,7 @@ import {
 } from "./_components/product-list/customizable-product-table"
 import { ProductTab } from "./_components/product/product-tab"
 import { StockListTab } from "./_components/stock-list/stock-list-tab"
-import { FileDown, FileUp, LogIn, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Plus, X } from "lucide-react"
+import { ChevronDown, FileDown, FileUp, Filter, LogIn, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Plus, Search, X } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
 import { useRouter } from "next/navigation"
@@ -938,41 +938,33 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
         </TabsContent>
 
         <TabsContent value="list" className="space-y-6">
-          <section className="space-y-4">
+          <div className="space-y-4">
+            {/* ページヘッダー */}
             <div>
-              <h2 className="text-xl font-semibold">商品一覧</h2>
-              <p className="text-sm text-muted-foreground">登録済み商品のカテゴリ・オプション・備考を確認</p>
-              <p className="text-xs text-muted-foreground">該当 {filteredProductEntries.length} 件</p>
+              <h1 className="text-2xl font-semibold">商品/在庫一覧</h1>
+              <p className="text-muted-foreground">登録済み商品のカテゴリ・オプション・備考を確認</p>
             </div>
-            <div className="space-y-3 rounded-lg border p-4">
-              <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div className="flex flex-wrap gap-2">
-                  <Button type="button" size="sm" onClick={handleCreateProduct}>
-                    <Plus className="mr-1.5 h-4 w-4" />
-                    新規商品を登録
-                  </Button>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="outline"
-                    onClick={handleExportProductsCsv}
-                    disabled={data.products.length === 0}
-                  >
-                    <FileDown className="mr-1.5 h-4 w-4" />
-                    CSVエクスポート
-                  </Button>
+
+            {/* ツールバー */}
+            <div className="flex flex-wrap items-center justify-between gap-3">
+              <div className="flex items-center gap-2">
+                {/* 検索ボックス（Searchアイコン付き） */}
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    type="text"
+                    value={productSearchQuery}
+                    onChange={(event) => setProductSearchQuery(event.target.value)}
+                    placeholder="商品を検索..."
+                    className="h-9 w-64 rounded-md border bg-transparent pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+                  />
                 </div>
-              </div>
-              <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-                <Input
-                  value={productSearchQuery}
-                  onChange={(event) => setProductSearchQuery(event.target.value)}
-                  placeholder="商品名・備考・設備で検索"
-                  className="w-full flex-1 min-w-[220px]"
-                />
+                {/* フィルターボタン（カテゴリ・ソート用Popover的に） */}
                 <Select value={productCategoryLargeFilter ?? "all"} onValueChange={handleCategoryLargeFilterChange}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="大カテゴリで絞り込み" />
+                  <SelectTrigger className="h-9 w-auto gap-1.5 border px-3">
+                    <Filter className="h-4 w-4" />
+                    <SelectValue placeholder="カテゴリ" />
+                    <ChevronDown className="h-3 w-3" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">すべてのカテゴリ</SelectItem>
@@ -983,34 +975,8 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select value={productCategoryMediumFilter ?? "all"} onValueChange={handleCategoryMediumFilterChange}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="中カテゴリで絞り込み" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">すべての中カテゴリ</SelectItem>
-                    {availableMediumCategories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-                <Select value={productCategorySmallFilter ?? "all"} onValueChange={handleCategorySmallFilterChange}>
-                  <SelectTrigger className="w-full md:w-48">
-                    <SelectValue placeholder="小カテゴリで絞り込み" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">すべての小カテゴリ</SelectItem>
-                    {availableSmallCategories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
                 <Select value={productSortKey} onValueChange={setProductSortKey}>
-                  <SelectTrigger className="w-full md:w-48">
+                  <SelectTrigger className="h-9 w-auto gap-1.5 border px-3">
                     <SelectValue placeholder="並び替え" />
                   </SelectTrigger>
                   <SelectContent>
@@ -1025,26 +991,48 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
                   </SelectContent>
                 </Select>
               </div>
-              {data.products.length === 0 ? (
-                <p className="text-sm text-muted-foreground">まだ商品がありません。</p>
-              ) : filteredProductEntries.length === 0 ? (
-                <p className="text-sm text-muted-foreground">条件に一致する商品がありません。</p>
-              ) : (
-                <CustomizableProductTable
-                  entries={filteredProductEntries}
-                  isAuthenticated={isAuthenticated}
-                  stocks={stocks}
-                  stocksLoaded={stocksLoaded}
-                  columnSettings={productTableColumnSettings}
-                  onColumnSettingsChange={handleProductTableColumnSettingsChange}
-                  onAdjustStock={adjustStock}
-                  onEdit={handleEditProduct}
-                  onCopy={handleCopyProduct}
-                  onDelete={handleDeleteProduct}
-                />
-              )}
+              <div className="flex items-center gap-2">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  onClick={handleExportProductsCsv}
+                  disabled={data.products.length === 0}
+                >
+                  <FileDown className="mr-1.5 h-4 w-4" />
+                  CSVエクスポート
+                </Button>
+                <button
+                  type="button"
+                  onClick={handleCreateProduct}
+                  className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm text-primary-foreground hover:bg-primary/90"
+                >
+                  <Plus className="h-4 w-4" />
+                  新規追加
+                </button>
+              </div>
             </div>
-          </section>
+
+            {/* テーブル */}
+            {data.products.length === 0 ? (
+              <p className="text-sm text-muted-foreground">まだ商品がありません。</p>
+            ) : filteredProductEntries.length === 0 ? (
+              <p className="text-sm text-muted-foreground">条件に一致する商品がありません。</p>
+            ) : (
+              <CustomizableProductTable
+                entries={filteredProductEntries}
+                isAuthenticated={isAuthenticated}
+                stocks={stocks}
+                stocksLoaded={stocksLoaded}
+                columnSettings={productTableColumnSettings}
+                onColumnSettingsChange={handleProductTableColumnSettingsChange}
+                onAdjustStock={adjustStock}
+                onEdit={handleEditProduct}
+                onCopy={handleCopyProduct}
+                onDelete={handleDeleteProduct}
+              />
+            )}
+          </div>
 
           <StockListTab
             data={data}
