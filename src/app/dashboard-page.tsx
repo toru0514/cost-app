@@ -679,33 +679,89 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
           ))}
         </nav>
         <div className="mt-auto space-y-2 border-t pt-3">
-          <Button type="button" variant="outline" size="sm" className="w-full justify-start" onClick={actions.seedSample} disabled={isAuthenticated}>
-            デモデータ投入
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
+            onClick={actions.seedSample}
+            disabled={isAuthenticated}
+            title={sidebarCollapsed ? "デモデータ投入" : undefined}
+          >
+            <Plus className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
+            {!sidebarCollapsed && "デモデータ投入"}
           </Button>
-          <Button type="button" variant="ghost" size="sm" className="w-full justify-start" onClick={handleResetLocalStorage} disabled={isAuthenticated}>
-            データクリア
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
+            onClick={handleResetLocalStorage}
+            disabled={isAuthenticated}
+            title={sidebarCollapsed ? "データクリア" : undefined}
+          >
+            <Menu className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
+            {!sidebarCollapsed && "データクリア"}
           </Button>
           {!isAuthenticated ? (
             <>
-              <Button type="button" variant="outline" size="sm" className="w-full justify-start" onClick={handleExportBackupJson}>
-                <FileDown className="mr-1.5 h-4 w-4" />
-                バックアップ
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
+                onClick={handleExportBackupJson}
+                title={sidebarCollapsed ? "バックアップ" : undefined}
+              >
+                <FileDown className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
+                {!sidebarCollapsed && "バックアップ"}
               </Button>
-              <Button type="button" variant="outline" size="sm" className="w-full justify-start" onClick={handleOpenBackupImport}>
-                <FileUp className="mr-1.5 h-4 w-4" />
-                復元
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
+                onClick={handleOpenBackupImport}
+                title={sidebarCollapsed ? "復元" : undefined}
+              >
+                <FileUp className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
+                {!sidebarCollapsed && "復元"}
               </Button>
-              <Button type="button" variant="default" size="sm" className="w-full justify-start" onClick={() => setLoginPanelOpen(true)}>
-                ログイン
+              <Button
+                type="button"
+                variant="default"
+                size="sm"
+                className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
+                onClick={() => setLoginPanelOpen(true)}
+                title={sidebarCollapsed ? "ログイン" : undefined}
+              >
+                <PanelLeftOpen className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
+                {!sidebarCollapsed && "ログイン"}
               </Button>
             </>
           ) : (
-            <Button type="button" variant="outline" size="sm" className="w-full justify-start" onClick={handleLogout}>
-              ログアウト
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className={`w-full ${sidebarCollapsed ? "justify-center px-0" : "justify-start"}`}
+              onClick={handleLogout}
+              title={sidebarCollapsed ? "ログアウト" : undefined}
+            >
+              <PanelLeftClose className={sidebarCollapsed ? "h-4 w-4" : "mr-1.5 h-4 w-4"} />
+              {!sidebarCollapsed && "ログアウト"}
             </Button>
           )}
         </div>
       </aside>
+
+      <input
+        ref={backupImportInputRef}
+        type="file"
+        accept="application/json,.json"
+        className="hidden"
+        onChange={handleImportBackupJson}
+      />
 
       <main className={`mx-auto min-h-screen w-full ${mainMaxWidth} space-y-8 px-4 py-10`}>
       <header className="flex flex-col gap-2">
@@ -717,48 +773,13 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
           <Badge variant="outline">マスタ {data.materials.length + data.packagingItems.length + data.laborRoles.length + data.equipments.length} 件</Badge>
           <Badge variant="outline">商品 {data.products.length} 件</Badge>
           <Badge variant="outline">コスト明細 {Object.values(data.costEntries).reduce((sum, list) => sum + list.length, 0)} 件</Badge>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={actions.seedSample}
-            disabled={isAuthenticated}
-            title={isAuthenticated ? "ログイン中は利用できません" : undefined}
-          >
-            デモデータ投入
-          </Button>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={handleResetLocalStorage}
-            disabled={isAuthenticated}
-            title={isAuthenticated ? "ログイン中は利用できません" : undefined}
-          >
-            ローカル保存をクリア
-          </Button>
-          {!isAuthenticated ? (
-            <>
-              <Button variant="outline" size="sm" onClick={handleExportBackupJson}>
-                <FileDown className="mr-1.5 h-4 w-4" />
-                バックアップ
-              </Button>
-              <Button variant="outline" size="sm" onClick={handleOpenBackupImport}>
-                <FileUp className="mr-1.5 h-4 w-4" />
-                復元
-              </Button>
-              <input
-                ref={backupImportInputRef}
-                type="file"
-                accept="application/json,.json"
-                className="hidden"
-                onChange={handleImportBackupJson}
-              />
-            </>
-          ) : null}
         </div>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={isAuthenticated ? "default" : "outline"}>
-            {isAuthenticated ? `ログイン中: ${authState.user.name ?? authState.user.email}` : "ゲストモード"}
-          </Badge>
+          {isAuthenticated ? (
+            <Badge variant="default">{authState.user.email}</Badge>
+          ) : (
+            <Badge variant="outline">ゲストモード</Badge>
+          )}
           {isSaving && (
             <Badge variant="outline" className="text-muted-foreground">
               保存中...
@@ -768,11 +789,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
             <Button type="button" size="sm" onClick={() => setLoginPanelOpen((prev) => !prev)}>
               ログイン
             </Button>
-          ) : (
-            <Button type="button" size="sm" variant="outline" onClick={handleLogout}>
-              ログアウト
-            </Button>
-          )}
+          ) : null}
         </div>
         <Button type="button" variant="outline" className="mt-2 w-full md:hidden" onClick={() => setMobileNavOpen(true)}>
           <Menu className="mr-2 h-4 w-4" />
@@ -897,6 +914,31 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
                   {tab.label}
                 </Button>
               ))}
+              <div className="mt-3 space-y-2 border-t pt-3">
+                <Button type="button" variant="outline" className="w-full justify-start" onClick={actions.seedSample} disabled={isAuthenticated}>
+                  デモデータ投入
+                </Button>
+                <Button type="button" variant="ghost" className="w-full justify-start" onClick={handleResetLocalStorage} disabled={isAuthenticated}>
+                  データクリア
+                </Button>
+                {!isAuthenticated ? (
+                  <>
+                    <Button type="button" variant="outline" className="w-full justify-start" onClick={handleExportBackupJson}>
+                      バックアップ
+                    </Button>
+                    <Button type="button" variant="outline" className="w-full justify-start" onClick={handleOpenBackupImport}>
+                      復元
+                    </Button>
+                    <Button type="button" className="w-full justify-start" onClick={() => setLoginPanelOpen(true)}>
+                      ログイン
+                    </Button>
+                  </>
+                ) : (
+                  <Button type="button" variant="outline" className="w-full justify-start" onClick={handleLogout}>
+                    ログアウト
+                  </Button>
+                )}
+              </div>
             </div>
           </div>
         </div>
