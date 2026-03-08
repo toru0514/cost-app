@@ -893,7 +893,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
               </Card>
             )}
 
-      <Tabs value={activeTab} onValueChange={handleTabChange}>
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="dashboard-table-style">
 
         <TabsContent value="cost" className="space-y-6">
           <CostTab data={data} />

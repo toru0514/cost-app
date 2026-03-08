@@ -166,3 +166,36 @@
     opacity: 1;
   }
 }
+
+.dashboard-table-style [data-slot="card"] {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  gap: 0.75rem !important;
+}
+
+.dashboard-table-style [data-slot="card-header"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.dashboard-table-style [data-slot="card-content"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.dashboard-table-style [data-slot="table"] {
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+.dashboard-table-style [data-slot="table-header"] [data-slot="table-row"] {
+  background: var(--color-muted) !important;
+}
+
+.dashboard-table-style [data-slot="table-head"] {
+  font-weight: 600 !important;
+}
