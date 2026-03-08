@@ -47,8 +47,7 @@ const tabOptions = [
   { value: "analytics", label: "集計データ" },
   { value: "product", label: "商品登録" },
   { value: "master", label: "マスタ登録" },
-  { value: "list", label: "商品一覧" },
-  { value: "stock", label: "在庫一覧" },
+  { value: "list", label: "商品/在庫一覧" },
   { value: "bulk", label: "一括処理" },
   { value: "audit", label: "監査ログ" },
 ] as const
@@ -1115,9 +1114,7 @@ export default function Home() {
               )}
             </CardContent>
           </Card>
-        </TabsContent>
 
-        <TabsContent value="stock" className="space-y-6">
           <StockListTab
             data={data}
             materialStocks={materialStocks}
