@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import type { AppData } from "@/lib/types"
@@ -33,8 +33,34 @@ const defaultOpenState: Record<CostSectionKey, boolean> = {
   logisticsElectricity: true,
 }
 
+const COST_TAB_OPEN_STATE_STORAGE_KEY = "cost-app-cost-tab-open-state"
+
+const loadCostTabOpenState = (): Record<CostSectionKey, boolean> => {
+  if (typeof window === "undefined") return defaultOpenState
+  try {
+    const raw = window.localStorage.getItem(COST_TAB_OPEN_STATE_STORAGE_KEY)
+    if (!raw) return defaultOpenState
+    const parsed = JSON.parse(raw) as Partial<Record<CostSectionKey, unknown>>
+    return {
+      summary: typeof parsed.summary === "boolean" ? parsed.summary : defaultOpenState.summary,
+      profitSimulation: typeof parsed.profitSimulation === "boolean" ? parsed.profitSimulation : defaultOpenState.profitSimulation,
+      packaging: typeof parsed.packaging === "boolean" ? parsed.packaging : defaultOpenState.packaging,
+      laborOutsourcing: typeof parsed.laborOutsourcing === "boolean" ? parsed.laborOutsourcing : defaultOpenState.laborOutsourcing,
+      developmentEquipment: typeof parsed.developmentEquipment === "boolean" ? parsed.developmentEquipment : defaultOpenState.developmentEquipment,
+      logisticsElectricity: typeof parsed.logisticsElectricity === "boolean" ? parsed.logisticsElectricity : defaultOpenState.logisticsElectricity,
+    }
+  } catch {
+    return defaultOpenState
+  }
+}
+
 export function CostTab({ data }: CostTabProps) {
-  const [openState, setOpenState] = useState<Record<CostSectionKey, boolean>>(defaultOpenState)
+  const [openState, setOpenState] = useState<Record<CostSectionKey, boolean>>(() => loadCostTabOpenState())
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(COST_TAB_OPEN_STATE_STORAGE_KEY, JSON.stringify(openState))
+  }, [openState])
 
   const setAllOpenState = (value: boolean) => {
     setOpenState({
