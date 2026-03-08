@@ -1,16 +1,16 @@
 import { notFound } from "next/navigation"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { Search, Filter, Plus, MoreHorizontal, ChevronDown } from "lucide-react"
 
 const sections = {
   cost: { title: "原価サマリ", description: "原価・収支関連のサンプル表示", maxWidth: "max-w-6xl" },
   analytics: { title: "集計データ", description: "集計グラフ・統計の配置確認", maxWidth: "max-w-6xl" },
   product: { title: "商品登録", description: "登録フォームと一覧のレイアウト確認", maxWidth: "max-w-4xl" },
   master: { title: "マスタ登録", description: "カテゴリ・材料・梱包材の管理画面確認", maxWidth: "max-w-5xl" },
-  list: { title: "商品/在庫一覧", description: "商品一覧と在庫一覧の統合後レイアウト確認（全幅）", maxWidth: "max-w-full" },
+  list: { title: "商品/在庫一覧", description: "商品一覧と在庫一覧の統合後レイアウト確認", maxWidth: "max-w-full" },
   bulk: { title: "一括処理", description: "インポート/エクスポート関連の導線確認", maxWidth: "max-w-4xl" },
-  audit: { title: "監査ログ", description: "履歴表示とフィルター導線の確認（全幅）", maxWidth: "max-w-full" },
+  audit: { title: "監査ログ", description: "履歴表示とフィルター導線の確認", maxWidth: "max-w-full" },
 } as const
 
 type SectionKey = keyof typeof sections
@@ -23,142 +23,274 @@ export default async function UiPrototypeSectionPage({ params }: { params: Promi
 
   const current = sections[section as SectionKey]
 
-  // listセクション用のサンプルテーブル（カラム多め）
-  const renderListSample = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>商品一覧（サンプル: 12カラム）</CardTitle>
-        <CardDescription>全幅表示により横スクロールが減少するか確認</CardDescription>
-      </CardHeader>
-      <CardContent>
-        <div className="overflow-x-auto">
+  // テーブル中心デザイン: 商品一覧
+  const renderTableCentricList = () => (
+    <div className="space-y-4">
+      {/* ツールバー: 検索・フィルター・アクション */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <input
+              type="text"
+              placeholder="商品を検索..."
+              className="h-9 w-64 rounded-md border bg-transparent pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            />
+          </div>
+          <button className="flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm text-muted-foreground hover:bg-muted">
+            <Filter className="h-4 w-4" />
+            フィルター
+            <ChevronDown className="h-3 w-3" />
+          </button>
+        </div>
+        <button className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm text-primary-foreground hover:bg-primary/90">
+          <Plus className="h-4 w-4" />
+          新規追加
+        </button>
+      </div>
+
+      {/* テーブル: カードなしで直接配置 */}
+      <div className="rounded-lg border">
+        <Table>
+          <TableHeader>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="w-[200px] font-semibold">商品名</TableHead>
+              <TableHead className="font-semibold">カテゴリ</TableHead>
+              <TableHead className="font-semibold">生産計画</TableHead>
+              <TableHead className="font-semibold">設備</TableHead>
+              <TableHead className="text-right font-semibold">材料費</TableHead>
+              <TableHead className="text-right font-semibold">人件費</TableHead>
+              <TableHead className="text-right font-semibold">梱包費</TableHead>
+              <TableHead className="text-right font-semibold">原価合計</TableHead>
+              <TableHead className="text-right font-semibold">在庫</TableHead>
+              <TableHead className="w-[100px]"></TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {[
+              { name: "チョコレートケーキ", category: "食品 / 菓子類 / 焼き菓子", plan: "120個/年", equip: "オーブンA", mat: 450, labor: 280, pack: 120, stock: 15 },
+              { name: "バニラクッキー", category: "食品 / 菓子類 / 焼き菓子", plan: "200個/年", equip: "オーブンB", mat: 180, labor: 150, pack: 80, stock: 42 },
+              { name: "抹茶マフィン", category: "食品 / 菓子類 / 焼き菓子", plan: "80個/年", equip: "オーブンA", mat: 320, labor: 200, pack: 100, stock: 8 },
+              { name: "フルーツタルト", category: "食品 / 菓子類 / 生菓子", plan: "60個/年", equip: "冷蔵庫A", mat: 580, labor: 350, pack: 150, stock: 3 },
+              { name: "カスタードプリン", category: "食品 / 菓子類 / 生菓子", plan: "150個/年", equip: "冷蔵庫B", mat: 220, labor: 180, pack: 90, stock: 25 },
+            ].map((item, i) => (
+              <TableRow key={i} className="group">
+                <TableCell className="font-medium">{item.name}</TableCell>
+                <TableCell className="text-muted-foreground">{item.category}</TableCell>
+                <TableCell>{item.plan}</TableCell>
+                <TableCell>{item.equip}</TableCell>
+                <TableCell className="text-right">¥{item.mat.toLocaleString()}</TableCell>
+                <TableCell className="text-right">¥{item.labor.toLocaleString()}</TableCell>
+                <TableCell className="text-right">¥{item.pack.toLocaleString()}</TableCell>
+                <TableCell className="text-right font-semibold">¥{(item.mat + item.labor + item.pack).toLocaleString()}</TableCell>
+                <TableCell className="text-right">
+                  <span className={`inline-flex min-w-[2rem] justify-center rounded px-1.5 py-0.5 text-xs font-medium ${item.stock < 5 ? "bg-red-100 text-red-700" : item.stock < 10 ? "bg-yellow-100 text-yellow-700" : "bg-green-100 text-green-700"}`}>
+                    {item.stock}
+                  </span>
+                </TableCell>
+                <TableCell>
+                  {/* 行ホバーでアクション表示 */}
+                  <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                      <Plus className="h-4 w-4" />
+                    </button>
+                    <button className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </button>
+                  </div>
+                </TableCell>
+              </TableRow>
+            ))}
+          </TableBody>
+        </Table>
+      </div>
+
+      {/* フッター: ページネーション風 */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>5 件表示中</span>
+        <div className="flex items-center gap-2">
+          <button className="rounded border px-3 py-1 hover:bg-muted">前へ</button>
+          <button className="rounded border px-3 py-1 hover:bg-muted">次へ</button>
+        </div>
+      </div>
+    </div>
+  )
+
+  // テーブル中心デザイン: フォーム（カードなし）
+  const renderTableCentricForm = () => (
+    <div className="space-y-6">
+      {/* セクションヘッダー: シンプルな見出し */}
+      <div className="border-b pb-4">
+        <h2 className="text-lg font-semibold">基本情報</h2>
+        <p className="text-sm text-muted-foreground">商品の基本的な情報を入力してください</p>
+      </div>
+
+      {/* フォームフィールド: カードなしで直接配置 */}
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">商品名 <span className="text-red-500">*</span></label>
+          <input
+            type="text"
+            placeholder="例: チョコレートケーキ"
+            className="h-10 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">カテゴリ <span className="text-red-500">*</span></label>
+          <select className="h-10 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+            <option>カテゴリを選択</option>
+            <option>食品 / 菓子類</option>
+            <option>食品 / 飲料</option>
+          </select>
+        </div>
+      </div>
+
+      <div className="space-y-2">
+        <label className="text-sm font-medium">説明</label>
+        <textarea
+          placeholder="商品の説明を入力..."
+          rows={3}
+          className="w-full rounded-md border bg-transparent px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+        />
+      </div>
+
+      {/* 別セクション */}
+      <div className="border-b pb-4 pt-4">
+        <h2 className="text-lg font-semibold">生産情報</h2>
+        <p className="text-sm text-muted-foreground">生産計画と使用設備を設定</p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-3">
+        <div className="space-y-2">
+          <label className="text-sm font-medium">生産数量</label>
+          <input
+            type="number"
+            placeholder="100"
+            className="h-10 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">期間（年）</label>
+          <input
+            type="number"
+            placeholder="1"
+            className="h-10 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+          />
+        </div>
+        <div className="space-y-2">
+          <label className="text-sm font-medium">使用設備</label>
+          <select className="h-10 w-full rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20">
+            <option>設備を選択</option>
+            <option>オーブンA</option>
+            <option>オーブンB</option>
+          </select>
+        </div>
+      </div>
+
+      {/* アクションボタン */}
+      <div className="flex items-center gap-3 border-t pt-6">
+        <button className="rounded-md bg-primary px-6 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+          保存する
+        </button>
+        <button className="rounded-md border px-6 py-2 text-sm font-medium hover:bg-muted">
+          キャンセル
+        </button>
+      </div>
+    </div>
+  )
+
+  // サマリー表示（テーブル中心版）
+  const renderTableCentricSummary = () => (
+    <div className="space-y-6">
+      {/* 統計サマリー: シンプルなグリッド */}
+      <div className="grid gap-4 md:grid-cols-4">
+        {[
+          { label: "総商品数", value: "24", sub: "前月比 +3" },
+          { label: "平均原価", value: "¥850", sub: "前月比 -2.1%" },
+          { label: "在庫総数", value: "156", sub: "低在庫 3件" },
+          { label: "月間売上", value: "¥1.2M", sub: "目標達成率 85%" },
+        ].map((stat, i) => (
+          <div key={i} className="rounded-lg border p-4">
+            <p className="text-sm text-muted-foreground">{stat.label}</p>
+            <p className="text-2xl font-semibold">{stat.value}</p>
+            <p className="text-xs text-muted-foreground">{stat.sub}</p>
+          </div>
+        ))}
+      </div>
+
+      {/* テーブル */}
+      <div>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-semibold">原価内訳</h2>
+          <button className="text-sm text-primary hover:underline">すべて表示</button>
+        </div>
+        <div className="rounded-lg border">
           <Table>
             <TableHeader>
-              <TableRow>
-                <TableHead className="min-w-[120px]">商品名</TableHead>
-                <TableHead className="min-w-[80px]">カテゴリ大</TableHead>
-                <TableHead className="min-w-[80px]">カテゴリ中</TableHead>
-                <TableHead className="min-w-[80px]">カテゴリ小</TableHead>
-                <TableHead className="min-w-[100px]">生産計画</TableHead>
-                <TableHead className="min-w-[80px]">設備</TableHead>
-                <TableHead className="min-w-[80px] text-right">材料費</TableHead>
-                <TableHead className="min-w-[80px] text-right">人件費</TableHead>
-                <TableHead className="min-w-[80px] text-right">梱包費</TableHead>
-                <TableHead className="min-w-[80px] text-right">原価合計</TableHead>
-                <TableHead className="min-w-[60px] text-right">在庫数</TableHead>
-                <TableHead className="min-w-[100px]">操作</TableHead>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="font-semibold">商品名</TableHead>
+                <TableHead className="text-right font-semibold">材料費</TableHead>
+                <TableHead className="text-right font-semibold">人件費</TableHead>
+                <TableHead className="text-right font-semibold">その他</TableHead>
+                <TableHead className="text-right font-semibold">合計</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {[1, 2, 3, 4, 5].map((i) => (
+              {[
+                { name: "チョコレートケーキ", mat: 450, labor: 280, other: 120, total: 850 },
+                { name: "バニラクッキー", mat: 180, labor: 150, other: 80, total: 410 },
+                { name: "抹茶マフィン", mat: 320, labor: 200, other: 100, total: 620 },
+              ].map((item, i) => (
                 <TableRow key={i}>
-                  <TableCell className="font-medium">サンプル商品 {i}</TableCell>
-                  <TableCell>食品</TableCell>
-                  <TableCell>菓子類</TableCell>
-                  <TableCell>焼き菓子</TableCell>
-                  <TableCell>100個/年</TableCell>
-                  <TableCell>オーブンA</TableCell>
-                  <TableCell className="text-right">¥{(150 * i).toLocaleString()}</TableCell>
-                  <TableCell className="text-right">¥{(80 * i).toLocaleString()}</TableCell>
-                  <TableCell className="text-right">¥{(30 * i).toLocaleString()}</TableCell>
-                  <TableCell className="text-right font-semibold">¥{(260 * i).toLocaleString()}</TableCell>
-                  <TableCell className="text-right">{10 * i}</TableCell>
-                  <TableCell>
-                    <div className="flex gap-1">
-                      <button className="rounded bg-muted px-2 py-1 text-xs">+</button>
-                      <button className="rounded bg-muted px-2 py-1 text-xs">−</button>
-                    </div>
-                  </TableCell>
+                  <TableCell className="font-medium">{item.name}</TableCell>
+                  <TableCell className="text-right">¥{item.mat.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">¥{item.labor.toLocaleString()}</TableCell>
+                  <TableCell className="text-right">¥{item.other.toLocaleString()}</TableCell>
+                  <TableCell className="text-right font-semibold">¥{item.total.toLocaleString()}</TableCell>
                 </TableRow>
               ))}
             </TableBody>
           </Table>
         </div>
-      </CardContent>
-    </Card>
-  )
-
-  // productセクション用のフォームサンプル
-  const renderProductSample = () => (
-    <Card>
-      <CardHeader>
-        <CardTitle>商品登録フォーム（サンプル）</CardTitle>
-        <CardDescription>フォームは狭め（max-w-4xl）で読みやすく</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid gap-4 md:grid-cols-2">
-          <div className="space-y-2">
-            <label className="text-sm font-medium">商品名</label>
-            <input type="text" placeholder="商品名を入力" className="w-full rounded border px-3 py-2 text-sm" />
-          </div>
-          <div className="space-y-2">
-            <label className="text-sm font-medium">カテゴリ</label>
-            <select className="w-full rounded border px-3 py-2 text-sm">
-              <option>選択してください</option>
-            </select>
-          </div>
-        </div>
-        <div className="space-y-2">
-          <label className="text-sm font-medium">備考</label>
-          <textarea placeholder="備考を入力" className="w-full rounded border px-3 py-2 text-sm" rows={3} />
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   )
 
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>{current.title}</CardTitle>
-          <CardDescription>{current.description}</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            この画面は #162 のUI検討用プロトタイプです。現在の幅設定: <code className="rounded bg-muted px-1">{current.maxWidth}</code>
-          </p>
-        </CardContent>
-      </Card>
+    <div className="space-y-6">
+      {/* ページヘッダー: シンプル */}
+      <div>
+        <h1 className="text-2xl font-semibold">{current.title}</h1>
+        <p className="text-muted-foreground">{current.description}</p>
+      </div>
 
-      {section === "list" || section === "audit" ? renderListSample() : null}
-      {section === "product" ? renderProductSample() : null}
+      {/* デザイン案表示 */}
+      <div className="rounded-md bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:bg-blue-950 dark:text-blue-200">
+        デザイン案: <strong>テーブル中心（Airtable風）</strong> - カードを使わずテーブルを直接配置、行ホバーでアクション表示
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>レイアウト確認サンプル</CardTitle>
-          <CardDescription>横幅利用とカード配置を確認できます</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="overflow-x-auto">
-            <Table className="min-w-[860px]">
-              <TableHeader>
-                <TableRow>
-                  <TableHead>項目</TableHead>
-                  <TableHead>状態</TableHead>
-                  <TableHead>メモ</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                <TableRow>
-                  <TableCell>デスクトップ（展開）</TableCell>
-                  <TableCell>アイコン + テキスト</TableCell>
-                  <TableCell>案Aに準拠</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>デスクトップ（折りたたみ）</TableCell>
-                  <TableCell>アイコンのみ</TableCell>
-                  <TableCell>幅を圧縮してコンテンツ領域を拡張</TableCell>
-                </TableRow>
-                <TableRow>
-                  <TableCell>モバイル</TableCell>
-                  <TableCell>ハンバーガーメニュー</TableCell>
-                  <TableCell>左からドロワー表示</TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
+      {/* セクション別コンテンツ */}
+      {(section === "list" || section === "audit" || section === "master") && renderTableCentricList()}
+      {section === "product" && renderTableCentricForm()}
+      {(section === "cost" || section === "analytics") && renderTableCentricSummary()}
+      {section === "bulk" && (
+        <div className="space-y-4">
+          <div className="rounded-lg border p-6">
+            <h2 className="mb-2 text-lg font-semibold">データインポート</h2>
+            <p className="mb-4 text-sm text-muted-foreground">CSVファイルから商品データを一括インポート</p>
+            <button className="rounded-md bg-primary px-4 py-2 text-sm text-primary-foreground hover:bg-primary/90">
+              ファイルを選択
+            </button>
           </div>
-        </CardContent>
-      </Card>
+          <div className="rounded-lg border p-6">
+            <h2 className="mb-2 text-lg font-semibold">データエクスポート</h2>
+            <p className="mb-4 text-sm text-muted-foreground">現在のデータをCSV形式でエクスポート</p>
+            <button className="rounded-md border px-4 py-2 text-sm hover:bg-muted">
+              エクスポート
+            </button>
+          </div>
+        </div>
+      )}
     </div>
   )
 }
