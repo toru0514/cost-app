@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useState, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
 export type FormSectionOpenSignal = { value: boolean; nonce: number }
@@ -157,27 +158,93 @@ export function CostDisplay({
   description: string
   rows: { product: string; detail: string; amount: string }[]
 }) {
+  const [productFilter, setProductFilter] = useState("")
+  const [sortKey, setSortKey] = useState<"product" | "detail" | "amount">("product")
+  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+
+  const sortLabelMap: Record<"product" | "detail" | "amount", string> = {
+    product: "商品名",
+    detail: "内容",
+    amount: "金額",
+  }
+
+  const displayedRows = useMemo(() => {
+    const collator = new Intl.Collator("ja-JP")
+    const query = productFilter.trim().toLowerCase()
+    const filtered = rows
+      .map((row) => ({
+        ...row,
+        amountValue: Number(row.amount.replace(/[^\d.-]/g, "")) || 0,
+      }))
+      .filter((row) => !query || row.product.toLowerCase().includes(query))
+
+    return filtered.sort((a, b) => {
+      const direction = sortDirection === "asc" ? 1 : -1
+      if (sortKey === "amount") return (a.amountValue - b.amountValue) * direction
+      if (sortKey === "detail") return collator.compare(a.detail, b.detail) * direction
+      return collator.compare(a.product, b.product) * direction
+    })
+  }, [productFilter, rows, sortDirection, sortKey])
+
+  const toggleSort = (key: "product" | "detail" | "amount") => {
+    if (sortKey === key) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))
+      return
+    }
+    setSortKey(key)
+    setSortDirection("asc")
+  }
+
+  const renderSortMark = (key: "product" | "detail" | "amount") => {
+    if (sortKey !== key) return ""
+    return sortDirection === "asc" ? " ↑" : " ↓"
+  }
+
   return (
     <Card className="overflow-x-hidden">
       <CardHeader>
         <CardTitle>{title}</CardTitle>
         <CardDescription>{description}</CardDescription>
       </CardHeader>
-      <CardContent>
-        {rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">まだデータがありません。</p>
+      <CardContent className="space-y-3">
+        <Input
+          value={productFilter}
+          onChange={(event) => setProductFilter(event.target.value)}
+          placeholder="商品名で絞り込み"
+          className="md:max-w-xs"
+        />
+        <p className="text-xs text-muted-foreground">
+          並び順: {sortLabelMap[sortKey]}（{sortDirection === "asc" ? "昇順" : "降順"}）
+          {productFilter && ` / フィルター: 商品「${productFilter}」`}
+        </p>
+        {displayedRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            {rows.length === 0 ? "まだデータがありません。" : "条件に一致するデータがありません。"}
+          </p>
         ) : (
           <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="w-auto min-w-max">
               <TableHeader>
                 <TableRow>
-                  <TableHead>商品</TableHead>
-                  <TableHead>内容</TableHead>
-                  <TableHead>金額</TableHead>
+                  <TableHead>
+                    <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("product")}>
+                      商品{renderSortMark("product")}
+                    </button>
+                  </TableHead>
+                  <TableHead>
+                    <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("detail")}>
+                      内容{renderSortMark("detail")}
+                    </button>
+                  </TableHead>
+                  <TableHead className="text-right">
+                    <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("amount")}>
+                      金額{renderSortMark("amount")}
+                    </button>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {rows.map((row, index) => (
+                {displayedRows.map((row, index) => (
                   <TableRow key={`${title}-${index}`}>
                     <TableCell>{row.product}</TableCell>
                     <TableCell>{row.detail}</TableCell>
