@@ -122,39 +122,47 @@
   }
 }
 
-@layer components {
-  .master-list-table-style [data-slot="card"] {
-    @apply gap-3 border-0 bg-transparent py-0 shadow-none;
+.master-list-table-style [data-slot="card"] {
+  border: 0 !important;
+  background: transparent !important;
+  box-shadow: none !important;
+  padding-top: 0 !important;
+  padding-bottom: 0 !important;
+  gap: 0.75rem !important;
+}
+
+.master-list-table-style [data-slot="card-header"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+  padding-bottom: 0 !important;
+}
+
+.master-list-table-style [data-slot="card-content"] {
+  padding-left: 0 !important;
+  padding-right: 0 !important;
+}
+
+.master-list-table-style [data-slot="table"] {
+  border: 1px solid var(--color-border) !important;
+  border-radius: var(--radius-lg) !important;
+}
+
+.master-list-table-style [data-slot="table-header"] [data-slot="table-row"] {
+  background: var(--color-muted) !important;
+}
+
+.master-list-table-style [data-slot="table-head"] {
+  font-weight: 600 !important;
+}
+
+@media (min-width: 768px) {
+  .master-list-table-style [data-slot="table-row"] .master-row-actions {
+    opacity: 0;
+    transition: opacity 150ms ease;
   }
 
-  .master-list-table-style [data-slot="card-header"] {
-    @apply px-0 pb-0;
-  }
-
-  .master-list-table-style [data-slot="card-content"] {
-    @apply px-0;
-  }
-
-  .master-list-table-style [data-slot="table"] {
-    @apply rounded-lg border;
-  }
-
-  .master-list-table-style [data-slot="table-header"] [data-slot="table-row"] {
-    @apply bg-muted/50 hover:bg-muted/50;
-  }
-
-  .master-list-table-style [data-slot="table-head"] {
-    @apply font-semibold;
-  }
-
-  @media (min-width: 768px) {
-    .master-list-table-style [data-slot="table-row"] .master-row-actions {
-      @apply opacity-0 transition-opacity;
-    }
-
-    .master-list-table-style [data-slot="table-row"]:hover .master-row-actions,
-    .master-list-table-style [data-slot="table-row"]:focus-within .master-row-actions {
-      @apply opacity-100;
-    }
+  .master-list-table-style [data-slot="table-row"]:hover .master-row-actions,
+  .master-list-table-style [data-slot="table-row"]:focus-within .master-row-actions {
+    opacity: 1;
   }
 }
