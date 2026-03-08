@@ -13,6 +13,12 @@ interface BulkTabProps {
 export function BulkTab({ data, actions }: BulkTabProps) {
   return (
     <div className="space-y-6">
+      {/* ページヘッダー */}
+      <div>
+        <h1 className="text-2xl font-semibold">一括処理</h1>
+        <p className="text-muted-foreground">データのインポート・エクスポートを実行できます</p>
+      </div>
+
       <BulkSyncSection
         title="マスタ一括反映"
         description="マスタ用シートの差分確認・書き出し・読み込みを実行します。"

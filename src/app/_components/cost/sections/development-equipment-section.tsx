@@ -2,7 +2,6 @@
 
 import { useMemo } from "react"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { CostDisplay } from "../../shared/ui"
 import { formatCurrency } from "@/lib/calculations"
@@ -76,12 +75,12 @@ export function DevelopmentEquipmentSection({ data }: DevelopmentEquipmentSectio
           }
         })}
       />
-      <Card className="overflow-x-hidden">
-        <CardHeader>
-          <CardTitle>設備配賦</CardTitle>
-          <CardDescription>設備単位での配賦状況</CardDescription>
-        </CardHeader>
-        <CardContent>
+      <section className="space-y-3 rounded-lg border p-4">
+        <div>
+          <h2 className="text-xl font-semibold">設備配賦</h2>
+          <p className="text-sm text-muted-foreground">設備単位での配賦状況</p>
+        </div>
+        <div className="space-y-3">
           {equipmentUsageGroups.length === 0 ? (
             <p className="text-sm text-muted-foreground">まだ設備配賦が登録されていません。</p>
           ) : (
@@ -131,8 +130,8 @@ export function DevelopmentEquipmentSection({ data }: DevelopmentEquipmentSectio
               </Table>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   )
 }

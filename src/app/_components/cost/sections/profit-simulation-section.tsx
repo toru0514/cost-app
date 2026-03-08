@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Label } from "@/components/ui/label"
 import { NumberInput } from "@/components/ui/number-input"
 import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
@@ -47,12 +46,12 @@ export function ProfitSimulationSection({ data }: ProfitSimulationSectionProps) 
   }
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle>目標利益率シミュレーション</CardTitle>
-        <CardDescription>目標利益率と販売数量を入力し、必要な販売価格と粗利を逆算します。</CardDescription>
-      </CardHeader>
-      <CardContent>
+    <section className="space-y-3 rounded-lg border p-4">
+      <div>
+        <h2 className="text-xl font-semibold">目標利益率シミュレーション</h2>
+        <p className="text-sm text-muted-foreground">目標利益率と販売数量を入力し、必要な販売価格と粗利を逆算します。</p>
+      </div>
+      <div className="space-y-3">
         {productSummaries.length === 0 ? (
           <p className="text-sm text-muted-foreground">商品が登録されると試算できます。</p>
         ) : (
@@ -142,7 +141,7 @@ export function ProfitSimulationSection({ data }: ProfitSimulationSectionProps) 
             })}
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   )
 }

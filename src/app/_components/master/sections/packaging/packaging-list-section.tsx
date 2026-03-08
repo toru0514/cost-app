@@ -27,6 +27,17 @@ interface PackagingListSectionProps {
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
 }
 
+const formatStockQuantity = (quantity: number) => {
+  const rounded = Math.round((quantity + Number.EPSILON) * 10) / 10
+  return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
+}
+
+const stockBadgeClass = (quantity: number) => {
+  if (quantity < 5) return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+  if (quantity < 10) return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+  return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+}
+
 export function PackagingListSection({ data, actions, createTempId, isAuthenticated, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetPackagingStock, onAdjustPackagingStock }: PackagingListSectionProps) {
   const [editingPackaging, setEditingPackaging] = useState<Omit<PackagingItem, "id"> & { id: string | null }>({
     id: null,
@@ -194,7 +205,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                   const isEditing = editingPackaging.id === item.id
                   const displayStockUnit = packagingStockUnits.get(item.id)?.trim() || item.unit
                   return (
-                    <TableRow key={item.id}>
+                    <TableRow key={item.id} className="group">
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -337,7 +348,9 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                         ) : (
                           <button
                             type="button"
-                            className="text-sm hover:underline"
+                            className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${stockBadgeClass(
+                              packagingStocks.get(item.id) ?? 0
+                            )} hover:opacity-80`}
                             onClick={() => {
                               resetPackaging()
                               setEditingStock({
@@ -350,7 +363,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                             {!masterStocksLoaded
                               ? <span className="text-muted-foreground">-</span>
                               : packagingStocks.has(item.id)
-                                ? `${packagingStocks.get(item.id)} ${displayStockUnit}`
+                                ? `${formatStockQuantity(packagingStocks.get(item.id) ?? 0)} ${displayStockUnit}`
                                 : <span className="text-muted-foreground">-</span>}
                           </button>
                         )}
@@ -374,7 +387,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                       </TableCell>
                       <TableCell>
                         {isAuthenticated && (
-                          <div className="flex gap-1">
+                          <div className="master-row-actions flex gap-1">
                             <Button
                               type="button"
                               size="sm"
@@ -404,7 +417,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                         {isEditing ? (
                           renderActionButtons(handlePackagingSave, resetPackaging, handlePackagingDelete)
                         ) : (
-                          <div className="flex justify-end gap-2">
+                          <div className="master-row-actions flex justify-end gap-2">
                             <Button
                               type="button"
                               size="sm"

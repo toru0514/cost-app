@@ -26,6 +26,12 @@ export function ProductTab(props: ProductTabProps) {
 
   return (
     <div className="space-y-6">
+      {/* ページヘッダー */}
+      <div>
+        <h1 className="text-2xl font-semibold">商品登録</h1>
+        <p className="text-muted-foreground">商品情報とコスト明細を登録・編集</p>
+      </div>
+
       <ProductFormPanel {...props} />
       <RegisteredProductsSection data={data} readOnly />
     </div>

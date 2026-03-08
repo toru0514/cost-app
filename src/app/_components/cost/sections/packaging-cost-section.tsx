@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/calculations"
@@ -140,12 +139,12 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
 
   return (
     <div className="space-y-4">
-      <Card className="overflow-x-hidden">
-        <CardHeader>
-          <CardTitle>梱包材費</CardTitle>
-          <CardDescription>梱包材の使用数量</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <section className="space-y-3 rounded-lg border p-4">
+        <div>
+          <h2 className="text-xl font-semibold">梱包材費</h2>
+          <p className="text-sm text-muted-foreground">梱包材の使用数量</p>
+        </div>
+        <div className="space-y-3">
           <div className="grid gap-2 md:grid-cols-2">
             <Select value={productFilter} onValueChange={setProductFilter}>
               <SelectTrigger>
@@ -215,15 +214,15 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
               </Table>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
-      <Card className="overflow-x-hidden">
-        <CardHeader>
-          <CardTitle>商品別梱包材費合計</CardTitle>
-          <CardDescription>商品ごとの梱包材費内訳と合計</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-3">
+      <section className="space-y-3 rounded-lg border p-4">
+        <div>
+          <h2 className="text-xl font-semibold">商品別梱包材費合計</h2>
+          <p className="text-sm text-muted-foreground">商品ごとの梱包材費内訳と合計</p>
+        </div>
+        <div className="space-y-3">
           <div className="flex flex-col gap-2 md:flex-row md:items-center">
             <Select value={summaryProductFilter} onValueChange={setSummaryProductFilter}>
               <SelectTrigger className="md:max-w-xs">
@@ -274,8 +273,8 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
               </Table>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   )
 }

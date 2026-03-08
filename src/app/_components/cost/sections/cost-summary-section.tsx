@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
@@ -70,17 +69,17 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
   }
 
   return (
-    <Card className="overflow-x-hidden">
-      <CardHeader>
-        <CardTitle>原価サマリ</CardTitle>
-        <CardDescription>カテゴリ別の積み上げと合計を確認できます。</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <section className="space-y-3">
+      <div>
+        <h2 className="text-xl font-semibold">原価サマリ</h2>
+        <p className="text-sm text-muted-foreground">カテゴリ別の積み上げと合計を確認できます。</p>
+      </div>
+      <div className="space-y-3">
         <Input
           value={productFilter}
           onChange={(event) => setProductFilter(event.target.value)}
           placeholder="商品名で絞り込み"
-          className="md:max-w-xs"
+          className="w-full md:w-72"
         />
         <p className="text-xs text-muted-foreground">
           並び順: {sortLabelMap[sortKey]}（{sortDirection === "asc" ? "昇順" : "降順"}）
@@ -103,24 +102,24 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
           </p>
         ) : (
           <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain">
-            <Table className="w-auto min-w-max">
+            <Table className="cost-summary-table w-auto min-w-max">
               <TableHeader>
-                <TableRow>
-                  <TableHead>
+                <TableRow className="bg-muted/50 hover:bg-muted/50">
+                  <TableHead className="font-semibold">
                     <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("product")}>
                       商品{renderSortMark("product")}
                     </button>
                   </TableHead>
-                  <TableHead>材料</TableHead>
-                  <TableHead>梱包</TableHead>
-                  <TableHead>人件費</TableHead>
-                  <TableHead>外注</TableHead>
-                  <TableHead>開発</TableHead>
-                  <TableHead>設備</TableHead>
-                  <TableHead>物流</TableHead>
-                  <TableHead>電気</TableHead>
-                  <TableHead>手数料</TableHead>
-                  <TableHead className="text-right">
+                  <TableHead className="font-semibold">材料</TableHead>
+                  <TableHead className="font-semibold">梱包</TableHead>
+                  <TableHead className="font-semibold">人件費</TableHead>
+                  <TableHead className="font-semibold">外注</TableHead>
+                  <TableHead className="font-semibold">開発</TableHead>
+                  <TableHead className="font-semibold">設備</TableHead>
+                  <TableHead className="font-semibold">物流</TableHead>
+                  <TableHead className="font-semibold">電気</TableHead>
+                  <TableHead className="font-semibold">手数料</TableHead>
+                  <TableHead className="text-right font-semibold">
                     <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("amount")}>
                       合計{renderSortMark("amount")}
                     </button>
@@ -147,7 +146,7 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
             </Table>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   )
 }

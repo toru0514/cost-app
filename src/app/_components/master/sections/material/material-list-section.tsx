@@ -32,6 +32,12 @@ const formatStockQuantity = (quantity: number) => {
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
 }
 
+const stockBadgeClass = (quantity: number) => {
+  if (quantity < 5) return "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+  if (quantity < 10) return "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+  return "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+}
+
 export function MaterialListSection({ data, actions, createTempId, isAuthenticated, materialStocks, materialStockUnits, masterStocksLoaded, onSetMaterialStock, onAdjustMaterialStock }: MaterialListSectionProps) {
   const [editingMaterial, setEditingMaterial] = useState<Omit<Material, "id"> & { id: string | null }>({
     id: null,
@@ -208,7 +214,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                   const isEditing = editingMaterial.id === material.id
                   const displayStockUnit = materialStockUnits.get(material.id)?.trim() || material.unit
                   return (
-                    <TableRow key={material.id}>
+                    <TableRow key={material.id} className="group">
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -369,7 +375,9 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                         ) : (
                           <button
                             type="button"
-                            className="text-sm hover:underline"
+                            className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${stockBadgeClass(
+                              materialStocks.get(material.id) ?? 0
+                            )} hover:opacity-80`}
                             onClick={() => {
                               resetMaterial()
                               setEditingStock({
@@ -406,7 +414,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                       </TableCell>
                       <TableCell>
                         {isAuthenticated && (
-                          <div className="flex gap-1">
+                          <div className="master-row-actions flex gap-1">
                             <Button
                               type="button"
                               size="sm"
@@ -436,7 +444,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                         {isEditing ? (
                           renderActionButtons(handleMaterialSave, resetMaterial, handleMaterialDelete)
                         ) : (
-                          <div className="flex justify-end gap-2">
+                          <div className="master-row-actions flex justify-end gap-2">
                             <Button
                               type="button"
                               size="sm"

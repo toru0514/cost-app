@@ -1,7 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Copy, Edit3, GripVertical, Trash2 } from "lucide-react"
+import { Copy, Edit3, GripVertical, MoreHorizontal, Trash2 } from "lucide-react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -172,26 +172,33 @@ export function CustomizableProductTable({
     const stockQuantity = stocks.get(product.id) ?? 0
     const isBusy = busyKey?.startsWith(`${product.id}:`) ?? false
     switch (key) {
-      case "stock":
+      case "stock": {
+        // 在庫数に応じた色分け
+        const stockColorClass =
+          stockQuantity < 5
+            ? "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300"
+            : stockQuantity < 10
+              ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+              : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
         return (
           <div className="flex items-center gap-2">
             {isAuthenticated ? (
               stocksLoaded ? (
-                <Badge variant={stockQuantity === 0 ? "outline" : "secondary"} className="min-w-10 justify-center text-sm">
+                <span className={`inline-flex min-w-[2rem] justify-center rounded px-1.5 py-0.5 text-xs font-medium ${stockColorClass}`}>
                   {stockQuantity}
-                </Badge>
+                </span>
               ) : (
                 <span className="text-xs text-muted-foreground">読込中...</span>
               )
             ) : (
               <span className="text-xs text-muted-foreground">-</span>
             )}
-            <div className="flex gap-1">
+            <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
               <Button
                 type="button"
                 size="sm"
                 variant="outline"
-                className="h-7 w-7 px-0"
+                className="h-6 w-6 px-0"
                 onClick={() => adjustStock(product.id, 1)}
                 disabled={!isAuthenticated || !stocksLoaded || isBusy}
               >
@@ -201,7 +208,7 @@ export function CustomizableProductTable({
                 type="button"
                 size="sm"
                 variant="outline"
-                className="h-7 w-7 px-0"
+                className="h-6 w-6 px-0"
                 onClick={() => adjustStock(product.id, -1)}
                 disabled={!isAuthenticated || !stocksLoaded || isBusy || stockQuantity === 0}
               >
@@ -210,6 +217,7 @@ export function CustomizableProductTable({
             </div>
           </div>
         )
+      }
       case "category":
         return categoryPath
       case "options": {
@@ -300,14 +308,15 @@ export function CustomizableProductTable({
         </div>
       )}
 
-      <div className="overflow-x-auto">
+      <div className="overflow-x-auto rounded-lg border">
         <Table>
           <TableHeader>
-            <TableRow>
-              <TableHead>商品</TableHead>
+            <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="font-semibold">商品</TableHead>
               {visibleColumns.map((key) => (
                 <TableHead
                   key={key}
+                  className="font-semibold"
                   onDragOver={(event) => {
                     if (!isAuthenticated || !draggingColumn) return
                     event.preventDefault()
@@ -333,7 +342,7 @@ export function CustomizableProductTable({
                   </div>
                 </TableHead>
               ))}
-              <TableHead />
+              <TableHead className="w-[80px]" />
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -356,44 +365,44 @@ export function CustomizableProductTable({
                     {renderColumnCell(key, entry)}
                   </TableCell>
                 ))}
-                <TableCell className="w-48 text-right">
-                  <div className="flex flex-wrap justify-end gap-2 md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-                    <Button
+                <TableCell>
+                  {/* 行ホバーでアクション表示 */}
+                  <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                    <button
                       type="button"
-                      size="sm"
-                      variant="outline"
-                      className="w-full sm:w-auto"
+                      className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                       onClick={() => onEdit(entry.product.id)}
+                      title="編集"
                     >
-                      <Edit3 className="mr-1 h-4 w-4" />
-                      編集
-                    </Button>
-                    <Button
+                      <Edit3 className="h-4 w-4" />
+                    </button>
+                    <button
                       type="button"
-                      size="sm"
-                      variant="secondary"
-                      className="w-full sm:w-auto"
+                      className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                       onClick={() => onCopy(entry.product.id)}
+                      title="コピー"
                     >
-                      <Copy className="mr-1 h-4 w-4" />
-                      コピー
-                    </Button>
-                    <Button
+                      <Copy className="h-4 w-4" />
+                    </button>
+                    <button
                       type="button"
-                      size="sm"
-                      variant="destructive"
-                      className="w-full sm:w-auto"
+                      className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
                       onClick={() => onDelete(entry.product)}
+                      title="削除"
                     >
-                      <Trash2 className="mr-1 h-4 w-4" />
-                      削除
-                    </Button>
+                      <Trash2 className="h-4 w-4" />
+                    </button>
                   </div>
                 </TableCell>
               </TableRow>
             ))}
           </TableBody>
         </Table>
+      </div>
+
+      {/* フッター: 件数表示 */}
+      <div className="flex items-center justify-between text-sm text-muted-foreground">
+        <span>{entries.length} 件表示中</span>
       </div>
     </div>
   )

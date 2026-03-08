@@ -38,23 +38,36 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, mate
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end gap-2">
-        <Button
+      {/* ページヘッダー */}
+      <div>
+        <h1 className="text-2xl font-semibold">マスタ登録</h1>
+        <p className="text-muted-foreground">材料・梱包材・設備などのマスタデータを管理</p>
+      </div>
+
+      {/* ツールバー: ビュー切り替え */}
+      <div className="flex items-center gap-2">
+        <button
           type="button"
-          size="sm"
-          variant={view === "register" ? "default" : "outline"}
           onClick={() => setView("register")}
+          className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            view === "register"
+              ? "bg-primary text-primary-foreground"
+              : "border bg-transparent text-muted-foreground hover:bg-muted"
+          }`}
         >
           マスタ登録
-        </Button>
-        <Button
+        </button>
+        <button
           type="button"
-          size="sm"
-          variant={view === "list" ? "default" : "outline"}
           onClick={() => setView("list")}
+          className={`rounded-md px-4 py-2 text-sm font-medium transition-colors ${
+            view === "list"
+              ? "bg-primary text-primary-foreground"
+              : "border bg-transparent text-muted-foreground hover:bg-muted"
+          }`}
         >
           登録済みマスタ
-        </Button>
+        </button>
       </div>
 
       {view === "register" ? (
