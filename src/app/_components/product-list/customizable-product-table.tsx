@@ -338,7 +338,7 @@ export function CustomizableProductTable({
           </TableHeader>
           <TableBody>
             {entries.map((entry) => (
-              <TableRow key={entry.product.id}>
+              <TableRow key={entry.product.id} className="group">
                 <TableCell className="font-medium">{entry.product.name}</TableCell>
                 {visibleColumns.map((key) => (
                   <TableCell
@@ -357,7 +357,7 @@ export function CustomizableProductTable({
                   </TableCell>
                 ))}
                 <TableCell className="w-48 text-right">
-                  <div className="flex flex-wrap justify-end gap-2">
+                  <div className="flex flex-wrap justify-end gap-2 md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-within:opacity-100">
                     <Button
                       type="button"
                       size="sm"

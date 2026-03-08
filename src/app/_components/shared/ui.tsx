@@ -3,7 +3,6 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
@@ -201,17 +200,17 @@ export function CostDisplay({
   }
 
   return (
-    <Card className="overflow-x-hidden">
-      <CardHeader>
-        <CardTitle>{title}</CardTitle>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <section className="space-y-3 rounded-lg border p-4">
+      <div>
+        <h2 className="text-xl font-semibold">{title}</h2>
+        <p className="text-sm text-muted-foreground">{description}</p>
+      </div>
+      <div className="space-y-3">
         <Input
           value={productFilter}
           onChange={(event) => setProductFilter(event.target.value)}
           placeholder="商品名で絞り込み"
-          className="md:max-w-xs"
+          className="w-full md:w-72"
         />
         <p className="text-xs text-muted-foreground">
           並び順: {sortLabelMap[sortKey]}（{sortDirection === "asc" ? "昇順" : "降順"}）
@@ -255,7 +254,7 @@ export function CostDisplay({
             </Table>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   )
 }
