@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useMemo, useState, type ComponentType, type ReactNode } from "react"
-import { BarChart3, Box, Boxes, ClipboardList, FileText, LayoutDashboard, Menu, Package, PanelLeftClose, PanelLeftOpen, Settings, X } from "lucide-react"
+import { BarChart3, Box, Boxes, ClipboardList, Database, Download, FileText, LayoutDashboard, LogIn, LogOut, Menu, Package, PanelLeftClose, PanelLeftOpen, Settings, Trash2, Upload, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -21,7 +21,24 @@ const navItems: NavItem[] = [
   { href: "/ui-prototype/list", label: "商品/在庫一覧", icon: ClipboardList },
   { href: "/ui-prototype/bulk", label: "一括処理", icon: Box },
   { href: "/ui-prototype/audit", label: "監査ログ", icon: FileText },
-  { href: "/ui-prototype/settings", label: "設定", icon: Settings },
+]
+
+// 案B用: メニュー下部のアクション
+type ActionItem = {
+  label: string
+  icon: ComponentType<{ className?: string }>
+  variant?: "default" | "destructive"
+}
+
+const guestActions: ActionItem[] = [
+  { label: "デモデータ投入", icon: Database },
+  { label: "バックアップ", icon: Download },
+  { label: "復元", icon: Upload },
+  { label: "データクリア", icon: Trash2, variant: "destructive" },
+]
+
+const authActions: ActionItem[] = [
+  { label: "デモデータ投入", icon: Database },
 ]
 
 function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
@@ -51,6 +68,34 @@ function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: 
   )
 }
 
+// 案B: メニュー下部のアクションボタン
+function MenuActions({ collapsed, isGuest }: { collapsed: boolean; isGuest: boolean }) {
+  const actions = isGuest ? guestActions : authActions
+
+  return (
+    <div className="space-y-1">
+      {actions.map((item) => {
+        const Icon = item.icon
+        return (
+          <button
+            key={item.label}
+            type="button"
+            className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+              item.variant === "destructive"
+                ? "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+            title={collapsed ? item.label : undefined}
+          >
+            <Icon className="h-4 w-4 shrink-0" />
+            {!collapsed && <span className="truncate">{item.label}</span>}
+          </button>
+        )
+      })}
+    </div>
+  )
+}
+
 // セクションごとの最適幅設定
 const sectionMaxWidths: Record<string, string> = {
   cost: "max-w-6xl",      // サマリーカード + テーブル
@@ -67,6 +112,8 @@ export function PrototypeShell({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
+  // プロトタイプ用: ログイン状態をシミュレート
+  const [isGuest, setIsGuest] = useState(true)
 
   const sidebarWidthClass = useMemo(() => (collapsed ? "w-[76px]" : "w-[240px]"), [collapsed])
 
@@ -77,6 +124,7 @@ export function PrototypeShell({ children }: { children: ReactNode }) {
   return (
     <div className="min-h-screen bg-background">
       <div className="flex min-h-screen">
+        {/* 案B: サイドバーにナビ + アクションを統合 */}
         <aside className={`hidden border-r bg-card p-3 md:flex md:flex-col ${sidebarWidthClass}`}>
           <div className="mb-3 flex items-center justify-between gap-2 px-1">
             {!collapsed && <p className="text-sm font-semibold">Cost App</p>}
@@ -84,7 +132,37 @@ export function PrototypeShell({ children }: { children: ReactNode }) {
               {collapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             </Button>
           </div>
+
+          {/* ナビゲーション */}
           <NavLinks collapsed={collapsed} />
+
+          {/* 案B: メニュー下部にアクションを統合 */}
+          <div className="mt-auto space-y-2 border-t pt-3">
+            <MenuActions collapsed={collapsed} isGuest={isGuest} />
+
+            {/* ログイン/ログアウトボタン */}
+            {isGuest ? (
+              <button
+                type="button"
+                onClick={() => setIsGuest(false)}
+                className="flex w-full items-center gap-3 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
+                title={collapsed ? "ログイン" : undefined}
+              >
+                <LogIn className="h-4 w-4 shrink-0" />
+                {!collapsed && <span>ログイン</span>}
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setIsGuest(true)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title={collapsed ? "ログアウト" : undefined}
+              >
+                <LogOut className="h-4 w-4 shrink-0" />
+                {!collapsed && <span>ログアウト</span>}
+              </button>
+            )}
+          </div>
         </aside>
 
         <div className="flex min-h-screen flex-1 flex-col">
@@ -96,9 +174,16 @@ export function PrototypeShell({ children }: { children: ReactNode }) {
                 </Button>
                 <span className="text-sm font-semibold">コスト設計ダッシュボード</span>
               </div>
-              {/* 案C: ヘッダーはシンプルに。機能は設定ページへ移動 */}
-              <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                <span>ゲストモード</span>
+              {/* 案B: ヘッダー右上 - ゲスト時はログインボタン表示 */}
+              <div className="flex items-center gap-2">
+                {isGuest ? (
+                  <Button type="button" size="sm" onClick={() => setIsGuest(false)}>
+                    <LogIn className="mr-1.5 h-4 w-4" />
+                    ログイン
+                  </Button>
+                ) : (
+                  <span className="text-sm text-muted-foreground">ログイン中: demo@example.com</span>
+                )}
               </div>
             </div>
           </header>
@@ -110,7 +195,7 @@ export function PrototypeShell({ children }: { children: ReactNode }) {
       {mobileOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
           <button type="button" className="absolute inset-0 bg-black/40" onClick={() => setMobileOpen(false)} aria-label="メニューを閉じる" />
-          <aside className="absolute left-0 top-0 h-full w-72 border-r bg-card p-3 shadow-lg">
+          <aside className="absolute left-0 top-0 flex h-full w-72 flex-col border-r bg-card p-3 shadow-lg">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-semibold">Cost App</p>
               <Button type="button" variant="ghost" size="sm" onClick={() => setMobileOpen(false)}>
@@ -118,6 +203,30 @@ export function PrototypeShell({ children }: { children: ReactNode }) {
               </Button>
             </div>
             <NavLinks collapsed={false} onNavigate={() => setMobileOpen(false)} />
+
+            {/* 案B: モバイルメニュー下部にもアクションを統合 */}
+            <div className="mt-auto space-y-2 border-t pt-3">
+              <MenuActions collapsed={false} isGuest={isGuest} />
+              {isGuest ? (
+                <button
+                  type="button"
+                  onClick={() => { setIsGuest(false); setMobileOpen(false) }}
+                  className="flex w-full items-center gap-3 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
+                >
+                  <LogIn className="h-4 w-4 shrink-0" />
+                  <span>ログイン</span>
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  onClick={() => { setIsGuest(true); setMobileOpen(false) }}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <LogOut className="h-4 w-4 shrink-0" />
+                  <span>ログアウト</span>
+                </button>
+              )}
+            </div>
           </aside>
         </div>
       )}
