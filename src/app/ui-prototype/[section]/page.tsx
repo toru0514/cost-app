@@ -15,8 +15,8 @@ const sections = {
 
 type SectionKey = keyof typeof sections
 
-export default function UiPrototypeSectionPage({ params }: { params: { section: string } }) {
-  const { section } = params
+export default async function UiPrototypeSectionPage({ params }: { params: Promise<{ section: string }> }) {
+  const { section } = await params
   if (!(section in sections)) {
     notFound()
   }
