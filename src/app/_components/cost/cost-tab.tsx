@@ -1,7 +1,6 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { Activity, Boxes, Layers3 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import type { AppData } from "@/lib/types"
@@ -57,15 +56,6 @@ const loadCostTabOpenState = (): Record<CostSectionKey, boolean> => {
 
 export function CostTab({ data }: CostTabProps) {
   const [openState, setOpenState] = useState<Record<CostSectionKey, boolean>>(() => loadCostTabOpenState())
-  const totalCostEntries = Object.values(data.costEntries).reduce((sum, list) => sum + list.length, 0)
-  const registeredProducts = data.products.length
-  const totalMasterCount =
-    data.materials.length +
-    data.packagingItems.length +
-    data.laborRoles.length +
-    data.equipments.length +
-    data.shippingMethods.length +
-    data.fees.length
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -88,7 +78,7 @@ export function CostTab({ data }: CostTabProps) {
   }
 
   const renderSectionToggle = (key: CostSectionKey, label: string) => (
-    <div className="cost-section-toggle">
+    <div className="cost-section-toggle flex justify-end">
       <Button type="button" size="sm" variant="ghost" onClick={() => toggleSection(key)}>
         {label}を{openState[key] ? "閉じる" : "開く"}
       </Button>
@@ -97,33 +87,13 @@ export function CostTab({ data }: CostTabProps) {
 
   return (
     <div className="cost-ux space-y-6">
-      <section className="cost-hero">
-        <div className="space-y-2">
-          <p className="text-xs uppercase tracking-[0.2em] text-muted-foreground">Cost Studio</p>
-          <h1 className="text-3xl font-semibold tracking-tight md:text-4xl">原価サマリ</h1>
-          <p className="text-sm text-muted-foreground md:text-base">カテゴリ別の積み上げと合計を、テーブル中心で確認します。</p>
+      {/* ページヘッダー */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">原価サマリ</h1>
+          <p className="text-muted-foreground">カテゴリ別の積み上げと合計を確認できます</p>
         </div>
-        <div className="grid gap-2 sm:grid-cols-3">
-          <div className="cost-hero-stat">
-            <Activity className="h-4 w-4" />
-            <span>コスト明細</span>
-            <strong>{totalCostEntries}件</strong>
-          </div>
-          <div className="cost-hero-stat">
-            <Layers3 className="h-4 w-4" />
-            <span>商品</span>
-            <strong>{registeredProducts}件</strong>
-          </div>
-          <div className="cost-hero-stat">
-            <Boxes className="h-4 w-4" />
-            <span>関連マスタ</span>
-            <strong>{totalMasterCount}件</strong>
-          </div>
-        </div>
-      </section>
-
-      <section className="cost-control-panel">
-        <div className="flex flex-wrap gap-2">
+        <div className="flex gap-2">
           <Button type="button" size="sm" variant="outline" onClick={() => setAllOpenState(true)}>
             全て開く
           </Button>
@@ -131,53 +101,35 @@ export function CostTab({ data }: CostTabProps) {
             全て閉じる
           </Button>
         </div>
-      </section>
+      </div>
 
       <div className="cost-section-block space-y-3">
-        <div className="cost-section-heading">
-          <h2>原価サマリ</h2>
-          {renderSectionToggle("summary", "表示")}
-        </div>
+        {renderSectionToggle("summary", "原価サマリ")}
         {openState.summary && <CostSummarySection data={data} />}
       </div>
 
       <div className="cost-section-block space-y-3">
-        <div className="cost-section-heading">
-          <h2>利益シミュレーション</h2>
-          {renderSectionToggle("profitSimulation", "表示")}
-        </div>
+        {renderSectionToggle("profitSimulation", "利益シミュレーション")}
         {openState.profitSimulation && <ProfitSimulationSection data={data} />}
       </div>
 
       <div className="cost-section-block space-y-3">
-        <div className="cost-section-heading">
-          <h2>梱包コスト集計</h2>
-          {renderSectionToggle("packaging", "表示")}
-        </div>
+        {renderSectionToggle("packaging", "梱包コスト集計")}
         {openState.packaging && <PackagingCostSection data={data} />}
       </div>
 
       <div className="cost-section-block space-y-3">
-        <div className="cost-section-heading">
-          <h2>人件費・外注費集計</h2>
-          {renderSectionToggle("laborOutsourcing", "表示")}
-        </div>
+        {renderSectionToggle("laborOutsourcing", "人件費・外注費集計")}
         {openState.laborOutsourcing && <LaborOutsourcingSection data={data} />}
       </div>
 
       <div className="cost-section-block space-y-3">
-        <div className="cost-section-heading">
-          <h2>開発・設備コスト</h2>
-          {renderSectionToggle("developmentEquipment", "表示")}
-        </div>
+        {renderSectionToggle("developmentEquipment", "開発・設備コスト")}
         {openState.developmentEquipment && <DevelopmentEquipmentSection data={data} />}
       </div>
 
       <div className="cost-section-block space-y-3">
-        <div className="cost-section-heading">
-          <h2>物流・電力コスト</h2>
-          {renderSectionToggle("logisticsElectricity", "表示")}
-        </div>
+        {renderSectionToggle("logisticsElectricity", "物流・電力コスト")}
         {openState.logisticsElectricity && <LogisticsElectricitySection data={data} />}
       </div>
     </div>
