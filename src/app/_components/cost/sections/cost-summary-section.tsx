@@ -69,7 +69,7 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
   }
 
   return (
-    <section className="space-y-3 rounded-lg border p-4">
+    <section className="space-y-3">
       <div>
         <h2 className="text-xl font-semibold">原価サマリ</h2>
         <p className="text-sm text-muted-foreground">カテゴリ別の積み上げと合計を確認できます。</p>
