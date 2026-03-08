@@ -2,7 +2,6 @@
 
 import { useMemo, useState } from "react"
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
@@ -70,17 +69,17 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
   }
 
   return (
-    <Card className="overflow-x-hidden">
-      <CardHeader>
-        <CardTitle>原価サマリ</CardTitle>
-        <CardDescription>カテゴリ別の積み上げと合計を確認できます。</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <section className="space-y-3 rounded-lg border p-4">
+      <div>
+        <h2 className="text-xl font-semibold">原価サマリ</h2>
+        <p className="text-sm text-muted-foreground">カテゴリ別の積み上げと合計を確認できます。</p>
+      </div>
+      <div className="space-y-3">
         <Input
           value={productFilter}
           onChange={(event) => setProductFilter(event.target.value)}
           placeholder="商品名で絞り込み"
-          className="md:max-w-xs"
+          className="w-full md:w-72"
         />
         <p className="text-xs text-muted-foreground">
           並び順: {sortLabelMap[sortKey]}（{sortDirection === "asc" ? "昇順" : "降順"}）
@@ -147,7 +146,7 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
             </Table>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   )
 }
