@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import type { AppActions } from "@/lib/app-data"
@@ -52,8 +52,36 @@ const defaultOpenState: Record<MasterListSectionKey, boolean> = {
   equipment: true,
 }
 
+const MASTER_LIST_OPEN_STATE_STORAGE_KEY = "cost-app-master-list-open-state"
+
+const loadMasterListOpenState = (): Record<MasterListSectionKey, boolean> => {
+  if (typeof window === "undefined") return defaultOpenState
+  try {
+    const raw = window.localStorage.getItem(MASTER_LIST_OPEN_STATE_STORAGE_KEY)
+    if (!raw) return defaultOpenState
+    const parsed = JSON.parse(raw) as Partial<Record<MasterListSectionKey, unknown>>
+    return {
+      category: typeof parsed.category === "boolean" ? parsed.category : defaultOpenState.category,
+      material: typeof parsed.material === "boolean" ? parsed.material : defaultOpenState.material,
+      packaging: typeof parsed.packaging === "boolean" ? parsed.packaging : defaultOpenState.packaging,
+      optionPreset: typeof parsed.optionPreset === "boolean" ? parsed.optionPreset : defaultOpenState.optionPreset,
+      shipping: typeof parsed.shipping === "boolean" ? parsed.shipping : defaultOpenState.shipping,
+      fee: typeof parsed.fee === "boolean" ? parsed.fee : defaultOpenState.fee,
+      labor: typeof parsed.labor === "boolean" ? parsed.labor : defaultOpenState.labor,
+      equipment: typeof parsed.equipment === "boolean" ? parsed.equipment : defaultOpenState.equipment,
+    }
+  } catch {
+    return defaultOpenState
+  }
+}
+
 export function MasterListView({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterListViewProps) {
-  const [openState, setOpenState] = useState<Record<MasterListSectionKey, boolean>>(defaultOpenState)
+  const [openState, setOpenState] = useState<Record<MasterListSectionKey, boolean>>(() => loadMasterListOpenState())
+
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    window.localStorage.setItem(MASTER_LIST_OPEN_STATE_STORAGE_KEY, JSON.stringify(openState))
+  }, [openState])
 
   const setAllOpenState = (value: boolean) => {
     setOpenState({
