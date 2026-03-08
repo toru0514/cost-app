@@ -3,7 +3,7 @@
 import { useMemo, useState } from "react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
@@ -17,11 +17,11 @@ type SortDirection = "asc" | "desc"
 type SummarySortDirection = "asc" | "desc"
 
 export function PackagingCostSection({ data }: PackagingCostSectionProps) {
-  const [productFilter, setProductFilter] = useState("")
-  const [packagingFilter, setPackagingFilter] = useState("")
+  const [productFilter, setProductFilter] = useState("all")
+  const [packagingFilter, setPackagingFilter] = useState("all")
   const [sortKey, setSortKey] = useState<SortKey>("product")
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
-  const [summaryProductFilter, setSummaryProductFilter] = useState("")
+  const [summaryProductFilter, setSummaryProductFilter] = useState("all")
   const [summarySortDirection, setSummarySortDirection] = useState<SummarySortDirection>("desc")
 
   const sortLabelMap: Record<SortKey, string> = {
@@ -30,12 +30,8 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
     amount: "金額",
   }
 
-  const rows = useMemo(() => {
-    const productQuery = productFilter.trim().toLowerCase()
-    const packagingQuery = packagingFilter.trim().toLowerCase()
-    const collator = new Intl.Collator("ja-JP")
-
-    const base = data.costEntries.packaging.map((entry) => {
+  const baseRows = useMemo(() => {
+    return data.costEntries.packaging.map((entry) => {
       const productName = data.products.find((product) => product.id === entry.productId)?.name ?? "未設定"
       const itemName = data.packagingItems.find((item) => item.id === entry.packagingItemId)?.name ?? "-"
       const detail = `${itemName} × ${entry.quantity}`
@@ -48,10 +44,24 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
         amountValue,
       }
     })
+  }, [data])
 
-    const filtered = base.filter((row) => {
-      const productHit = !productQuery || row.product.toLowerCase().includes(productQuery)
-      const packagingHit = !packagingQuery || row.packagingName.toLowerCase().includes(packagingQuery)
+  const productOptions = useMemo(() => {
+    const collator = new Intl.Collator("ja-JP")
+    return Array.from(new Set(baseRows.map((row) => row.product))).sort((a, b) => collator.compare(a, b))
+  }, [baseRows])
+
+  const packagingOptions = useMemo(() => {
+    const collator = new Intl.Collator("ja-JP")
+    return Array.from(new Set(baseRows.map((row) => row.packagingName))).sort((a, b) => collator.compare(a, b))
+  }, [baseRows])
+
+  const rows = useMemo(() => {
+    const collator = new Intl.Collator("ja-JP")
+
+    const filtered = baseRows.filter((row) => {
+      const productHit = productFilter === "all" || row.product === productFilter
+      const packagingHit = packagingFilter === "all" || row.packagingName === packagingFilter
       return productHit && packagingHit
     })
 
@@ -65,7 +75,7 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
       }
       return collator.compare(a.product, b.product) * direction
     })
-  }, [data, packagingFilter, productFilter, sortDirection, sortKey])
+  }, [baseRows, packagingFilter, productFilter, sortDirection, sortKey])
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -83,7 +93,6 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
 
   const summaryRows = useMemo(() => {
     const collator = new Intl.Collator("ja-JP")
-    const productQuery = summaryProductFilter.trim().toLowerCase()
     const grouped = new Map<string, { product: string; items: Map<string, { amountValue: number; currency: string }> }>()
 
     data.costEntries.packaging.forEach((entry) => {
@@ -121,9 +130,7 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
       }
     })
 
-    const filtered = summaries.filter((row) =>
-      !productQuery || row.product.toLowerCase().includes(productQuery)
-    )
+    const filtered = summaries.filter((row) => summaryProductFilter === "all" || row.product === summaryProductFilter)
 
     return filtered.sort((a, b) => {
       const direction = summarySortDirection === "asc" ? 1 : -1
@@ -140,20 +147,37 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="grid gap-2 md:grid-cols-2">
-            <Input
-              value={productFilter}
-              onChange={(event) => setProductFilter(event.target.value)}
-              placeholder="商品名で絞り込み"
-            />
-            <Input
-              value={packagingFilter}
-              onChange={(event) => setPackagingFilter(event.target.value)}
-              placeholder="梱包材名で絞り込み"
-            />
+            <Select value={productFilter} onValueChange={setProductFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="商品名で絞り込み" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">商品: すべて</SelectItem>
+                {productOptions.map((product) => (
+                  <SelectItem key={`product-filter-${product}`} value={product}>
+                    {product}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Select value={packagingFilter} onValueChange={setPackagingFilter}>
+              <SelectTrigger>
+                <SelectValue placeholder="梱包材名で絞り込み" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">梱包材: すべて</SelectItem>
+                {packagingOptions.map((packaging) => (
+                  <SelectItem key={`packaging-filter-${packaging}`} value={packaging}>
+                    {packaging}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
           <p className="text-xs text-muted-foreground">
             並び順: {sortLabelMap[sortKey]}（{sortDirection === "asc" ? "昇順" : "降順"}）
-            {(productFilter || packagingFilter) && ` / フィルター: 商品「${productFilter || "未指定"}」、梱包材「${packagingFilter || "未指定"}」`}
+            {(productFilter !== "all" || packagingFilter !== "all") &&
+              ` / フィルター: 商品「${productFilter === "all" ? "未指定" : productFilter}」、梱包材「${packagingFilter === "all" ? "未指定" : packagingFilter}」`}
           </p>
           {rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">条件に一致するデータがありません。</p>
@@ -201,12 +225,19 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
         </CardHeader>
         <CardContent className="space-y-3">
           <div className="flex flex-col gap-2 md:flex-row md:items-center">
-            <Input
-              value={summaryProductFilter}
-              onChange={(event) => setSummaryProductFilter(event.target.value)}
-              placeholder="商品名で絞り込み"
-              className="md:max-w-xs"
-            />
+            <Select value={summaryProductFilter} onValueChange={setSummaryProductFilter}>
+              <SelectTrigger className="md:max-w-xs">
+                <SelectValue placeholder="商品名で絞り込み" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">商品: すべて</SelectItem>
+                {productOptions.map((product) => (
+                  <SelectItem key={`summary-product-filter-${product}`} value={product}>
+                    {product}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <button
               type="button"
               className="text-left text-sm font-medium hover:underline md:text-right"
@@ -217,7 +248,7 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
           </div>
           <p className="text-xs text-muted-foreground">
             並び順: 合計（{summarySortDirection === "asc" ? "昇順" : "降順"}）
-            {summaryProductFilter && ` / フィルター: 商品「${summaryProductFilter}」`}
+            {summaryProductFilter !== "all" && ` / フィルター: 商品「${summaryProductFilter}」`}
           </p>
           {summaryRows.length === 0 ? (
             <p className="text-sm text-muted-foreground">条件に一致するデータがありません。</p>
