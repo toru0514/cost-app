@@ -50,11 +50,27 @@ function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: 
   )
 }
 
+// セクションごとの最適幅設定
+const sectionMaxWidths: Record<string, string> = {
+  cost: "max-w-6xl",      // サマリーカード + テーブル
+  analytics: "max-w-6xl", // グラフ（将来的にグリッド化）
+  product: "max-w-4xl",   // 入力フォーム（狭め）
+  master: "max-w-5xl",    // リスト/テーブル
+  list: "max-w-full",     // 大きなテーブル（全幅）
+  bulk: "max-w-4xl",      // ボタン群 + ログ（狭め）
+  audit: "max-w-full",    // テーブル（全幅）
+}
+
 export function PrototypeShell({ children }: { children: ReactNode }) {
+  const pathname = usePathname()
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
 
   const sidebarWidthClass = useMemo(() => (collapsed ? "w-[76px]" : "w-[240px]"), [collapsed])
+
+  // 現在のセクションに応じた幅を取得
+  const currentSection = pathname.split("/").pop() ?? ""
+  const contentMaxWidth = sectionMaxWidths[currentSection] ?? "max-w-6xl"
 
   return (
     <div className="min-h-screen bg-background">
@@ -85,7 +101,7 @@ export function PrototypeShell({ children }: { children: ReactNode }) {
             </div>
           </header>
 
-          <main className="flex-1 p-4 md:p-6">{children}</main>
+          <main className={`flex-1 p-4 md:p-6 ${contentMaxWidth}`}>{children}</main>
         </div>
       </div>
 
