@@ -1,8 +1,9 @@
 "use client"
 
-import { useMemo } from "react"
+import { useMemo, useState } from "react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
@@ -11,13 +12,62 @@ interface CostSummarySectionProps {
   data: AppData
 }
 
+type SortKey = "product" | "detail" | "amount"
+type SortDirection = "asc" | "desc"
+
 export function CostSummarySection({ data }: CostSummarySectionProps) {
+  const [productFilter, setProductFilter] = useState("")
+  const [sortKey, setSortKey] = useState<SortKey>("product")
+  const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
+
+  const sortLabelMap: Record<SortKey, string> = {
+    product: "商品名",
+    detail: "内容",
+    amount: "金額",
+  }
+
   const productSummaries = useMemo(() => {
-    return data.products.map((product) => ({
-      product,
-      costs: calculateProductUnitCosts(product.id, data),
-    }))
-  }, [data])
+    const collator = new Intl.Collator("ja-JP")
+    const query = productFilter.trim().toLowerCase()
+    const rows = data.products.map((product) => {
+      const costs = calculateProductUnitCosts(product.id, data)
+      const detailText = [
+        `材料 ${costs.material}`,
+        `梱包 ${costs.packaging}`,
+        `人件費 ${costs.labor}`,
+        `外注 ${costs.outsourcing}`,
+        `開発 ${costs.development}`,
+        `設備 ${costs.equipment}`,
+        `物流 ${costs.logistics}`,
+        `電気 ${costs.electricity}`,
+        `手数料 ${costs.fees}`,
+      ].join(" / ")
+      return { product, costs, detailText }
+    })
+
+    const filtered = rows.filter((row) => !query || row.product.name.toLowerCase().includes(query))
+
+    return filtered.sort((a, b) => {
+      const direction = sortDirection === "asc" ? 1 : -1
+      if (sortKey === "amount") return (a.costs.total - b.costs.total) * direction
+      if (sortKey === "detail") return collator.compare(a.detailText, b.detailText) * direction
+      return collator.compare(a.product.name, b.product.name) * direction
+    })
+  }, [data, productFilter, sortDirection, sortKey])
+
+  const toggleSort = (key: SortKey) => {
+    if (sortKey === key) {
+      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))
+      return
+    }
+    setSortKey(key)
+    setSortDirection("asc")
+  }
+
+  const renderSortMark = (key: SortKey) => {
+    if (sortKey !== key) return ""
+    return sortDirection === "asc" ? " ↑" : " ↓"
+  }
 
   return (
     <Card className="overflow-x-hidden">
@@ -25,15 +75,42 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
         <CardTitle>原価サマリ</CardTitle>
         <CardDescription>カテゴリ別の積み上げと合計を確認できます。</CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="space-y-3">
+        <Input
+          value={productFilter}
+          onChange={(event) => setProductFilter(event.target.value)}
+          placeholder="商品名で絞り込み"
+          className="md:max-w-xs"
+        />
+        <p className="text-xs text-muted-foreground">
+          並び順: {sortLabelMap[sortKey]}（{sortDirection === "asc" ? "昇順" : "降順"}）
+          {productFilter && ` / フィルター: 商品「${productFilter}」`}
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <button type="button" className="text-xs text-muted-foreground hover:underline" onClick={() => toggleSort("product")}>
+            商品名で並び替え
+          </button>
+          <button type="button" className="text-xs text-muted-foreground hover:underline" onClick={() => toggleSort("detail")}>
+            内容で並び替え
+          </button>
+          <button type="button" className="text-xs text-muted-foreground hover:underline" onClick={() => toggleSort("amount")}>
+            金額で並び替え
+          </button>
+        </div>
         {productSummaries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">まだ原価計算対象の商品がありません。</p>
+          <p className="text-sm text-muted-foreground">
+            {data.products.length === 0 ? "まだ原価計算対象の商品がありません。" : "条件に一致する商品がありません。"}
+          </p>
         ) : (
           <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain">
             <Table className="w-auto min-w-max">
               <TableHeader>
                 <TableRow>
-                  <TableHead>商品</TableHead>
+                  <TableHead>
+                    <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("product")}>
+                      商品{renderSortMark("product")}
+                    </button>
+                  </TableHead>
                   <TableHead>材料</TableHead>
                   <TableHead>梱包</TableHead>
                   <TableHead>人件費</TableHead>
@@ -43,7 +120,11 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
                   <TableHead>物流</TableHead>
                   <TableHead>電気</TableHead>
                   <TableHead>手数料</TableHead>
-                  <TableHead>合計</TableHead>
+                  <TableHead className="text-right">
+                    <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("amount")}>
+                      合計{renderSortMark("amount")}
+                    </button>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
