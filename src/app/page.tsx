@@ -721,8 +721,11 @@ export default function Home() {
     return renderLoading()
   }
 
+  // listタブは全幅、他のタブはmax-w-6xl
+  const mainMaxWidth = activeTab === "list" ? "max-w-full" : "max-w-6xl"
+
   return (
-    <main className="mx-auto min-h-screen max-w-6xl space-y-8 px-4 py-10">
+    <main className={`mx-auto min-h-screen ${mainMaxWidth} space-y-8 px-4 py-10`}>
       <header className="flex flex-col gap-2">
         <h1 className="text-3xl font-semibold">コスト設計ダッシュボード</h1>
         <p className="text-muted-foreground">
