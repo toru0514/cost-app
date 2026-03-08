@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { Search, Filter, Plus, MoreHorizontal, ChevronDown } from "lucide-react"
+import { Search, Filter, Plus, MoreHorizontal, ChevronDown, LogIn, LogOut, Database, Trash2, Download, Upload, User } from "lucide-react"
 
 const sections = {
   cost: { title: "原価サマリ", description: "原価・収支関連のサンプル表示", maxWidth: "max-w-6xl" },
@@ -11,6 +11,7 @@ const sections = {
   list: { title: "商品/在庫一覧", description: "商品一覧と在庫一覧の統合後レイアウト確認", maxWidth: "max-w-full" },
   bulk: { title: "一括処理", description: "インポート/エクスポート関連の導線確認", maxWidth: "max-w-4xl" },
   audit: { title: "監査ログ", description: "履歴表示とフィルター導線の確認", maxWidth: "max-w-full" },
+  settings: { title: "設定", description: "アカウント・データ管理", maxWidth: "max-w-3xl" },
 } as const
 
 type SectionKey = keyof typeof sections
@@ -256,6 +257,123 @@ export default async function UiPrototypeSectionPage({ params }: { params: Promi
     </div>
   )
 
+  // 設定ページ（案C: ヘッダー機能を設定ページに移動）
+  const renderSettingsPage = () => (
+    <div className="space-y-8">
+      {/* アカウント */}
+      <div className="space-y-4">
+        <div className="border-b pb-2">
+          <h2 className="text-lg font-semibold">アカウント</h2>
+        </div>
+        <div className="rounded-lg border">
+          <div className="flex items-center justify-between p-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-muted">
+                <User className="h-5 w-5 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium">ゲストモード</p>
+                <p className="text-sm text-muted-foreground">ログインするとデータがクラウドに保存されます</p>
+              </div>
+            </div>
+            <button className="flex items-center gap-2 rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90">
+              <LogIn className="h-4 w-4" />
+              ログイン
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* データ管理 */}
+      <div className="space-y-4">
+        <div className="border-b pb-2">
+          <h2 className="text-lg font-semibold">データ管理</h2>
+        </div>
+        <div className="space-y-3">
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <Database className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">デモデータ投入</p>
+                <p className="text-sm text-muted-foreground">サンプルデータを追加して機能を試す</p>
+              </div>
+            </div>
+            <button className="rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
+              投入する
+            </button>
+          </div>
+
+          <div className="flex items-center justify-between rounded-lg border p-4">
+            <div className="flex items-center gap-3">
+              <Trash2 className="h-5 w-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">ローカル保存をクリア</p>
+                <p className="text-sm text-muted-foreground">ブラウザに保存されたデータを削除</p>
+              </div>
+            </div>
+            <button className="rounded-md border border-red-200 px-4 py-2 text-sm font-medium text-red-600 hover:bg-red-50">
+              クリア
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* バックアップ・復元（ゲストモード時のみ） */}
+      <div className="space-y-4">
+        <div className="border-b pb-2">
+          <h2 className="text-lg font-semibold">バックアップ・復元</h2>
+          <p className="text-sm text-muted-foreground">ゲストモード時のみ利用可能</p>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="rounded-lg border p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Download className="h-5 w-5 text-muted-foreground" />
+              <p className="font-medium">バックアップ</p>
+            </div>
+            <p className="mb-4 text-sm text-muted-foreground">現在のデータをJSONファイルとしてダウンロード</p>
+            <button className="w-full rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
+              ダウンロード
+            </button>
+          </div>
+
+          <div className="rounded-lg border p-4">
+            <div className="mb-3 flex items-center gap-2">
+              <Upload className="h-5 w-5 text-muted-foreground" />
+              <p className="font-medium">復元</p>
+            </div>
+            <p className="mb-4 text-sm text-muted-foreground">バックアップファイルからデータを復元</p>
+            <button className="w-full rounded-md border px-4 py-2 text-sm font-medium hover:bg-muted">
+              ファイルを選択
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {/* アプリ情報 */}
+      <div className="space-y-4">
+        <div className="border-b pb-2">
+          <h2 className="text-lg font-semibold">アプリ情報</h2>
+        </div>
+        <div className="rounded-lg border p-4">
+          <div className="grid gap-2 text-sm">
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">バージョン</span>
+              <span>1.0.0</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">マスタ件数</span>
+              <span>42件</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-muted-foreground">商品件数</span>
+              <span>24件</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+
   return (
     <div className="space-y-6">
       {/* ページヘッダー: シンプル */}
@@ -264,15 +382,22 @@ export default async function UiPrototypeSectionPage({ params }: { params: Promi
         <p className="text-muted-foreground">{current.description}</p>
       </div>
 
-      {/* デザイン案表示 */}
-      <div className="rounded-md bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:bg-blue-950 dark:text-blue-200">
-        デザイン案: <strong>テーブル中心（Airtable風）</strong> - カードを使わずテーブルを直接配置、行ホバーでアクション表示
-      </div>
+      {/* デザイン案表示（設定ページでは案Cの説明） */}
+      {section === "settings" ? (
+        <div className="rounded-md bg-green-50 px-4 py-3 text-sm text-green-800 dark:bg-green-950 dark:text-green-200">
+          ヘッダー機能配置: <strong>案C（設定ページに移動）</strong> - ログイン、デモデータ投入、バックアップ等を設定ページに集約
+        </div>
+      ) : (
+        <div className="rounded-md bg-blue-50 px-4 py-3 text-sm text-blue-800 dark:bg-blue-950 dark:text-blue-200">
+          デザイン案: <strong>テーブル中心（Airtable風）</strong> - カードを使わずテーブルを直接配置、行ホバーでアクション表示
+        </div>
+      )}
 
       {/* セクション別コンテンツ */}
       {(section === "list" || section === "audit" || section === "master") && renderTableCentricList()}
       {section === "product" && renderTableCentricForm()}
       {(section === "cost" || section === "analytics") && renderTableCentricSummary()}
+      {section === "settings" && renderSettingsPage()}
       {section === "bulk" && (
         <div className="space-y-4">
           <div className="rounded-lg border p-6">

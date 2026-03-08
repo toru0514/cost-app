@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname } from "next/navigation"
 import { useMemo, useState, type ComponentType, type ReactNode } from "react"
-import { BarChart3, Box, Boxes, ClipboardList, FileText, LayoutDashboard, Menu, Package, PanelLeftClose, PanelLeftOpen, X } from "lucide-react"
+import { BarChart3, Box, Boxes, ClipboardList, FileText, LayoutDashboard, Menu, Package, PanelLeftClose, PanelLeftOpen, Settings, X } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 
@@ -21,6 +21,7 @@ const navItems: NavItem[] = [
   { href: "/ui-prototype/list", label: "商品/在庫一覧", icon: ClipboardList },
   { href: "/ui-prototype/bulk", label: "一括処理", icon: Box },
   { href: "/ui-prototype/audit", label: "監査ログ", icon: FileText },
+  { href: "/ui-prototype/settings", label: "設定", icon: Settings },
 ]
 
 function NavLinks({ collapsed, onNavigate }: { collapsed: boolean; onNavigate?: () => void }) {
@@ -59,6 +60,7 @@ const sectionMaxWidths: Record<string, string> = {
   list: "max-w-full",     // 大きなテーブル（全幅）
   bulk: "max-w-4xl",      // ボタン群 + ログ（狭め）
   audit: "max-w-full",    // テーブル（全幅）
+  settings: "max-w-3xl",  // 設定ページ（狭め）
 }
 
 export function PrototypeShell({ children }: { children: ReactNode }) {
@@ -92,11 +94,11 @@ export function PrototypeShell({ children }: { children: ReactNode }) {
                 <Button type="button" variant="ghost" size="sm" className="md:hidden" onClick={() => setMobileOpen(true)}>
                   <Menu className="h-4 w-4" />
                 </Button>
-                <span className="text-sm font-semibold">UIプロトタイプ（案A + ハンバーガー）</span>
+                <span className="text-sm font-semibold">コスト設計ダッシュボード</span>
               </div>
-              <div className="flex items-center gap-2">
-                <Button type="button" variant="outline" size="sm">ログイン</Button>
-                <Button type="button" variant="ghost" size="sm" className="hidden sm:inline-flex">デモデータ投入</Button>
+              {/* 案C: ヘッダーはシンプルに。機能は設定ページへ移動 */}
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <span>ゲストモード</span>
               </div>
             </div>
           </header>
