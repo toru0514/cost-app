@@ -87,13 +87,20 @@ export function CostTab({ data }: CostTabProps) {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end gap-2">
-        <Button type="button" size="sm" variant="outline" onClick={() => setAllOpenState(true)}>
-          全て開く
-        </Button>
-        <Button type="button" size="sm" variant="ghost" onClick={() => setAllOpenState(false)}>
-          全て閉じる
-        </Button>
+      {/* ページヘッダー */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold">原価サマリ</h1>
+          <p className="text-muted-foreground">カテゴリ別の積み上げと合計を確認できます</p>
+        </div>
+        <div className="flex gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={() => setAllOpenState(true)}>
+            全て開く
+          </Button>
+          <Button type="button" size="sm" variant="ghost" onClick={() => setAllOpenState(false)}>
+            全て閉じる
+          </Button>
+        </div>
       </div>
 
       <div className="space-y-2">

@@ -1,7 +1,8 @@
 "use client"
 
+import { FileDown, RefreshCw, Search } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { AuditFilters, AuditLog, ChangeSummary } from "@/lib/types"
 import { toast } from "sonner"
@@ -127,56 +128,66 @@ export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filter
 
   return (
     <div className="space-y-4">
-      <section className="space-y-4">
-        <div>
-          <h2 className="text-xl font-semibold">保存操作の監査ログ</h2>
-          <p className="text-sm text-muted-foreground">直近 {logs.length} 件の保存履歴を表示します。</p>
-        </div>
-        <div className="space-y-4 rounded-lg border p-4">
-          <div className="flex flex-wrap items-end gap-3">
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">開始日</p>
-              <Input
-                type="date"
-                value={filters.from ?? ""}
-                onChange={(event) => onFiltersChange({ ...filters, from: event.target.value || undefined })}
-              />
-            </div>
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground">終了日</p>
-              <Input
-                type="date"
-                value={filters.to ?? ""}
-                onChange={(event) => onFiltersChange({ ...filters, to: event.target.value || undefined })}
-              />
-            </div>
-            <Button type="button" variant="ghost" size="sm" onClick={() => onFiltersChange({})}>
-              フィルター解除
-            </Button>
-            <div className="ml-auto flex flex-wrap gap-2">
-              <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={loading}>
-                {loading ? "読込中" : "最新を取得"}
-              </Button>
-              <Button type="button" size="sm" variant="secondary" onClick={onLoadMore} disabled={loading || !hasMore}>
-                {hasMore ? "さらに読み込む" : "末尾まで表示"}
-              </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={handleExportCsv}>
-                CSVエクスポート
-              </Button>
-            </div>
+      {/* ページヘッダー */}
+      <div>
+        <h1 className="text-2xl font-semibold">監査ログ</h1>
+        <p className="text-muted-foreground">保存操作の履歴を確認できます</p>
+      </div>
+
+      {/* ツールバー */}
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2">
+            <input
+              type="date"
+              value={filters.from ?? ""}
+              onChange={(event) => onFiltersChange({ ...filters, from: event.target.value || undefined })}
+              className="h-9 rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            />
+            <span className="text-sm text-muted-foreground">〜</span>
+            <input
+              type="date"
+              value={filters.to ?? ""}
+              onChange={(event) => onFiltersChange({ ...filters, to: event.target.value || undefined })}
+              className="h-9 rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+            />
           </div>
-          {logs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">まだ監査ログがありません。</p>
-          ) : (
-            <div className="max-h-[520px] w-full overflow-auto">
-              <Table className="w-full min-w-[840px]">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>記録概要</TableHead>
-                    <TableHead>日時</TableHead>
-                    <TableHead>端末</TableHead>
-                  </TableRow>
-                </TableHeader>
+          <button
+            type="button"
+            className="h-9 rounded-md border px-3 text-sm text-muted-foreground hover:bg-muted"
+            onClick={() => onFiltersChange({})}
+          >
+            クリア
+          </button>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={loading}>
+            <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            {loading ? "読込中" : "更新"}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={onLoadMore} disabled={loading || !hasMore}>
+            {hasMore ? "さらに読み込む" : "末尾まで表示"}
+          </Button>
+          <Button type="button" size="sm" variant="outline" onClick={handleExportCsv}>
+            <FileDown className="mr-1.5 h-4 w-4" />
+            CSV
+          </Button>
+        </div>
+      </div>
+
+      {/* テーブル */}
+      {logs.length === 0 ? (
+        <p className="text-sm text-muted-foreground">まだ監査ログがありません。</p>
+      ) : (
+        <div className="max-h-[600px] w-full overflow-auto rounded-lg border">
+          <Table className="w-full min-w-[840px]">
+            <TableHeader>
+              <TableRow className="bg-muted/50 hover:bg-muted/50">
+                <TableHead className="font-semibold">記録概要</TableHead>
+                <TableHead className="font-semibold">日時</TableHead>
+                <TableHead className="font-semibold">端末</TableHead>
+              </TableRow>
+            </TableHeader>
                 <TableBody>
                   {logs.map((log) => (
                     <TableRow key={log.id}>
@@ -196,8 +207,11 @@ export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filter
               </Table>
             </div>
           )}
-        </div>
-      </section>
+
+          {/* フッター */}
+          <div className="flex items-center justify-between text-sm text-muted-foreground">
+            <span>{logs.length} 件表示中</span>
+          </div>
     </div>
   )
 }

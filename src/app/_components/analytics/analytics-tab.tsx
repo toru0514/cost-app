@@ -149,6 +149,12 @@ export function AnalyticsTab({ data }: { data: AppData }) {
 
   return (
     <div className="space-y-6">
+      {/* ページヘッダー */}
+      <div>
+        <h1 className="text-2xl font-semibold">集計データ</h1>
+        <p className="text-muted-foreground">コスト構成と推移をグラフで分析</p>
+      </div>
+
       <FilterPanel
         monthsRange={monthsRange}
         onMonthsRangeChange={setMonthsRange}

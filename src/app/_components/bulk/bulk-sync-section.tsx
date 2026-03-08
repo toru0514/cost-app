@@ -6,7 +6,6 @@ import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
   Dialog,
   DialogContent,
@@ -362,18 +361,18 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
                 : "待機中"
 
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex flex-wrap items-center justify-between gap-2">
-          <CardTitle>{title}</CardTitle>
-          <Button type="button" variant="outline" size="sm" onClick={handleOpenSpreadsheet} disabled={openingSheet}>
-            <ExternalLink className="mr-1 h-4 w-4" />
-            {openingSheet ? "シート確認中..." : "スプレッドシートを開く"}
-          </Button>
+    <section className="space-y-4 rounded-lg border p-4">
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h2 className="text-lg font-semibold">{title}</h2>
+          <p className="text-sm text-muted-foreground">{description}</p>
         </div>
-        <CardDescription>{description}</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-6">
+        <Button type="button" variant="outline" size="sm" onClick={handleOpenSpreadsheet} disabled={openingSheet}>
+          <ExternalLink className="mr-1 h-4 w-4" />
+          {openingSheet ? "シート確認中..." : "スプレッドシートを開く"}
+        </Button>
+      </div>
+      <div className="space-y-6">
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <Label>スプレッドシート連携</Label>
@@ -671,7 +670,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+      </div>
+    </section>
   )
 }
