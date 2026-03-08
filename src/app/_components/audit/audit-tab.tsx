@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { AuditFilters, AuditLog, ChangeSummary } from "@/lib/types"
@@ -128,12 +127,12 @@ export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filter
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
-          <div>
-            <CardTitle>保存操作の監査ログ</CardTitle>
-            <CardDescription>直近 {logs.length} 件の保存履歴を表示します。</CardDescription>
-          </div>
+      <section className="space-y-4">
+        <div>
+          <h2 className="text-xl font-semibold">保存操作の監査ログ</h2>
+          <p className="text-sm text-muted-foreground">直近 {logs.length} 件の保存履歴を表示します。</p>
+        </div>
+        <div className="space-y-4 rounded-lg border p-4">
           <div className="flex flex-wrap items-end gap-3">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground">開始日</p>
@@ -154,25 +153,23 @@ export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filter
             <Button type="button" variant="ghost" size="sm" onClick={() => onFiltersChange({})}>
               フィルター解除
             </Button>
+            <div className="ml-auto flex flex-wrap gap-2">
+              <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={loading}>
+                {loading ? "読込中" : "最新を取得"}
+              </Button>
+              <Button type="button" size="sm" variant="secondary" onClick={onLoadMore} disabled={loading || !hasMore}>
+                {hasMore ? "さらに読み込む" : "末尾まで表示"}
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={handleExportCsv}>
+                CSVエクスポート
+              </Button>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
-            <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={loading}>
-              {loading ? "読込中" : "最新を取得"}
-            </Button>
-            <Button type="button" size="sm" variant="secondary" onClick={onLoadMore} disabled={loading || !hasMore}>
-              {hasMore ? "さらに読み込む" : "末尾まで表示"}
-            </Button>
-            <Button type="button" size="sm" variant="ghost" onClick={handleExportCsv}>
-              CSVエクスポート
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
           {logs.length === 0 ? (
             <p className="text-sm text-muted-foreground">まだ監査ログがありません。</p>
           ) : (
-            <div className="max-h-[520px] overflow-auto">
-              <Table>
+            <div className="max-h-[520px] w-full overflow-auto">
+              <Table className="w-full min-w-[840px]">
                 <TableHeader>
                   <TableRow>
                     <TableHead>記録概要</TableHead>
@@ -199,8 +196,8 @@ export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filter
               </Table>
             </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
+      </section>
     </div>
   )
 }

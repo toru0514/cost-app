@@ -647,8 +647,16 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
     return renderLoading()
   }
 
-  // listタブは全幅、他のタブはmax-w-6xl
-  const mainMaxWidth = activeTab === "list" ? "max-w-full" : "max-w-6xl"
+  const tabContentWidthMap: Record<TabValue, string> = {
+    cost: "max-w-6xl",
+    analytics: "max-w-6xl",
+    product: "max-w-4xl",
+    master: "max-w-5xl",
+    list: "max-w-full",
+    bulk: "max-w-4xl",
+    audit: "max-w-full",
+  }
+  const mainMaxWidth = tabContentWidthMap[activeTab]
   const sidebarWidthClass = sidebarCollapsed ? "w-[76px]" : "w-[260px]"
 
   return (
@@ -989,14 +997,14 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
         </TabsContent>
 
         <TabsContent value="list" className="space-y-6">
-          <Card>
-            <CardHeader className="space-y-4">
+          <section className="space-y-4">
+            <div>
+              <h2 className="text-xl font-semibold">商品一覧</h2>
+              <p className="text-sm text-muted-foreground">登録済み商品のカテゴリ・オプション・備考を確認</p>
+              <p className="text-xs text-muted-foreground">該当 {filteredProductEntries.length} 件</p>
+            </div>
+            <div className="space-y-3 rounded-lg border p-4">
               <div className="flex flex-col gap-2 md:flex-row md:items-center md:justify-between">
-                <div>
-                  <CardTitle>商品一覧</CardTitle>
-                  <CardDescription>登録済み商品のカテゴリ・オプション・備考を確認</CardDescription>
-                  <p className="text-xs text-muted-foreground">該当 {filteredProductEntries.length} 件</p>
-                </div>
                 <div className="flex flex-wrap gap-2">
                   <Button type="button" size="sm" onClick={handleCreateProduct}>
                     <Plus className="mr-1.5 h-4 w-4" />
@@ -1021,10 +1029,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
                   placeholder="商品名・備考・設備で検索"
                   className="w-full flex-1 min-w-[220px]"
                 />
-                <Select
-                  value={productCategoryLargeFilter ?? "all"}
-                  onValueChange={handleCategoryLargeFilterChange}
-                >
+                <Select value={productCategoryLargeFilter ?? "all"} onValueChange={handleCategoryLargeFilterChange}>
                   <SelectTrigger className="w-full md:w-48">
                     <SelectValue placeholder="大カテゴリで絞り込み" />
                   </SelectTrigger>
@@ -1037,10 +1042,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select
-                  value={productCategoryMediumFilter ?? "all"}
-                  onValueChange={handleCategoryMediumFilterChange}
-                >
+                <Select value={productCategoryMediumFilter ?? "all"} onValueChange={handleCategoryMediumFilterChange}>
                   <SelectTrigger className="w-full md:w-48">
                     <SelectValue placeholder="中カテゴリで絞り込み" />
                   </SelectTrigger>
@@ -1053,10 +1055,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
                     ))}
                   </SelectContent>
                 </Select>
-                <Select
-                  value={productCategorySmallFilter ?? "all"}
-                  onValueChange={handleCategorySmallFilterChange}
-                >
+                <Select value={productCategorySmallFilter ?? "all"} onValueChange={handleCategorySmallFilterChange}>
                   <SelectTrigger className="w-full md:w-48">
                     <SelectValue placeholder="小カテゴリで絞り込み" />
                   </SelectTrigger>
@@ -1085,8 +1084,6 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
                   </SelectContent>
                 </Select>
               </div>
-            </CardHeader>
-            <CardContent className="space-y-3">
               {data.products.length === 0 ? (
                 <p className="text-sm text-muted-foreground">まだ商品がありません。</p>
               ) : filteredProductEntries.length === 0 ? (
@@ -1105,8 +1102,8 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
                   onDelete={handleDeleteProduct}
                 />
               )}
-            </CardContent>
-          </Card>
+            </div>
+          </section>
 
           <StockListTab
             data={data}
