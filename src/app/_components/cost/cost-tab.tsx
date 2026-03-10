@@ -2,6 +2,8 @@
 
 import { useEffect, useState } from "react"
 
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import type { AppData } from "@/lib/types"
 
@@ -78,9 +80,13 @@ export function CostTab({ data }: CostTabProps) {
   }
 
   const renderSectionToggle = (key: CostSectionKey, label: string) => (
-    <div className="cost-section-toggle flex justify-end">
-      <Button type="button" size="sm" variant="ghost" onClick={() => toggleSection(key)}>
-        {label}を{openState[key] ? "閉じる" : "開く"}
+    <div
+      className="cost-section-toggle flex items-center justify-between cursor-pointer select-none rounded-md px-2 py-1 hover:bg-muted/50"
+      onClick={() => toggleSection(key)}
+    >
+      <h3 className="text-sm font-semibold">{label}</h3>
+      <Button type="button" size="sm" variant="ghost" className="h-7 w-7 p-0">
+        {openState[key] ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
       </Button>
     </div>
   )
