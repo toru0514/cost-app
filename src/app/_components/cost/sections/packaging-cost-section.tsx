@@ -2,6 +2,9 @@
 
 import { useMemo, useState } from "react"
 
+import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
+
+import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/calculations"
@@ -16,6 +19,8 @@ type SortDirection = "asc" | "desc"
 type SummarySortDirection = "asc" | "desc"
 
 export function PackagingCostSection({ data }: PackagingCostSectionProps) {
+  const [packagingDetailOpen, setPackagingDetailOpen] = useState(true)
+  const [packagingSummaryOpen, setPackagingSummaryOpen] = useState(true)
   const [productFilter, setProductFilter] = useState("all")
   const [packagingFilter, setPackagingFilter] = useState("all")
   const [sortKey, setSortKey] = useState<SortKey>("product")
@@ -140,11 +145,28 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
   return (
     <div className="space-y-4">
       <section className="space-y-3 rounded-lg border p-4">
-        <div>
-          <h2 className="text-xl font-semibold">梱包材費</h2>
-          <p className="text-sm text-muted-foreground">梱包材の使用数量</p>
+        <div
+          className="flex items-center justify-between cursor-pointer select-none rounded-md px-2 py-1 hover:bg-muted/50"
+          role="button"
+          tabIndex={0}
+          aria-expanded={packagingDetailOpen}
+          onClick={() => setPackagingDetailOpen((prev) => !prev)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              setPackagingDetailOpen((prev) => !prev)
+            }
+          }}
+        >
+          <div>
+            <h2 className="text-xl font-semibold">梱包材費</h2>
+            <p className="text-sm text-muted-foreground">梱包材の使用数量</p>
+          </div>
+          <Button type="button" size="sm" variant="ghost" className="h-7 w-7 p-0 pointer-events-none" aria-hidden="true">
+            {packagingDetailOpen ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
+          </Button>
         </div>
-        <div className="space-y-3">
+        {packagingDetailOpen && <div className="space-y-3">
           <div className="grid gap-2 md:grid-cols-2">
             <Select value={productFilter} onValueChange={setProductFilter}>
               <SelectTrigger>
@@ -214,15 +236,32 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
               </Table>
             </div>
           )}
-        </div>
+        </div>}
       </section>
 
       <section className="space-y-3 rounded-lg border p-4">
-        <div>
-          <h2 className="text-xl font-semibold">商品別梱包材費合計</h2>
-          <p className="text-sm text-muted-foreground">商品ごとの梱包材費内訳と合計</p>
+        <div
+          className="flex items-center justify-between cursor-pointer select-none rounded-md px-2 py-1 hover:bg-muted/50"
+          role="button"
+          tabIndex={0}
+          aria-expanded={packagingSummaryOpen}
+          onClick={() => setPackagingSummaryOpen((prev) => !prev)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === " ") {
+              e.preventDefault()
+              setPackagingSummaryOpen((prev) => !prev)
+            }
+          }}
+        >
+          <div>
+            <h2 className="text-xl font-semibold">商品別梱包材費合計</h2>
+            <p className="text-sm text-muted-foreground">商品ごとの梱包材費内訳と合計</p>
+          </div>
+          <Button type="button" size="sm" variant="ghost" className="h-7 w-7 p-0 pointer-events-none" aria-hidden="true">
+            {packagingSummaryOpen ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
+          </Button>
         </div>
-        <div className="space-y-3">
+        {packagingSummaryOpen && <div className="space-y-3">
           <div className="flex flex-col gap-2 md:flex-row md:items-center">
             <Select value={summaryProductFilter} onValueChange={setSummaryProductFilter}>
               <SelectTrigger className="md:max-w-xs">
@@ -273,7 +312,7 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
               </Table>
             </div>
           )}
-        </div>
+        </div>}
       </section>
     </div>
   )
