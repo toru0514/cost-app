@@ -1,0 +1,28 @@
+name: Claude Code Review
+
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+permissions:
+  contents: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  review:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: anthropics/claude-code-action@v1
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          prompt: |
+            このPull Requestをレビューしてください。以下の観点で確認し、問題があれば具体的な改善案と共にレビューコメントを投稿してください:
+            1. TypeScriptの型安全性
+            2. React/Next.jsのベストプラクティス
+            3. コード品質・パフォーマンス
+            4. セキュリティ上の問題（特にAPIルート）
+            5. バグの可能性
