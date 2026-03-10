@@ -36,19 +36,19 @@ import {
 } from "./_components/product-list/customizable-product-table"
 import { ProductTab } from "./_components/product/product-tab"
 import { StockListTab } from "./_components/stock-list/stock-list-tab"
-import { ChevronDown, FileDown, FileUp, Filter, LogIn, LogOut, Menu, PanelLeftClose, PanelLeftOpen, Plus, Search, X } from "lucide-react"
+import { BarChart3, Box, Boxes, ChevronDown, ClipboardList, FileDown, FileText, FileUp, Filter, LayoutDashboard, LogIn, LogOut, Menu, Package, PanelLeftClose, PanelLeftOpen, Plus, Search, X } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
 import { useRouter } from "next/navigation"
 
 const tabOptions = [
-  { value: "cost", label: "原価サマリ" },
-  { value: "analytics", label: "集計データ" },
-  { value: "product", label: "商品登録" },
-  { value: "master", label: "マスタ登録" },
-  { value: "list", label: "商品/在庫一覧" },
-  { value: "bulk", label: "一括処理" },
-  { value: "audit", label: "監査ログ" },
+  { value: "cost", label: "原価サマリ", icon: LayoutDashboard },
+  { value: "analytics", label: "集計データ", icon: BarChart3 },
+  { value: "product", label: "商品登録", icon: Package },
+  { value: "master", label: "マスタ登録", icon: Boxes },
+  { value: "list", label: "商品/在庫一覧", icon: ClipboardList },
+  { value: "bulk", label: "一括処理", icon: Box },
+  { value: "audit", label: "監査ログ", icon: FileText },
 ] as const
 
 type TabValue = (typeof tabOptions)[number]["value"]
@@ -671,22 +671,25 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
             </Button>
           </div>
           <nav className="space-y-1">
-            {tabOptions.map((tab) => (
-              <button
-                key={tab.value}
-                type="button"
-                onClick={() => handleTabChange(tab.value)}
-                className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm ${
-                  activeTab === tab.value
-                    ? "bg-primary text-primary-foreground"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-                title={sidebarCollapsed ? tab.label : undefined}
-              >
-                <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px]">{tab.label[0]}</span>
-                {!sidebarCollapsed && <span className="truncate">{tab.label}</span>}
-              </button>
-            ))}
+            {tabOptions.map((tab) => {
+              const Icon = tab.icon
+              return (
+                <button
+                  key={tab.value}
+                  type="button"
+                  onClick={() => handleTabChange(tab.value)}
+                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm ${
+                    activeTab === tab.value
+                      ? "bg-primary text-primary-foreground"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                  title={sidebarCollapsed ? tab.label : undefined}
+                >
+                  <Icon className="h-5 w-5 shrink-0" />
+                  {!sidebarCollapsed && <span className="truncate">{tab.label}</span>}
+                </button>
+              )
+            })}
           </nav>
           <div className="mt-auto space-y-1 border-t pt-3">
             {!isAuthenticated && (
@@ -1114,21 +1117,24 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
               </Button>
             </div>
             <nav className="space-y-1">
-              {tabOptions.map((tab) => (
-                <button
-                  key={tab.value}
-                  type="button"
-                  onClick={() => handleTabChange(tab.value)}
-                  className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm ${
-                    activeTab === tab.value
-                      ? "bg-primary text-primary-foreground"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                  }`}
-                >
-                  <span className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded border text-[10px]">{tab.label[0]}</span>
-                  <span className="truncate">{tab.label}</span>
-                </button>
-              ))}
+              {tabOptions.map((tab) => {
+                const Icon = tab.icon
+                return (
+                  <button
+                    key={tab.value}
+                    type="button"
+                    onClick={() => handleTabChange(tab.value)}
+                    className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-left text-sm ${
+                      activeTab === tab.value
+                        ? "bg-primary text-primary-foreground"
+                        : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                    }`}
+                  >
+                    <Icon className="h-5 w-5 shrink-0" />
+                    <span className="truncate">{tab.label}</span>
+                  </button>
+                )
+              })}
             </nav>
             <div className="mt-auto space-y-1 border-t pt-3">
               {!isAuthenticated && (
