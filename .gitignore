@@ -13,3 +13,4 @@ pnpm-debug.log*
 supabase/.temp/
 supabase_backup_*.sql
 docs/PR解説/
+tsconfig.tsbuildinfo
