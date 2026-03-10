@@ -105,10 +105,19 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
   const renderSectionToggle = (key: MasterListSectionKey, label: string) => (
     <div
       className="flex items-center justify-between cursor-pointer select-none rounded-md px-2 py-1 hover:bg-muted/50"
+      role="button"
+      tabIndex={0}
+      aria-expanded={openState[key]}
       onClick={() => toggleSection(key)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault()
+          toggleSection(key)
+        }
+      }}
     >
       <h3 className="text-sm font-semibold">{label}</h3>
-      <Button type="button" size="sm" variant="ghost" className="h-7 w-7 p-0">
+      <Button type="button" size="sm" variant="ghost" className="h-7 w-7 p-0 pointer-events-none" aria-hidden="true">
         {openState[key] ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
       </Button>
     </div>
