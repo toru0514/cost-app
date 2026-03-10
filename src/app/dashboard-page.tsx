@@ -663,7 +663,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
     <div className="min-h-screen bg-background">
       <div className="flex min-h-screen">
         {/* サイドバー */}
-        <aside className={`hidden border-r bg-card p-3 md:flex md:flex-col ${sidebarWidthClass}`}>
+        <aside className={`hidden sticky top-0 h-screen overflow-y-auto border-r bg-card p-3 md:flex md:flex-col ${sidebarWidthClass}`}>
           <div className="mb-3 flex items-center justify-between gap-2 px-1">
             {!sidebarCollapsed && <p className="text-sm font-semibold">Cost App</p>}
             <Button type="button" variant="ghost" size="sm" onClick={() => setSidebarCollapsed((prev) => !prev)}>
