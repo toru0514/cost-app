@@ -689,18 +689,17 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
             ))}
           </nav>
           <div className="mt-auto space-y-1 border-t pt-3">
-            <button
-              type="button"
-              onClick={actions.seedSample}
-              disabled={isAuthenticated}
-              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                isAuthenticated ? "cursor-not-allowed opacity-50" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-              }`}
-              title={sidebarCollapsed ? "デモデータ投入" : undefined}
-            >
-              <Plus className="h-4 w-4 shrink-0" />
-              {!sidebarCollapsed && <span className="truncate">デモデータ投入</span>}
-            </button>
+            {!isAuthenticated && (
+              <button
+                type="button"
+                onClick={actions.seedSample}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title={sidebarCollapsed ? "デモデータ投入" : undefined}
+              >
+                <Plus className="h-4 w-4 shrink-0" />
+                {!sidebarCollapsed && <span className="truncate">デモデータ投入</span>}
+              </button>
+            )}
             {!isAuthenticated && (
               <>
                 <button
@@ -723,20 +722,17 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
                 </button>
               </>
             )}
-            <button
-              type="button"
-              onClick={handleResetLocalStorage}
-              disabled={isAuthenticated}
-              className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                isAuthenticated
-                  ? "cursor-not-allowed opacity-50"
-                  : "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
-              }`}
-              title={sidebarCollapsed ? "データクリア" : undefined}
-            >
-              <X className="h-4 w-4 shrink-0" />
-              {!sidebarCollapsed && <span className="truncate">データクリア</span>}
-            </button>
+            {!isAuthenticated && (
+              <button
+                type="button"
+                onClick={handleResetLocalStorage}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+                title={sidebarCollapsed ? "データクリア" : undefined}
+              >
+                <X className="h-4 w-4 shrink-0" />
+                {!sidebarCollapsed && <span className="truncate">データクリア</span>}
+              </button>
+            )}
             {!isAuthenticated ? (
               <button
                 type="button"
@@ -1135,17 +1131,16 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
               ))}
             </nav>
             <div className="mt-auto space-y-1 border-t pt-3">
-              <button
-                type="button"
-                onClick={() => { actions.seedSample(); setMobileNavOpen(false) }}
-                disabled={isAuthenticated}
-                className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                  isAuthenticated ? "cursor-not-allowed opacity-50" : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
-              >
-                <Plus className="h-4 w-4 shrink-0" />
-                <span>デモデータ投入</span>
-              </button>
+              {!isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => { actions.seedSample(); setMobileNavOpen(false) }}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <Plus className="h-4 w-4 shrink-0" />
+                  <span>デモデータ投入</span>
+                </button>
+              )}
               {!isAuthenticated && (
                 <>
                   <button
@@ -1166,19 +1161,16 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
                   </button>
                 </>
               )}
-              <button
-                type="button"
-                onClick={() => { handleResetLocalStorage(); setMobileNavOpen(false) }}
-                disabled={isAuthenticated}
-                className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
-                  isAuthenticated
-                    ? "cursor-not-allowed opacity-50"
-                    : "text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
-                }`}
-              >
-                <X className="h-4 w-4 shrink-0" />
-                <span>データクリア</span>
-              </button>
+              {!isAuthenticated && (
+                <button
+                  type="button"
+                  onClick={() => { handleResetLocalStorage(); setMobileNavOpen(false) }}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-red-600 transition-colors hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950"
+                >
+                  <X className="h-4 w-4 shrink-0" />
+                  <span>データクリア</span>
+                </button>
+              )}
               {!isAuthenticated ? (
                 <button
                   type="button"
