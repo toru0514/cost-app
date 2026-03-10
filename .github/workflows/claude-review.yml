@@ -24,7 +24,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
-          model: claude-sonnet-4-20250514
+          claude_args: "--model claude-sonnet-4-20250514"
           prompt: |
             このPull Requestの差分をレビューしてください。以下の観点で確認し、問題があれば具体的な改善案と共にレビューコメントを投稿してください:
             1. TypeScriptの型安全性
