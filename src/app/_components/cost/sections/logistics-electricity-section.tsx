@@ -12,32 +12,34 @@ export function LogisticsElectricitySection({ data }: LogisticsElectricitySectio
   const shippingMethods = data.shippingMethods ?? []
 
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-      <CostDisplay
-        title="物流・配送費"
-        description="配送方法"
-        rows={data.costEntries.logistics.map((entry) => {
-          const productName = data.products.find((product) => product.id === entry.productId)?.name ?? "未設定"
-          const methodName = shippingMethods.find((method) => method.id === entry.shippingMethodId)?.name ?? "未設定"
-          return {
-            product: productName,
-            detail: methodName,
-            amount: formatCurrency(entry.costPerUnit, entry.currency),
-          }
-        })}
-      />
-      <CostDisplay
-        title="電気代"
-        description="1ユニットあたり"
-        rows={data.costEntries.electricity.map((entry) => {
-          const productName = data.products.find((product) => product.id === entry.productId)?.name ?? "未設定"
-          return {
-            product: productName,
-            detail: "基準値",
-            amount: formatCurrency(entry.costPerUnit, entry.currency),
-          }
-        })}
-      />
+    <div className="space-y-6">
+      <div className="grid gap-6 md:grid-cols-2">
+        <CostDisplay
+          title="物流・配送費"
+          description="配送方法"
+          rows={data.costEntries.logistics.map((entry) => {
+            const productName = data.products.find((product) => product.id === entry.productId)?.name ?? "未設定"
+            const methodName = shippingMethods.find((method) => method.id === entry.shippingMethodId)?.name ?? "未設定"
+            return {
+              product: productName,
+              detail: methodName,
+              amount: formatCurrency(entry.costPerUnit, entry.currency),
+            }
+          })}
+        />
+        <CostDisplay
+          title="電気代"
+          description="1ユニットあたり"
+          rows={data.costEntries.electricity.map((entry) => {
+            const productName = data.products.find((product) => product.id === entry.productId)?.name ?? "未設定"
+            return {
+              product: productName,
+              detail: "基準値",
+              amount: formatCurrency(entry.costPerUnit, entry.currency),
+            }
+          })}
+        />
+      </div>
       <CostDisplay
         title="販売・決済手数料"
         description="マスタ定義の%+固定額で算出"
