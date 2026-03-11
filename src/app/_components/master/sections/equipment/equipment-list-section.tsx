@@ -6,6 +6,14 @@ import { Copy, Edit3, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { NumberInput } from "@/components/ui/number-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -33,6 +41,8 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
     utilizationRate: 100,
     note: "",
   })
+
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
 
   const { updateEquipment, removeEquipment, addEquipment } = actions
 
@@ -79,9 +89,15 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
     const { id } = editingEquipment
     if (!id) return
     const name = editingEquipment.name.trim() || "設備"
-    removeEquipment(id)
-    toast.success("設備を削除しました", { description: `「${name}」を削除しました。` })
+    setDeleteTarget({ id, name })
+  }
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return
+    removeEquipment(deleteTarget.id)
+    toast.success("設備を削除しました", { description: `「${deleteTarget.name}」を削除しました。` })
     resetEquipment()
+    setDeleteTarget(null)
   }
 
   const handleEquipmentCopy = (equipment: Equipment) => {
@@ -109,6 +125,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>設備一覧</CardTitle>
@@ -248,10 +265,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                             <button
                               type="button"
                               className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
-                              onClick={() => {
-                                removeEquipment(equipment.id)
-                                toast.success("設備を削除しました", { description: `「${equipment.name}」を削除しました。` })
-                              }}
+                              onClick={() => setDeleteTarget({ id: equipment.id, name: equipment.name })}
                               title="削除"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -268,5 +282,24 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
         )}
       </CardContent>
     </Card>
+    <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>設備を削除しますか？</DialogTitle>
+          <DialogDescription>
+            「{deleteTarget?.name}」を削除します。この操作は取り消せません。
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setDeleteTarget(null)}>
+            キャンセル
+          </Button>
+          <Button type="button" variant="destructive" onClick={confirmDelete}>
+            削除する
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
