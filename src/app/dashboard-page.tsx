@@ -1016,7 +1016,10 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
               </div>
             </div>
 
-            {/* テーブル */}
+            {/* 商品一覧セクション */}
+            <section className="space-y-1">
+              <h2 className="text-xl font-semibold">商品一覧</h2>
+            </section>
             {data.products.length === 0 ? (
               <p className="text-sm text-muted-foreground">まだ商品がありません。</p>
             ) : filteredProductEntries.length === 0 ? (
