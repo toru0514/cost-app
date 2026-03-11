@@ -35,8 +35,9 @@ import {
   type ProductTableColumnSettings,
 } from "./_components/product-list/customizable-product-table"
 import { ProductTab } from "./_components/product/product-tab"
+import { SearchWithScope, type SearchField } from "./_components/shared/search-with-scope"
 import { StockListTab } from "./_components/stock-list/stock-list-tab"
-import { BarChart3, Box, Boxes, ChevronDown, ClipboardList, FileDown, FileText, FileUp, Filter, LayoutDashboard, LogIn, LogOut, Menu, Package, PanelLeftClose, PanelLeftOpen, Plus, Search, X } from "lucide-react"
+import { BarChart3, Box, Boxes, ChevronDown, ClipboardList, FileDown, FileText, FileUp, Filter, LayoutDashboard, LogIn, LogOut, Menu, Package, PanelLeftClose, PanelLeftOpen, Plus, X } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
 import { useRouter } from "next/navigation"
@@ -106,6 +107,21 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
   const [copyProductId, setCopyProductId] = useState<string | null>(null)
   const [copyProductNonce, setCopyProductNonce] = useState(0)
   const [productSearchQuery, setProductSearchQuery] = useState("")
+  const productSearchFields: SearchField[] = useMemo(
+    () => [
+      { key: "name", label: "商品名" },
+      { key: "notes", label: "備考" },
+      { key: "categoryLarge", label: "大カテゴリ" },
+      { key: "categoryMedium", label: "中カテゴリ" },
+      { key: "categorySmall", label: "小カテゴリ" },
+      { key: "shipping", label: "送料" },
+      { key: "equipment", label: "設備" },
+    ],
+    []
+  )
+  const [productSearchCheckedFields, setProductSearchCheckedFields] = useState<Set<string>>(
+    () => new Set(["name", "notes", "categoryLarge", "categoryMedium", "categorySmall", "shipping", "equipment"])
+  )
   const [productCategoryLargeFilter, setProductCategoryLargeFilter] = useState<string | null>(null)
   const [productCategoryMediumFilter, setProductCategoryMediumFilter] = useState<string | null>(null)
   const [productCategorySmallFilter, setProductCategorySmallFilter] = useState<string | null>(null)
@@ -486,18 +502,22 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
         const categoryPath = [categoryLargeName, categoryMediumName, categorySmallName].filter(Boolean).join(" / ") || "-"
         const shippingText = getShippingText(product.id)
         const equipmentText = getEquipmentText(product)
-        const searchBucket = [
-          product.name,
-          product.notes ?? "",
-          categoryLargeName,
-          categoryMediumName,
-          categorySmallName,
-          shippingText,
-          equipmentText,
+        const allChecked = productSearchCheckedFields.size === 0 || productSearchCheckedFields.size === productSearchFields.length
+        const searchEntries: Array<{ key: string; value: string }> = [
+          { key: "name", value: product.name },
+          { key: "notes", value: product.notes ?? "" },
+          { key: "categoryLarge", value: categoryLargeName },
+          { key: "categoryMedium", value: categoryMediumName },
+          { key: "categorySmall", value: categorySmallName },
+          { key: "shipping", value: shippingText },
+          { key: "equipment", value: equipmentText },
         ]
-          .filter(Boolean)
-          .map((text) => text.toLowerCase())
-        const matchesSearch = normalizedSearch.length === 0 || searchBucket.some((text) => text.includes(normalizedSearch))
+        const activeEntries = allChecked
+          ? searchEntries
+          : searchEntries.filter((e) => productSearchCheckedFields.has(e.key))
+        const matchesSearch =
+          normalizedSearch.length === 0 ||
+          activeEntries.some((e) => e.value.toLowerCase().includes(normalizedSearch))
         const matchesCategory =
           (!productCategoryLargeFilter || product.categoryLargeId === productCategoryLargeFilter) &&
           (!productCategoryMediumFilter || product.categoryMediumId === productCategoryMediumFilter) &&
@@ -553,6 +573,8 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
     productCategoryMediumFilter,
     productCategorySmallFilter,
     productCostMap,
+    productSearchCheckedFields,
+    productSearchFields.length,
     productSearchQuery,
     productSortKey,
   ])
@@ -950,18 +972,16 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
 
             {/* ツールバー */}
             <div className="flex flex-wrap items-center justify-between gap-3">
-              <div className="flex items-center gap-2">
-                {/* 検索ボックス（Searchアイコン付き） */}
-                <div className="relative">
-                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                  <input
-                    type="text"
-                    value={productSearchQuery}
-                    onChange={(event) => setProductSearchQuery(event.target.value)}
-                    placeholder="商品を検索..."
-                    className="h-9 w-64 rounded-md border bg-transparent pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-                  />
-                </div>
+              <div className="flex flex-wrap items-center gap-2">
+                {/* 検索ボックス（検索範囲選択付き） */}
+                <SearchWithScope
+                  fields={productSearchFields}
+                  query={productSearchQuery}
+                  onQueryChange={setProductSearchQuery}
+                  checkedFields={productSearchCheckedFields}
+                  onCheckedFieldsChange={setProductSearchCheckedFields}
+                  placeholder="商品を検索..."
+                />
                 {/* フィルターボタン（カテゴリ・ソート用Popover的に） */}
                 <Select value={productCategoryLargeFilter ?? "all"} onValueChange={handleCategoryLargeFilterChange}>
                   <SelectTrigger className="h-9 w-auto gap-1.5 border px-3">
