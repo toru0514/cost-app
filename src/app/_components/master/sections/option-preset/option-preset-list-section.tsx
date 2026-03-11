@@ -9,6 +9,7 @@ import { NumberInput } from "@/components/ui/number-input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { AppActions } from "@/lib/app-data"
 import type { AppData, OptionPreset, ProductSizeVariant } from "@/lib/types"
+import { Copy, Edit3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface OptionPresetListSectionProps {
@@ -121,7 +122,7 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
                       ? preset.variants.map((variant) => `${variant.label}(${variant.quantity})`).join(" / ")
                       : "-"
                   return (
-                    <TableRow key={preset.id}>
+                    <TableRow key={preset.id} className="group">
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -176,11 +177,10 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
                             <Button type="button" size="sm" variant="ghost" onClick={resetOptionPreset}>キャンセル</Button>
                           </div>
                         ) : (
-                          <div className="flex justify-end gap-2">
-                            <Button
+                          <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                               onClick={() =>
                                 setEditingOptionPreset({
                                   id: preset.id,
@@ -191,12 +191,29 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
                                       : [{ label: "", quantity: 0 }],
                                 })
                               }
+                              title="編集"
                             >
-                              編集
-                            </Button>
-                            <Button type="button" size="sm" variant="secondary" onClick={() => handlePresetCopy(preset)}>
-                              コピー
-                            </Button>
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              onClick={() => handlePresetCopy(preset)}
+                              title="コピー"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                              onClick={() => {
+                                removeOptionPreset(preset.id)
+                                toast.success("オプションプリセットを削除しました", { description: `「${preset.name}」を削除しました。` })
+                              }}
+                              title="削除"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </TableCell>
