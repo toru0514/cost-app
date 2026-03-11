@@ -793,7 +793,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
             </div>
           </header>
 
-          <main className={`flex-1 overflow-x-hidden p-4 md:p-6 ${mainMaxWidth}`}>
+          <main className={`flex-1 min-w-0 overflow-x-hidden p-4 md:p-6 ${mainMaxWidth}`}>
             {/* ログインパネル */}
             {loginPanelOpen && authState.status !== "authenticated" && (
               <Card className="mb-6 border-primary/50 bg-background/95 shadow-lg">

@@ -114,7 +114,7 @@ export function StockTab({ data, products, stocks, stocksLoaded, materialStocks,
           ) : products.length === 0 ? (
             <p className="text-sm text-muted-foreground">商品が登録されていません。</p>
           ) : (
-            <div className="overflow-auto">
+            <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
               <Table>
                 <TableHeader>
                   <TableRow>

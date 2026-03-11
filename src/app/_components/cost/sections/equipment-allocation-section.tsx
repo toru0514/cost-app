@@ -67,7 +67,7 @@ export function EquipmentAllocationSection({ data }: CostSectionProps) {
         {equipmentUsageGroups.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ設備配賦が登録されていません。</p>
         ) : (
-          <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="w-auto min-w-max">
               <TableHeader>
                 <TableRow>

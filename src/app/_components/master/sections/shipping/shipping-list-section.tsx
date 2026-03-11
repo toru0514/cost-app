@@ -104,7 +104,7 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
         {(data.shippingMethods ?? []).length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
-          <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="min-w-[640px]">
               <TableHeader>
                 <TableRow>
