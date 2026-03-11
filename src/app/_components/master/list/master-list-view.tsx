@@ -124,7 +124,7 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
   )
 
   return (
-    <div className="master-list-table-style space-y-6">
+    <div className="master-list-table-style space-y-6 overflow-x-hidden">
       <div className="flex justify-end gap-2">
         <Button type="button" size="sm" variant="outline" onClick={() => setAllOpenState(true)}>
           全て開く

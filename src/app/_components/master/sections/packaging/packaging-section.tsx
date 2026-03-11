@@ -86,7 +86,7 @@ export function PackagingSection({ data, actions, isAuthenticated, onSetPackagin
               onChange={(event) => setPackagingForm((prev) => ({ ...prev, name: event.target.value }))}
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">単位</Label>
               <Input
