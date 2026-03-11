@@ -13,6 +13,7 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, Equipment } from "@/lib/types"
+import { Copy, Edit3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface EquipmentListSectionProps {
@@ -133,7 +134,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                 {data.equipments.map((equipment) => {
                   const isEditing = editingEquipment.id === equipment.id
                   return (
-                    <TableRow key={equipment.id}>
+                    <TableRow key={equipment.id} className="group">
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -216,11 +217,10 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                         {isEditing ? (
                           renderActionButtons(handleEquipmentSave, resetEquipment, handleEquipmentDelete)
                         ) : (
-                          <div className="flex justify-end gap-2">
-                            <Button
+                          <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                               onClick={() =>
                                 setEditingEquipment({
                                   id: equipment.id,
@@ -232,12 +232,29 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                                   note: equipment.note ?? "",
                                 })
                               }
+                              title="編集"
                             >
-                              編集
-                            </Button>
-                            <Button type="button" size="sm" variant="secondary" onClick={() => handleEquipmentCopy(equipment)}>
-                              コピー
-                            </Button>
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              onClick={() => handleEquipmentCopy(equipment)}
+                              title="コピー"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                              onClick={() => {
+                                removeEquipment(equipment.id)
+                                toast.success("設備を削除しました", { description: `「${equipment.name}」を削除しました。` })
+                              }}
+                              title="削除"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </TableCell>

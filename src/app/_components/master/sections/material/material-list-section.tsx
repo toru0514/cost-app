@@ -13,6 +13,7 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, Material } from "@/lib/types"
+import { Copy, Edit3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface MaterialListSectionProps {
@@ -444,11 +445,10 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                         {isEditing ? (
                           renderActionButtons(handleMaterialSave, resetMaterial, handleMaterialDelete)
                         ) : (
-                          <div className="master-row-actions flex justify-end gap-2">
-                            <Button
+                          <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                               onClick={() => {
                                 setEditingStock(null)
                                 setEditingMaterial({
@@ -463,12 +463,29 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                                   note: material.note ?? "",
                                 })
                               }}
+                              title="編集"
                             >
-                              編集
-                            </Button>
-                            <Button type="button" size="sm" variant="secondary" onClick={() => handleMaterialCopy(material)}>
-                              コピー
-                            </Button>
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              onClick={() => handleMaterialCopy(material)}
+                              title="コピー"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                              onClick={() => {
+                                removeMaterial(material.id)
+                                toast.success("材料を削除しました", { description: `「${material.name}」を削除しました。` })
+                              }}
+                              title="削除"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </TableCell>

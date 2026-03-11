@@ -13,6 +13,7 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, PackagingItem } from "@/lib/types"
+import { Copy, Edit3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface PackagingListSectionProps {
@@ -417,11 +418,10 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                         {isEditing ? (
                           renderActionButtons(handlePackagingSave, resetPackaging, handlePackagingDelete)
                         ) : (
-                          <div className="master-row-actions flex justify-end gap-2">
-                            <Button
+                          <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                               onClick={() => {
                                 setEditingStock(null)
                                 setEditingPackaging({
@@ -435,12 +435,29 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                                   note: item.note ?? "",
                                 })
                               }}
+                              title="編集"
                             >
-                              編集
-                            </Button>
-                            <Button type="button" size="sm" variant="secondary" onClick={() => handlePackagingCopy(item)}>
-                              コピー
-                            </Button>
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              onClick={() => handlePackagingCopy(item)}
+                              title="コピー"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                              onClick={() => {
+                                removePackagingItem(item.id)
+                                toast.success("梱包材を削除しました", { description: `「${item.name}」を削除しました。` })
+                              }}
+                              title="削除"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </TableCell>

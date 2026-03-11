@@ -13,6 +13,7 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, Fee } from "@/lib/types"
+import { Copy, Edit3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface FeeListSectionProps {
@@ -119,7 +120,7 @@ export function FeeListSection({ data, actions, createTempId }: FeeListSectionPr
                 {data.fees.map((fee) => {
                   const isEditing = editingFee.id === fee.id
                   return (
-                    <TableRow key={fee.id}>
+                    <TableRow key={fee.id} className="group">
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -187,11 +188,10 @@ export function FeeListSection({ data, actions, createTempId }: FeeListSectionPr
                         {isEditing
                           ? renderActions(handleSave, reset, handleDelete)
                           : (
-                            <div className="flex justify-end gap-2">
-                              <Button
+                            <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                              <button
                                 type="button"
-                                size="sm"
-                                variant="outline"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 onClick={() =>
                                   setEditingFee({
                                     id: fee.id,
@@ -202,12 +202,29 @@ export function FeeListSection({ data, actions, createTempId }: FeeListSectionPr
                                     note: fee.note ?? "",
                                   })
                                 }
+                                title="編集"
                               >
-                                編集
-                              </Button>
-                              <Button type="button" size="sm" variant="ghost" onClick={() => handleCopy(fee)}>
-                                複製
-                              </Button>
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                onClick={() => handleCopy(fee)}
+                                title="複製"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                                onClick={() => {
+                                  removeFee(fee.id)
+                                  toast.success("手数料を削除しました", { description: `「${fee.name}」を削除しました。` })
+                                }}
+                                title="削除"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </div>
                             )}
                       </TableCell>

@@ -13,6 +13,7 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, ShippingMethod } from "@/lib/types"
+import { Copy, Edit3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface ShippingListSectionProps {
@@ -121,7 +122,7 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
                 {(data.shippingMethods ?? []).map((method) => {
                   const isEditing = editingShipping.id === method.id
                   return (
-                    <TableRow key={method.id}>
+                    <TableRow key={method.id} className="group">
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -183,11 +184,10 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
                         {isEditing ? (
                           renderActionButtons(handleShippingSave, resetShipping, handleShippingDelete)
                         ) : (
-                          <div className="flex justify-end gap-2">
-                            <Button
+                          <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                               onClick={() =>
                                 setEditingShipping({
                                   id: method.id,
@@ -198,12 +198,29 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
                                   note: method.note ?? "",
                                 })
                               }
+                              title="編集"
                             >
-                              編集
-                            </Button>
-                            <Button type="button" size="sm" variant="secondary" onClick={() => handleShippingCopy(method)}>
-                              コピー
-                            </Button>
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              onClick={() => handleShippingCopy(method)}
+                              title="コピー"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                              onClick={() => {
+                                removeShippingMethod(method.id)
+                                toast.success("配送方法を削除しました", { description: `「${method.name}」を削除しました。` })
+                              }}
+                              title="削除"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </TableCell>
