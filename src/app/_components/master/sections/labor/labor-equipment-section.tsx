@@ -67,7 +67,7 @@ export function LaborEquipmentSection({ data, actions, openSignal }: LaborEquipm
               onChange={(event) => setLaborForm((prev) => ({ ...prev, name: event.target.value }))}
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">時給</Label>
               <NumberInput
@@ -131,7 +131,7 @@ export function LaborEquipmentSection({ data, actions, openSignal }: LaborEquipm
               onChange={(event) => setEquipmentForm((prev) => ({ ...prev, name: event.target.value }))}
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">取得額</Label>
               <NumberInput

@@ -8,9 +8,13 @@ import { Button } from "@/components/ui/button"
 import type { AppData } from "@/lib/types"
 
 import { CostSummarySection } from "./sections/cost-summary-section"
-import { DevelopmentEquipmentSection } from "./sections/development-equipment-section"
-import { LaborOutsourcingSection } from "./sections/labor-outsourcing-section"
-import { LogisticsElectricitySection } from "./sections/logistics-electricity-section"
+import { DevelopmentCostSection } from "./sections/development-cost-section"
+import { ElectricityCostSection } from "./sections/electricity-cost-section"
+import { EquipmentAllocationSection } from "./sections/equipment-allocation-section"
+import { FeesCostSection } from "./sections/fees-cost-section"
+import { LaborCostSection } from "./sections/labor-cost-section"
+import { LogisticsCostSection } from "./sections/logistics-cost-section"
+import { OutsourcingCostSection } from "./sections/outsourcing-cost-section"
 import { PackagingCostSection } from "./sections/packaging-cost-section"
 import { ProfitSimulationSection } from "./sections/profit-simulation-section"
 
@@ -22,17 +26,25 @@ type CostSectionKey =
   | "summary"
   | "profitSimulation"
   | "packaging"
-  | "laborOutsourcing"
-  | "developmentEquipment"
-  | "logisticsElectricity"
+  | "labor"
+  | "outsourcing"
+  | "development"
+  | "equipment"
+  | "logistics"
+  | "electricity"
+  | "fees"
 
 const defaultOpenState: Record<CostSectionKey, boolean> = {
   summary: true,
   profitSimulation: true,
   packaging: true,
-  laborOutsourcing: true,
-  developmentEquipment: true,
-  logisticsElectricity: true,
+  labor: true,
+  outsourcing: true,
+  development: true,
+  equipment: true,
+  logistics: true,
+  electricity: true,
+  fees: true,
 }
 
 const COST_TAB_OPEN_STATE_STORAGE_KEY = "cost-app-cost-tab-open-state"
@@ -42,15 +54,14 @@ const loadCostTabOpenState = (): Record<CostSectionKey, boolean> => {
   try {
     const raw = window.localStorage.getItem(COST_TAB_OPEN_STATE_STORAGE_KEY)
     if (!raw) return defaultOpenState
-    const parsed = JSON.parse(raw) as Partial<Record<CostSectionKey, unknown>>
-    return {
-      summary: typeof parsed.summary === "boolean" ? parsed.summary : defaultOpenState.summary,
-      profitSimulation: typeof parsed.profitSimulation === "boolean" ? parsed.profitSimulation : defaultOpenState.profitSimulation,
-      packaging: typeof parsed.packaging === "boolean" ? parsed.packaging : defaultOpenState.packaging,
-      laborOutsourcing: typeof parsed.laborOutsourcing === "boolean" ? parsed.laborOutsourcing : defaultOpenState.laborOutsourcing,
-      developmentEquipment: typeof parsed.developmentEquipment === "boolean" ? parsed.developmentEquipment : defaultOpenState.developmentEquipment,
-      logisticsElectricity: typeof parsed.logisticsElectricity === "boolean" ? parsed.logisticsElectricity : defaultOpenState.logisticsElectricity,
+    const parsed = JSON.parse(raw) as Partial<Record<string, unknown>>
+    const result = { ...defaultOpenState }
+    for (const key of Object.keys(defaultOpenState) as CostSectionKey[]) {
+      if (typeof parsed[key] === "boolean") {
+        result[key] = parsed[key]
+      }
     }
+    return result
   } catch {
     return defaultOpenState
   }
@@ -65,14 +76,11 @@ export function CostTab({ data }: CostTabProps) {
   }, [openState])
 
   const setAllOpenState = (value: boolean) => {
-    setOpenState({
-      summary: value,
-      profitSimulation: value,
-      packaging: value,
-      laborOutsourcing: value,
-      developmentEquipment: value,
-      logisticsElectricity: value,
-    })
+    const next = {} as Record<CostSectionKey, boolean>
+    for (const key of Object.keys(defaultOpenState) as CostSectionKey[]) {
+      next[key] = value
+    }
+    setOpenState(next)
   }
 
   const toggleSection = (key: CostSectionKey) => {
@@ -134,18 +142,38 @@ export function CostTab({ data }: CostTabProps) {
       </div>
 
       <div className="cost-section-block space-y-3 overflow-hidden">
-        {renderSectionToggle("laborOutsourcing", "人件費・外注費集計")}
-        {openState.laborOutsourcing && <LaborOutsourcingSection data={data} />}
+        {renderSectionToggle("labor", "人件費")}
+        {openState.labor && <LaborCostSection data={data} />}
       </div>
 
       <div className="cost-section-block space-y-3 overflow-hidden">
-        {renderSectionToggle("developmentEquipment", "開発・設備コスト")}
-        {openState.developmentEquipment && <DevelopmentEquipmentSection data={data} />}
+        {renderSectionToggle("outsourcing", "外注費")}
+        {openState.outsourcing && <OutsourcingCostSection data={data} />}
       </div>
 
       <div className="cost-section-block space-y-3 overflow-hidden">
-        {renderSectionToggle("logisticsElectricity", "物流・電力コスト")}
-        {openState.logisticsElectricity && <LogisticsElectricitySection data={data} />}
+        {renderSectionToggle("development", "開発コスト")}
+        {openState.development && <DevelopmentCostSection data={data} />}
+      </div>
+
+      <div className="cost-section-block space-y-3 overflow-hidden">
+        {renderSectionToggle("equipment", "設備配賦")}
+        {openState.equipment && <EquipmentAllocationSection data={data} />}
+      </div>
+
+      <div className="cost-section-block space-y-3 overflow-hidden">
+        {renderSectionToggle("logistics", "物流・配送費")}
+        {openState.logistics && <LogisticsCostSection data={data} />}
+      </div>
+
+      <div className="cost-section-block space-y-3 overflow-hidden">
+        {renderSectionToggle("electricity", "電気代")}
+        {openState.electricity && <ElectricityCostSection data={data} />}
+      </div>
+
+      <div className="cost-section-block space-y-3 overflow-hidden">
+        {renderSectionToggle("fees", "販売・決済手数料")}
+        {openState.fees && <FeesCostSection data={data} />}
       </div>
     </div>
   )

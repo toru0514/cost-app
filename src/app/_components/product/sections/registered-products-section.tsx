@@ -91,8 +91,8 @@ export function RegisteredProductsSection({
         {data.products.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ商品がありません。</p>
         ) : (
-          <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
-          <Table>
+          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+          <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
                 <TableHead>商品名</TableHead>

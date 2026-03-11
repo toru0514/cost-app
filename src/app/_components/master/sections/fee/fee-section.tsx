@@ -68,7 +68,7 @@ export function FeeSection({ data, actions, openSignal }: FeeSectionProps) {
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">固定額</Label>
-            <div className="flex gap-2">
+            <div className="flex flex-wrap gap-2">
               <NumberInput
                 value={feeForm.fixedAmount}
                 onValueChange={(next) => setFeeForm((prev) => ({ ...prev, fixedAmount: next === "" ? 0 : Number(next) }))}

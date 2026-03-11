@@ -179,7 +179,7 @@ export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filter
       {logs.length === 0 ? (
         <p className="text-sm text-muted-foreground">まだ監査ログがありません。</p>
       ) : (
-        <div className="max-h-[600px] w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
+        <div className="max-h-[600px] w-full min-w-0 max-w-full overflow-auto overscroll-x-contain touch-pan-x rounded-lg border">
           <Table className="w-full min-w-[840px]">
             <TableHeader>
               <TableRow className="bg-muted/50 hover:bg-muted/50">

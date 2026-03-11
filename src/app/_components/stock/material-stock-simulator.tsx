@@ -84,7 +84,7 @@ export function MaterialStockSimulator({ data, materialStocks, masterStocksLoade
         ) : rows.length === 0 ? (
           <p className="text-sm text-muted-foreground">この商品に使用量が設定された材料費明細がありません。</p>
         ) : (
-          <div className="relative w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="min-w-[640px]">
               <TableHeader>
                 <TableRow>

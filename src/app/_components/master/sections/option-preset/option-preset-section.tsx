@@ -97,7 +97,7 @@ export function OptionPresetSection({ data, actions, openSignal }: OptionPresetS
               <div className="space-y-2">
                 {optionPresetForm.variants.map((variant, index) => (
                   <div key={`preset-variant-${index}`} className="flex flex-wrap gap-2 rounded-md border p-3">
-                    <div className="min-w-[140px] flex-1 space-y-1">
+                    <div className="min-w-0 flex-1 space-y-1">
                       <Label className="text-xs text-muted-foreground">名称</Label>
                       <Input
                         placeholder="例: S"
@@ -105,7 +105,7 @@ export function OptionPresetSection({ data, actions, openSignal }: OptionPresetS
                         onChange={(event) => updateVariant(index, { label: event.target.value })}
                       />
                     </div>
-                    <div className="w-32 min-w-[120px] space-y-1">
+                    <div className="w-full sm:w-32 space-y-1">
                       <Label className="text-xs text-muted-foreground">数量</Label>
                       <NumberInput
                         placeholder="例: 500"

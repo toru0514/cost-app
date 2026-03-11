@@ -213,7 +213,7 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
           {rows.length === 0 ? (
             <p className="text-sm text-muted-foreground">条件に一致するデータがありません。</p>
           ) : (
-            <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+            <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
               <Table className="w-auto min-w-max">
                 <TableHeader>
                   <TableRow>
@@ -288,7 +288,7 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
           {summaryRows.length === 0 ? (
             <p className="text-sm text-muted-foreground">条件に一致するデータがありません。</p>
           ) : (
-            <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+            <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
               <Table className="w-auto min-w-max">
                 <TableHeader>
                   <TableRow>
