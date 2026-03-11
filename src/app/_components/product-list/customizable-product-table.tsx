@@ -250,7 +250,7 @@ export function CustomizableProductTable({
   }
 
   return (
-    <div className="space-y-3">
+    <div className="space-y-3 overflow-hidden">
       <div className="flex flex-col gap-2 rounded-md border border-dashed p-3 md:flex-row md:items-center md:justify-between">
         <p className="text-xs text-muted-foreground">
           {isAuthenticated
@@ -308,7 +308,7 @@ export function CustomizableProductTable({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">

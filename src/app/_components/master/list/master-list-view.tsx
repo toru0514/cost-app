@@ -134,13 +134,13 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
         </Button>
       </div>
 
-      <div className="space-y-2">
+      <div className="space-y-2 overflow-hidden">
         {renderSectionToggle("category", "カテゴリ一覧")}
         {openState.category && <CategoryListSection data={data} actions={actions} createTempId={createTempId} />}
       </div>
 
       <div className="space-y-6">
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-hidden">
           {renderSectionToggle("material", "材料一覧")}
           {openState.material && (
             <MaterialListSection
@@ -157,7 +157,7 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-hidden">
           {renderSectionToggle("packaging", "梱包材一覧")}
           {openState.packaging && (
             <PackagingListSection
@@ -174,29 +174,29 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
           )}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-hidden">
           {renderSectionToggle("optionPreset", "オプション一覧")}
           {openState.optionPreset && <OptionPresetListSection data={data} actions={actions} createTempId={createTempId} />}
         </div>
       </div>
 
       <div className="space-y-6">
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-hidden">
           {renderSectionToggle("shipping", "配送一覧")}
           {openState.shipping && <ShippingListSection data={data} actions={actions} createTempId={createTempId} />}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-hidden">
           {renderSectionToggle("fee", "手数料一覧")}
           {openState.fee && <FeeListSection data={data} actions={actions} createTempId={createTempId} />}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-hidden">
           {renderSectionToggle("labor", "人件費一覧")}
           {openState.labor && <LaborListSection data={data} actions={actions} createTempId={createTempId} />}
         </div>
 
-        <div className="space-y-2">
+        <div className="space-y-2 overflow-hidden">
           {renderSectionToggle("equipment", "設備一覧")}
           {openState.equipment && <EquipmentListSection data={data} actions={actions} createTempId={createTempId} />}
         </div>

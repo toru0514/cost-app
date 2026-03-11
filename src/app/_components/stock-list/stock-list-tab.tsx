@@ -132,7 +132,7 @@ export function StockListTab({
         <p className="text-sm text-muted-foreground">材料・梱包材・設備の在庫情報を確認できます。</p>
       </section>
 
-      <section className="space-y-3">
+      <section className="space-y-3 overflow-hidden">
         <h3 className="text-lg font-semibold">材料在庫</h3>
         {!isAuthenticated ? (
           <p className="text-sm text-muted-foreground">在庫表示はログイン中のみ利用できます。</p>
@@ -141,7 +141,7 @@ export function StockListTab({
         ) : materialRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">材料が登録されていません。</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[980px]">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -223,7 +223,7 @@ export function StockListTab({
         )}
       </section>
 
-      <section className="space-y-3">
+      <section className="space-y-3 overflow-hidden">
         <h3 className="text-lg font-semibold">梱包材在庫</h3>
         {!isAuthenticated ? (
           <p className="text-sm text-muted-foreground">在庫表示はログイン中のみ利用できます。</p>
@@ -232,7 +232,7 @@ export function StockListTab({
         ) : packagingRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">梱包材が登録されていません。</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[980px]">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -312,12 +312,12 @@ export function StockListTab({
         )}
       </section>
 
-      <section className="space-y-3">
+      <section className="space-y-3 overflow-hidden">
         <h3 className="text-lg font-semibold">設備一覧</h3>
         {data.equipments.length === 0 ? (
           <p className="text-sm text-muted-foreground">設備が登録されていません。</p>
         ) : (
-          <div className="overflow-x-auto rounded-lg border">
+          <div className="overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[720px]">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
