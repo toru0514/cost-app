@@ -46,7 +46,7 @@ export function ProfitSimulationSection({ data }: ProfitSimulationSectionProps) 
   }
 
   return (
-    <section className="space-y-3 rounded-lg border p-4">
+    <section className="min-w-0 space-y-3 rounded-lg border p-4">
       <div>
         <h2 className="text-xl font-semibold">目標利益率シミュレーション</h2>
         <p className="text-sm text-muted-foreground">目標利益率と販売数量を入力し、必要な販売価格と粗利を逆算します。</p>
