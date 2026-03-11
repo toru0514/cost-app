@@ -4,7 +4,6 @@ import type { AppActions } from "@/lib/app-data"
 import type { AppData } from "@/lib/types"
 
 import { ProductFormPanel } from "./product-form-panel"
-import { RegisteredProductsSection } from "./sections/registered-products-section"
 
 interface ProductTabProps {
   data: AppData
@@ -22,8 +21,6 @@ interface ProductTabProps {
 }
 
 export function ProductTab(props: ProductTabProps) {
-  const { data } = props
-
   return (
     <div className="space-y-6">
       {/* ページヘッダー */}
@@ -33,7 +30,6 @@ export function ProductTab(props: ProductTabProps) {
       </div>
 
       <ProductFormPanel {...props} />
-      <RegisteredProductsSection data={data} readOnly />
     </div>
   )
 }
