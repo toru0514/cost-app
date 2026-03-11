@@ -65,7 +65,7 @@ export function ShippingSection({ data, actions, openSignal }: ShippingSectionPr
               onChange={(event) => setShippingMethodForm((prev) => ({ ...prev, description: event.target.value }))}
             />
           </div>
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">基準単価</Label>
               <NumberInput

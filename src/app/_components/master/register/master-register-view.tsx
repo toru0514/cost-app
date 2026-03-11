@@ -33,7 +33,7 @@ export function MasterRegisterView({ data, actions, isAuthenticated, onSetMateri
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 overflow-x-hidden">
       <div className="flex justify-end gap-2">
         <Button type="button" size="sm" variant="outline" onClick={() => triggerSectionOpenState(true)}>
           全て開く
