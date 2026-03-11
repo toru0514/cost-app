@@ -101,7 +101,7 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
             {data.products.length === 0 ? "まだ原価計算対象の商品がありません。" : "条件に一致する商品がありません。"}
           </p>
         ) : (
-          <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="cost-summary-table w-auto min-w-max">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">

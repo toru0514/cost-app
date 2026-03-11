@@ -141,7 +141,7 @@ export function StockListTab({
         ) : materialRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">材料が登録されていません。</p>
         ) : (
-          <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
+          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[980px]">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -232,7 +232,7 @@ export function StockListTab({
         ) : packagingRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">梱包材が登録されていません。</p>
         ) : (
-          <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
+          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[980px]">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
@@ -317,7 +317,7 @@ export function StockListTab({
         {data.equipments.length === 0 ? (
           <p className="text-sm text-muted-foreground">設備が登録されていません。</p>
         ) : (
-          <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
+          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[720px]">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">

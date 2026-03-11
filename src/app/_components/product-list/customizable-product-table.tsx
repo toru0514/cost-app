@@ -308,7 +308,7 @@ export function CustomizableProductTable({
         </div>
       )}
 
-      <div className="overflow-x-auto rounded-lg border">
+      <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
