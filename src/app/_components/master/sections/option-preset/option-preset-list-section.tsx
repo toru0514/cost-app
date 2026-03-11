@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 
+import { Copy, Edit3, Trash2 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -9,7 +11,6 @@ import { NumberInput } from "@/components/ui/number-input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { AppActions } from "@/lib/app-data"
 import type { AppData, OptionPreset, ProductSizeVariant } from "@/lib/types"
-import { Copy, Edit3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface OptionPresetListSectionProps {
@@ -177,7 +178,7 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
                             <Button type="button" size="sm" variant="ghost" onClick={resetOptionPreset}>キャンセル</Button>
                           </div>
                         ) : (
-                          <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <div className="master-row-actions flex items-center justify-end gap-1">
                             <button
                               type="button"
                               className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
