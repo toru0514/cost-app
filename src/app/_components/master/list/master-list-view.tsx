@@ -104,7 +104,7 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
 
   const renderSectionToggle = (key: MasterListSectionKey, label: string) => (
     <div
-      className="flex items-center justify-between cursor-pointer select-none rounded-md px-2 py-1 hover:bg-muted/50"
+      className="master-section-toggle flex items-center justify-between cursor-pointer select-none rounded-md px-2 py-1 hover:bg-muted/50"
       role="button"
       tabIndex={0}
       aria-expanded={openState[key]}
