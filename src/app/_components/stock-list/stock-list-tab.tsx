@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
@@ -8,6 +8,12 @@ import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
+import {
+  SearchWithScope,
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
 
 type StockListTabProps = {
   data: AppData
@@ -51,6 +57,44 @@ export function StockListTab({
 }: StockListTabProps) {
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
+
+  // Search fields per section
+  const materialSearchFields: SearchField[] = useMemo(
+    () => [
+      { key: "name", label: "名称" },
+      { key: "unit", label: "単位" },
+      { key: "unitCost", label: "単価" },
+      { key: "supplier", label: "仕入先" },
+      { key: "note", label: "備考" },
+      { key: "stock", label: "在庫数" },
+    ],
+    []
+  )
+  const packagingSearchFields: SearchField[] = useMemo(
+    () => [
+      { key: "name", label: "名称" },
+      { key: "unit", label: "単位" },
+      { key: "unitCost", label: "単価" },
+      { key: "sizeDescription", label: "仕様" },
+      { key: "note", label: "備考" },
+      { key: "stock", label: "在庫数" },
+    ],
+    []
+  )
+  const equipmentSearchFields: SearchField[] = useMemo(
+    () => [
+      { key: "name", label: "名称" },
+      { key: "acquisitionCost", label: "取得額" },
+      { key: "amortizationYears", label: "償却年数" },
+      { key: "utilizationRate", label: "使用率" },
+      { key: "note", label: "備考" },
+    ],
+    []
+  )
+
+  const materialSearch = useSearchWithScope(materialSearchFields)
+  const packagingSearch = useSearchWithScope(packagingSearchFields)
+  const equipmentSearch = useSearchWithScope(equipmentSearchFields)
 
   const getAdjustAmount = (key: string) => Math.max(1, parseInt(adjustAmounts.get(key) ?? "1", 10) || 1)
 
@@ -125,6 +169,44 @@ export function StockListTab({
     stockUnit: packagingStockUnits.get(item.id)?.trim() || item.unit,
   }))
 
+  const equipmentRows = data.equipments.map((equipment) => ({
+    id: equipment.id,
+    name: equipment.name,
+    acquisitionCost: equipment.acquisitionCost,
+    currency: equipment.currency,
+    amortizationYears: equipment.amortizationYears,
+    utilizationRate: equipment.utilizationRate ?? 100,
+    note: equipment.note,
+  }))
+
+  const filteredMaterialRows = useMemo(
+    () =>
+      filterRowsBySearch(materialRows, materialSearch.query, materialSearch.checkedFields, materialSearch.allFieldKeys),
+    [materialRows, materialSearch.query, materialSearch.checkedFields, materialSearch.allFieldKeys]
+  )
+
+  const filteredPackagingRows = useMemo(
+    () =>
+      filterRowsBySearch(
+        packagingRows,
+        packagingSearch.query,
+        packagingSearch.checkedFields,
+        packagingSearch.allFieldKeys
+      ),
+    [packagingRows, packagingSearch.query, packagingSearch.checkedFields, packagingSearch.allFieldKeys]
+  )
+
+  const filteredEquipmentRows = useMemo(
+    () =>
+      filterRowsBySearch(
+        equipmentRows,
+        equipmentSearch.query,
+        equipmentSearch.checkedFields,
+        equipmentSearch.allFieldKeys
+      ),
+    [equipmentRows, equipmentSearch.query, equipmentSearch.checkedFields, equipmentSearch.allFieldKeys]
+  )
+
   return (
     <div className="space-y-6">
       <section className="space-y-1">
@@ -133,13 +215,27 @@ export function StockListTab({
       </section>
 
       <section className="min-w-0 space-y-3 overflow-hidden">
-        <h3 className="text-lg font-semibold">材料在庫</h3>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-lg font-semibold">材料在庫</h3>
+          {isAuthenticated && masterStocksLoaded && materialRows.length > 0 && (
+            <SearchWithScope
+              fields={materialSearchFields}
+              query={materialSearch.query}
+              onQueryChange={materialSearch.setQuery}
+              checkedFields={materialSearch.checkedFields}
+              onCheckedFieldsChange={materialSearch.setCheckedFields}
+              placeholder="材料を検索..."
+            />
+          )}
+        </div>
         {!isAuthenticated ? (
           <p className="text-sm text-muted-foreground">在庫表示はログイン中のみ利用できます。</p>
         ) : !masterStocksLoaded ? (
           <p className="text-sm text-muted-foreground">読み込み中...</p>
         ) : materialRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">材料が登録されていません。</p>
+        ) : filteredMaterialRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">条件に一致する材料がありません。</p>
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[980px]">
@@ -160,7 +256,7 @@ export function StockListTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {materialRows.map((row) => (
+                {filteredMaterialRows.map((row) => (
                   <TableRow key={row.id} className="group">
                     <TableCell className="font-medium">{row.name}</TableCell>
                     <TableCell>{row.unit}</TableCell>
@@ -224,13 +320,27 @@ export function StockListTab({
       </section>
 
       <section className="min-w-0 space-y-3 overflow-hidden">
-        <h3 className="text-lg font-semibold">梱包材在庫</h3>
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-lg font-semibold">梱包材在庫</h3>
+          {isAuthenticated && masterStocksLoaded && packagingRows.length > 0 && (
+            <SearchWithScope
+              fields={packagingSearchFields}
+              query={packagingSearch.query}
+              onQueryChange={packagingSearch.setQuery}
+              checkedFields={packagingSearch.checkedFields}
+              onCheckedFieldsChange={packagingSearch.setCheckedFields}
+              placeholder="梱包材を検索..."
+            />
+          )}
+        </div>
         {!isAuthenticated ? (
           <p className="text-sm text-muted-foreground">在庫表示はログイン中のみ利用できます。</p>
         ) : !masterStocksLoaded ? (
           <p className="text-sm text-muted-foreground">読み込み中...</p>
         ) : packagingRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">梱包材が登録されていません。</p>
+        ) : filteredPackagingRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">条件に一致する梱包材がありません。</p>
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[980px]">
@@ -250,7 +360,7 @@ export function StockListTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {packagingRows.map((row) => (
+                {filteredPackagingRows.map((row) => (
                   <TableRow key={row.id} className="group">
                     <TableCell className="font-medium">{row.name}</TableCell>
                     <TableCell>{row.unit}</TableCell>
@@ -313,9 +423,23 @@ export function StockListTab({
       </section>
 
       <section className="min-w-0 space-y-3 overflow-hidden">
-        <h3 className="text-lg font-semibold">設備一覧</h3>
-        {data.equipments.length === 0 ? (
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <h3 className="text-lg font-semibold">設備一覧</h3>
+          {equipmentRows.length > 0 && (
+            <SearchWithScope
+              fields={equipmentSearchFields}
+              query={equipmentSearch.query}
+              onQueryChange={equipmentSearch.setQuery}
+              checkedFields={equipmentSearch.checkedFields}
+              onCheckedFieldsChange={equipmentSearch.setCheckedFields}
+              placeholder="設備を検索..."
+            />
+          )}
+        </div>
+        {equipmentRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">設備が登録されていません。</p>
+        ) : filteredEquipmentRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">条件に一致する設備がありません。</p>
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[720px]">
@@ -329,12 +453,12 @@ export function StockListTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.equipments.map((equipment) => (
+                {filteredEquipmentRows.map((equipment) => (
                   <TableRow key={equipment.id}>
                     <TableCell className="font-medium">{equipment.name}</TableCell>
                     <TableCell>{formatCurrency(equipment.acquisitionCost, equipment.currency)}</TableCell>
                     <TableCell>{`${equipment.amortizationYears}年`}</TableCell>
-                    <TableCell>{`${equipment.utilizationRate ?? 100}%`}</TableCell>
+                    <TableCell>{`${equipment.utilizationRate}%`}</TableCell>
                     <TableCell>{equipment.note || "-"}</TableCell>
                   </TableRow>
                 ))}
