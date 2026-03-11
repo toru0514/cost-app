@@ -6,6 +6,14 @@ import { Copy, Edit3, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { NumberInput } from "@/components/ui/number-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -54,6 +62,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
     note: "",
   })
 
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [editingStock, setEditingStock] = useState<{ id: string; value: string; unit: string } | null>(null)
   const [savingStockId, setSavingStockId] = useState<string | null>(null)
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
@@ -148,9 +157,15 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
     const { id } = editingMaterial
     if (!id) return
     const name = editingMaterial.name.trim() || "材料"
-    removeMaterial(id)
-    toast.success("材料を削除しました", { description: `「${name}」を削除しました。` })
+    setDeleteTarget({ id, name })
+  }
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return
+    removeMaterial(deleteTarget.id)
+    toast.success("材料を削除しました", { description: `「${deleteTarget.name}」を削除しました。` })
     resetMaterial()
+    setDeleteTarget(null)
   }
 
   const handleMaterialCopy = (material: Material) => {
@@ -184,6 +199,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
   }
 
   return (
+    <>
     <Card>
       <CardHeader>
         <CardTitle>材料一覧</CardTitle>
@@ -479,10 +495,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                             <button
                               type="button"
                               className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
-                              onClick={() => {
-                                removeMaterial(material.id)
-                                toast.success("材料を削除しました", { description: `「${material.name}」を削除しました。` })
-                              }}
+                              onClick={() => setDeleteTarget({ id: material.id, name: material.name })}
                               title="削除"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -499,5 +512,24 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
         )}
       </CardContent>
     </Card>
+    <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>材料を削除しますか？</DialogTitle>
+          <DialogDescription>
+            「{deleteTarget?.name}」を削除します。この操作は取り消せません。
+          </DialogDescription>
+        </DialogHeader>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setDeleteTarget(null)}>
+            キャンセル
+          </Button>
+          <Button type="button" variant="destructive" onClick={confirmDelete}>
+            削除する
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    </>
   )
 }
