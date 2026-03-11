@@ -18,6 +18,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea"
 import type { AppActions } from "@/lib/app-data"
 import type { AppData, CategoryLarge, CategoryMedium, CategorySmall } from "@/lib/types"
+import { Copy, Edit3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface CategoryListSectionProps {
@@ -298,7 +299,7 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                   {data.categories.large.map((category) => {
                     const isEditing = editingLarge.id === category.id
                     return (
-                      <TableRow key={category.id}>
+                      <TableRow key={category.id} className="group">
                         <TableCell>
                           {isEditing ? (
                             <Input
@@ -323,20 +324,47 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                           {isEditing ? (
                             renderActionButtons(handleLargeSave, resetLarge, handleLargeDelete)
                           ) : (
-                            <div className="flex justify-end gap-2">
-                              <Button
+                            <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                              <button
                                 type="button"
-                                size="sm"
-                                variant="outline"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 onClick={() =>
                                   setEditingLarge({ id: category.id, name: category.name, description: category.description ?? "" })
                                 }
+                                title="編集"
                               >
-                                編集
-                              </Button>
-                              <Button type="button" size="sm" variant="secondary" onClick={() => handleLargeCopy(category)}>
-                                コピー
-                              </Button>
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                onClick={() => handleLargeCopy(category)}
+                                title="コピー"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                                onClick={() => {
+                                  const impactedProducts = countImpactedProductsByLargeCategory(category.id)
+                                  const { mediumCount, smallCount } = countChildCategoriesByLargeCategory(category.id)
+                                  const cascadeMessage =
+                                    mediumCount > 0 || smallCount > 0
+                                      ? `配下の中カテゴリ ${mediumCount} 件・小カテゴリ ${smallCount} 件も削除されます。`
+                                      : ""
+                                  setPendingDeleteCategory({
+                                    level: "large",
+                                    id: category.id,
+                                    name: category.name,
+                                    impactedProducts,
+                                    cascadeMessage,
+                                  })
+                                }}
+                                title="削除"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </div>
                           )}
                         </TableCell>
@@ -371,7 +399,7 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                     const isEditing = editingMedium.id === category.id
                     const parentName = data.categories.large.find((c) => c.id === category.largeId)?.name ?? "-"
                     return (
-                      <TableRow key={category.id}>
+                      <TableRow key={category.id} className="group">
                         <TableCell>
                           {isEditing ? (
                             <Input
@@ -417,11 +445,10 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                           {isEditing ? (
                             renderActionButtons(handleMediumSave, resetMedium, handleMediumDelete)
                           ) : (
-                            <div className="flex justify-end gap-2">
-                              <Button
+                            <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                              <button
                                 type="button"
-                                size="sm"
-                                variant="outline"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 onClick={() =>
                                   setEditingMedium({
                                     id: category.id,
@@ -430,12 +457,37 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                                     largeId: category.largeId,
                                   })
                                 }
+                                title="編集"
                               >
-                                編集
-                              </Button>
-                              <Button type="button" size="sm" variant="secondary" onClick={() => handleMediumCopy(category)}>
-                                コピー
-                              </Button>
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                onClick={() => handleMediumCopy(category)}
+                                title="コピー"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                                onClick={() => {
+                                  const impactedProducts = countImpactedProductsByMediumCategory(category.id)
+                                  const childSmallCount = countChildCategoriesByMediumCategory(category.id)
+                                  const cascadeMessage = childSmallCount > 0 ? `配下の小カテゴリ ${childSmallCount} 件も削除されます。` : ""
+                                  setPendingDeleteCategory({
+                                    level: "medium",
+                                    id: category.id,
+                                    name: category.name,
+                                    impactedProducts,
+                                    cascadeMessage,
+                                  })
+                                }}
+                                title="削除"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </div>
                           )}
                         </TableCell>
@@ -470,7 +522,7 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                     const isEditing = editingSmall.id === category.id
                     const parent = data.categories.medium.find((c) => c.id === category.mediumId)?.name ?? "-"
                     return (
-                      <TableRow key={category.id}>
+                      <TableRow key={category.id} className="group">
                         <TableCell>
                           {isEditing ? (
                             <Input
@@ -516,11 +568,10 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                           {isEditing ? (
                             renderActionButtons(handleSmallSave, resetSmall, handleSmallDelete)
                           ) : (
-                            <div className="flex justify-end gap-2">
-                              <Button
+                            <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                              <button
                                 type="button"
-                                size="sm"
-                                variant="outline"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 onClick={() =>
                                   setEditingSmall({
                                     id: category.id,
@@ -529,12 +580,34 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                                     mediumId: category.mediumId,
                                   })
                                 }
+                                title="編集"
                               >
-                                編集
-                              </Button>
-                              <Button type="button" size="sm" variant="secondary" onClick={() => handleSmallCopy(category)}>
-                                コピー
-                              </Button>
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                onClick={() => handleSmallCopy(category)}
+                                title="コピー"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                                onClick={() => {
+                                  const impactedProducts = countImpactedProductsBySmallCategory(category.id)
+                                  setPendingDeleteCategory({
+                                    level: "small",
+                                    id: category.id,
+                                    name: category.name,
+                                    impactedProducts,
+                                  })
+                                }}
+                                title="削除"
+                              >
+                                <Trash2 className="h-4 w-4" />
+                              </button>
                             </div>
                           )}
                         </TableCell>

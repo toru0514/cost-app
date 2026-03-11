@@ -13,6 +13,7 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, LaborRole } from "@/lib/types"
+import { Copy, Edit3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface LaborListSectionProps {
@@ -104,7 +105,7 @@ export function LaborListSection({ data, actions, createTempId }: LaborListSecti
                 {data.laborRoles.map((role) => {
                   const isEditing = editingLabor.id === role.id
                   return (
-                    <TableRow key={role.id}>
+                    <TableRow key={role.id} className="group">
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -156,11 +157,10 @@ export function LaborListSection({ data, actions, createTempId }: LaborListSecti
                         {isEditing ? (
                           renderActionButtons(handleLaborSave, resetLabor, handleLaborDelete)
                         ) : (
-                          <div className="flex justify-end gap-2">
-                            <Button
+                          <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <button
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                               onClick={() =>
                                 setEditingLabor({
                                   id: role.id,
@@ -170,12 +170,29 @@ export function LaborListSection({ data, actions, createTempId }: LaborListSecti
                                   note: role.note ?? "",
                                 })
                               }
+                              title="編集"
                             >
-                              編集
-                            </Button>
-                            <Button type="button" size="sm" variant="secondary" onClick={() => handleLaborCopy(role)}>
-                              コピー
-                            </Button>
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              onClick={() => handleLaborCopy(role)}
+                              title="コピー"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
+                              onClick={() => {
+                                removeLaborRole(role.id)
+                                toast.success("人件費レートを削除しました", { description: `「${role.name}」を削除しました。` })
+                              }}
+                              title="削除"
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </TableCell>
