@@ -122,6 +122,40 @@ const hasMeaningfulData = (dataset: AppData) => {
   return false
 }
 
+const mergeAppData = (base: AppData, guest: AppData): AppData => {
+  const mergeById = <T extends { id: string }>(baseArr: T[], guestArr: T[]): T[] => {
+    const existingIds = new Set(baseArr.map((item) => item.id))
+    const newItems = guestArr.filter((item) => !existingIds.has(item.id))
+    return [...baseArr, ...newItems]
+  }
+  return {
+    categories: {
+      large: mergeById(base.categories.large, guest.categories.large),
+      medium: mergeById(base.categories.medium, guest.categories.medium),
+      small: mergeById(base.categories.small, guest.categories.small),
+    },
+    materials: mergeById(base.materials, guest.materials),
+    packagingItems: mergeById(base.packagingItems, guest.packagingItems),
+    shippingMethods: mergeById(base.shippingMethods, guest.shippingMethods),
+    laborRoles: mergeById(base.laborRoles, guest.laborRoles),
+    equipments: mergeById(base.equipments, guest.equipments),
+    fees: mergeById(base.fees, guest.fees),
+    optionPresets: mergeById(base.optionPresets, guest.optionPresets),
+    products: mergeById(base.products, guest.products),
+    costEntries: {
+      materials: mergeById(base.costEntries.materials, guest.costEntries.materials),
+      packaging: mergeById(base.costEntries.packaging, guest.costEntries.packaging),
+      labor: mergeById(base.costEntries.labor, guest.costEntries.labor),
+      outsourcing: mergeById(base.costEntries.outsourcing, guest.costEntries.outsourcing),
+      development: mergeById(base.costEntries.development, guest.costEntries.development),
+      equipmentAllocations: mergeById(base.costEntries.equipmentAllocations, guest.costEntries.equipmentAllocations),
+      logistics: mergeById(base.costEntries.logistics, guest.costEntries.logistics),
+      electricity: mergeById(base.costEntries.electricity, guest.costEntries.electricity),
+      fees: mergeById(base.costEntries.fees, guest.costEntries.fees),
+    },
+  }
+}
+
 const MAX_SAVE_RETRIES = 3
 
 export function useAppData() {
@@ -149,6 +183,7 @@ export function useAppData() {
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
+  const [pendingGuestData, setPendingGuestData] = useState<AppData | null>(null)
   // Stable primitives derived from authState — used as deps instead of the full object
   // to prevent load effect re-runs when only the object reference changes (e.g. TOKEN_REFRESHED).
   const authUserId = authState.status === "authenticated" ? authState.user.id : null
@@ -546,6 +581,19 @@ export function useAppData() {
     if (hydrated) return
     if (authState.status === "loading") return
     if (authState.status === "authenticated") {
+      // ゲスト→ログイン遷移時: ローカルデータがあればマージ確認用に保持
+      const stored = window.localStorage.getItem(STORAGE_KEY)
+      if (stored && previousAuthStatus !== "authenticated") {
+        try {
+          const parsed = JSON.parse(stored) as Partial<AppData>
+          const normalized = normalizeAppData(parsed)
+          if (hasMeaningfulData(normalized)) {
+            setPendingGuestData(normalized)
+          }
+        } catch {
+          // ignore parse errors
+        }
+      }
       skipSaveCounterRef.current += 1
       window.localStorage.removeItem(STORAGE_KEY)
       setData(emptyAppData)
@@ -570,7 +618,7 @@ export function useAppData() {
       }
     }
     startTransition(() => setHydrated(true))
-  }, [authState.status, hydrated])
+  }, [authState.status, hydrated, previousAuthStatus])
 
   useLayoutEffect(() => {
     if (authState.status === "authenticated" && typeof window !== "undefined") {
@@ -1239,6 +1287,18 @@ export function useAppData() {
     [update]
   )
 
+  const mergeGuestData = useCallback(() => {
+    if (!pendingGuestData) return
+    setData((current) => mergeAppData(current, pendingGuestData))
+    setPendingGuestData(null)
+    toast.success("ローカルデータをマージしました")
+  }, [pendingGuestData])
+
+  const discardGuestData = useCallback(() => {
+    setPendingGuestData(null)
+    toast.success("ローカルデータを破棄しました")
+  }, [])
+
   const resetAll = useCallback(() => {
     if (authState.status === "authenticated") {
       toast.error("ログイン中はリセットできません")
@@ -1282,6 +1342,10 @@ export function useAppData() {
     data,
     hydrated,
     isSaving,
+    pendingGuestData,
+    remoteLoadCompleted,
+    mergeGuestData,
+    discardGuestData,
     auditLogs,
     auditLogsLoading,
     auditHasMore,
