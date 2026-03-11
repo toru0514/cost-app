@@ -68,6 +68,9 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
     data,
     hydrated,
     isSaving,
+    pendingGuestData,
+    mergeGuestData,
+    discardGuestData,
     actions,
     auditLogs,
     auditLogsLoading,
@@ -1097,6 +1100,24 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
             </Button>
             <Button type="button" variant="destructive" onClick={confirmBackupRestore}>
               復元する
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={pendingGuestData !== null} onOpenChange={() => {}}>
+        <DialogContent onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
+          <DialogHeader>
+            <DialogTitle>ローカルデータのマージ確認</DialogTitle>
+            <DialogDescription>
+              ログアウト中に追加されたローカルデータがあります。サーバーのデータにマージしますか？破棄するとローカルデータは失われます。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="outline" onClick={discardGuestData}>
+              破棄する
+            </Button>
+            <Button type="button" onClick={mergeGuestData}>
+              マージする
             </Button>
           </DialogFooter>
         </DialogContent>
