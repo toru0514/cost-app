@@ -37,7 +37,7 @@ import {
 import { ProductTab } from "./_components/product/product-tab"
 import { SearchWithScope, type SearchField } from "./_components/shared/search-with-scope"
 import { StockListTab } from "./_components/stock-list/stock-list-tab"
-import { BarChart3, Box, Boxes, ChevronDown, ClipboardList, FileDown, FileText, FileUp, Filter, LayoutDashboard, LogIn, LogOut, Menu, Package, PanelLeftClose, PanelLeftOpen, Plus, Search, X } from "lucide-react"
+import { BarChart3, Box, Boxes, ChevronDown, ClipboardList, FileDown, FileText, FileUp, Filter, LayoutDashboard, LogIn, LogOut, Menu, Package, PanelLeftClose, PanelLeftOpen, Plus, X } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
 import { useRouter } from "next/navigation"
