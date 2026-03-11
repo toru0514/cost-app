@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 
+import { Copy, Edit3, Trash2 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -13,7 +15,6 @@ import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
 import type { AppData, LaborRole } from "@/lib/types"
-import { Copy, Edit3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface LaborListSectionProps {
@@ -157,7 +158,7 @@ export function LaborListSection({ data, actions, createTempId }: LaborListSecti
                         {isEditing ? (
                           renderActionButtons(handleLaborSave, resetLabor, handleLaborDelete)
                         ) : (
-                          <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                          <div className="master-row-actions flex items-center justify-end gap-1">
                             <button
                               type="button"
                               className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"

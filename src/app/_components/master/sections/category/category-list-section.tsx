@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 
+import { Copy, Edit3, Trash2 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -18,7 +20,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Textarea } from "@/components/ui/textarea"
 import type { AppActions } from "@/lib/app-data"
 import type { AppData, CategoryLarge, CategoryMedium, CategorySmall } from "@/lib/types"
-import { Copy, Edit3, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 interface CategoryListSectionProps {
@@ -324,7 +325,7 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                           {isEditing ? (
                             renderActionButtons(handleLargeSave, resetLarge, handleLargeDelete)
                           ) : (
-                            <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <div className="master-row-actions flex items-center justify-end gap-1">
                               <button
                                 type="button"
                                 className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -445,7 +446,7 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                           {isEditing ? (
                             renderActionButtons(handleMediumSave, resetMedium, handleMediumDelete)
                           ) : (
-                            <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <div className="master-row-actions flex items-center justify-end gap-1">
                               <button
                                 type="button"
                                 className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -568,7 +569,7 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                           {isEditing ? (
                             renderActionButtons(handleSmallSave, resetSmall, handleSmallDelete)
                           ) : (
-                            <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                            <div className="master-row-actions flex items-center justify-end gap-1">
                               <button
                                 type="button"
                                 className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
