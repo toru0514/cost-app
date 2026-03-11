@@ -317,11 +317,7 @@ export function StockListTab({
         {data.equipments.length === 0 ? (
           <p className="text-sm text-muted-foreground">設備が登録されていません。</p>
         ) : (
-<<<<<<< HEAD
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
-=======
-          <div className="overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
->>>>>>> 1d357a6 (fix: 全ページでカード固定・テーブルのみ横スクロールに統一)
             <Table className="min-w-[720px]">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
