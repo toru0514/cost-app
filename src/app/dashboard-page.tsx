@@ -69,6 +69,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
     hydrated,
     isSaving,
     pendingGuestData,
+    remoteLoadCompleted,
     mergeGuestData,
     discardGuestData,
     actions,
@@ -1104,7 +1105,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-      <Dialog open={pendingGuestData !== null} onOpenChange={() => {}}>
+      <Dialog open={pendingGuestData !== null && remoteLoadCompleted} onOpenChange={() => {}}>
         <DialogContent onPointerDownOutside={(e) => e.preventDefault()} onEscapeKeyDown={(e) => e.preventDefault()}>
           <DialogHeader>
             <DialogTitle>ローカルデータのマージ確認</DialogTitle>

@@ -1343,6 +1343,7 @@ export function useAppData() {
     hydrated,
     isSaving,
     pendingGuestData,
+    remoteLoadCompleted,
     mergeGuestData,
     discardGuestData,
     auditLogs,
