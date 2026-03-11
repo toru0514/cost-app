@@ -126,52 +126,52 @@ export function CostTab({ data }: CostTabProps) {
         </div>
       </div>
 
-      <div className="cost-section-block space-y-3 overflow-hidden">
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("summary", "原価サマリ")}
         {openState.summary && <CostSummarySection data={data} />}
       </div>
 
-      <div className="cost-section-block space-y-3 overflow-hidden">
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("profitSimulation", "利益シミュレーション")}
         {openState.profitSimulation && <ProfitSimulationSection data={data} />}
       </div>
 
-      <div className="cost-section-block space-y-3 overflow-hidden">
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("packaging", "梱包コスト集計")}
         {openState.packaging && <PackagingCostSection data={data} />}
       </div>
 
-      <div className="cost-section-block space-y-3 overflow-hidden">
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("labor", "人件費")}
         {openState.labor && <LaborCostSection data={data} />}
       </div>
 
-      <div className="cost-section-block space-y-3 overflow-hidden">
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("outsourcing", "外注費")}
         {openState.outsourcing && <OutsourcingCostSection data={data} />}
       </div>
 
-      <div className="cost-section-block space-y-3 overflow-hidden">
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("development", "開発コスト")}
         {openState.development && <DevelopmentCostSection data={data} />}
       </div>
 
-      <div className="cost-section-block space-y-3 overflow-hidden">
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("equipment", "設備配賦")}
         {openState.equipment && <EquipmentAllocationSection data={data} />}
       </div>
 
-      <div className="cost-section-block space-y-3 overflow-hidden">
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("logistics", "物流・配送費")}
         {openState.logistics && <LogisticsCostSection data={data} />}
       </div>
 
-      <div className="cost-section-block space-y-3 overflow-hidden">
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("electricity", "電気代")}
         {openState.electricity && <ElectricityCostSection data={data} />}
       </div>
 
-      <div className="cost-section-block space-y-3 overflow-hidden">
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("fees", "販売・決済手数料")}
         {openState.fees && <FeesCostSection data={data} />}
       </div>

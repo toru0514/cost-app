@@ -250,7 +250,7 @@ export function CustomizableProductTable({
   }
 
   return (
-    <div className="space-y-3 overflow-hidden">
+    <div className="min-w-0 space-y-3 overflow-hidden">
       <div className="flex flex-col gap-2 rounded-md border border-dashed p-3 md:flex-row md:items-center md:justify-between">
         <p className="text-xs text-muted-foreground">
           {isAuthenticated

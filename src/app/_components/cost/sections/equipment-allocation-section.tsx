@@ -58,7 +58,7 @@ export function EquipmentAllocationSection({ data }: CostSectionProps) {
   }, [data.costEntries.equipmentAllocations, data.equipments, data.products])
 
   return (
-    <section className="space-y-3 rounded-lg border p-4">
+    <section className="min-w-0 space-y-3 rounded-lg border p-4">
       <div>
         <h2 className="text-xl font-semibold">設備配賦</h2>
         <p className="text-sm text-muted-foreground">設備単位での配賦状況</p>
