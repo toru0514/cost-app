@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 
+import { Copy, Edit3 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -323,20 +325,25 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                           {isEditing ? (
                             renderActionButtons(handleLargeSave, resetLarge, handleLargeDelete)
                           ) : (
-                            <div className="flex justify-end gap-2">
-                              <Button
+                            <div className="master-row-actions flex items-center justify-end gap-1">
+                              <button
                                 type="button"
-                                size="sm"
-                                variant="outline"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 onClick={() =>
                                   setEditingLarge({ id: category.id, name: category.name, description: category.description ?? "" })
                                 }
+                                title="編集"
                               >
-                                編集
-                              </Button>
-                              <Button type="button" size="sm" variant="secondary" onClick={() => handleLargeCopy(category)}>
-                                コピー
-                              </Button>
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                onClick={() => handleLargeCopy(category)}
+                                title="コピー"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </button>
                             </div>
                           )}
                         </TableCell>
@@ -417,11 +424,10 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                           {isEditing ? (
                             renderActionButtons(handleMediumSave, resetMedium, handleMediumDelete)
                           ) : (
-                            <div className="flex justify-end gap-2">
-                              <Button
+                            <div className="master-row-actions flex items-center justify-end gap-1">
+                              <button
                                 type="button"
-                                size="sm"
-                                variant="outline"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 onClick={() =>
                                   setEditingMedium({
                                     id: category.id,
@@ -430,12 +436,18 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                                     largeId: category.largeId,
                                   })
                                 }
+                                title="編集"
                               >
-                                編集
-                              </Button>
-                              <Button type="button" size="sm" variant="secondary" onClick={() => handleMediumCopy(category)}>
-                                コピー
-                              </Button>
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                onClick={() => handleMediumCopy(category)}
+                                title="コピー"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </button>
                             </div>
                           )}
                         </TableCell>
@@ -516,11 +528,10 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                           {isEditing ? (
                             renderActionButtons(handleSmallSave, resetSmall, handleSmallDelete)
                           ) : (
-                            <div className="flex justify-end gap-2">
-                              <Button
+                            <div className="master-row-actions flex items-center justify-end gap-1">
+                              <button
                                 type="button"
-                                size="sm"
-                                variant="outline"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                                 onClick={() =>
                                   setEditingSmall({
                                     id: category.id,
@@ -529,12 +540,18 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                                     mediumId: category.mediumId,
                                   })
                                 }
+                                title="編集"
                               >
-                                編集
-                              </Button>
-                              <Button type="button" size="sm" variant="secondary" onClick={() => handleSmallCopy(category)}>
-                                コピー
-                              </Button>
+                                <Edit3 className="h-4 w-4" />
+                              </button>
+                              <button
+                                type="button"
+                                className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                                onClick={() => handleSmallCopy(category)}
+                                title="コピー"
+                              >
+                                <Copy className="h-4 w-4" />
+                              </button>
                             </div>
                           )}
                         </TableCell>

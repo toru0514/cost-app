@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 
+import { Copy, Edit3 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -176,11 +178,10 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
                             <Button type="button" size="sm" variant="ghost" onClick={resetOptionPreset}>キャンセル</Button>
                           </div>
                         ) : (
-                          <div className="flex justify-end gap-2">
-                            <Button
+                          <div className="master-row-actions flex items-center justify-end gap-1">
+                            <button
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                               onClick={() =>
                                 setEditingOptionPreset({
                                   id: preset.id,
@@ -191,12 +192,18 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
                                       : [{ label: "", quantity: 0 }],
                                 })
                               }
+                              title="編集"
                             >
-                              編集
-                            </Button>
-                            <Button type="button" size="sm" variant="secondary" onClick={() => handlePresetCopy(preset)}>
-                              コピー
-                            </Button>
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              onClick={() => handlePresetCopy(preset)}
+                              title="コピー"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </TableCell>

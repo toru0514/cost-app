@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 
+import { Copy, Edit3 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -444,11 +446,10 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                         {isEditing ? (
                           renderActionButtons(handleMaterialSave, resetMaterial, handleMaterialDelete)
                         ) : (
-                          <div className="master-row-actions flex justify-end gap-2">
-                            <Button
+                          <div className="master-row-actions flex items-center justify-end gap-1">
+                            <button
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                               onClick={() => {
                                 setEditingStock(null)
                                 setEditingMaterial({
@@ -463,12 +464,18 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                                   note: material.note ?? "",
                                 })
                               }}
+                              title="編集"
                             >
-                              編集
-                            </Button>
-                            <Button type="button" size="sm" variant="secondary" onClick={() => handleMaterialCopy(material)}>
-                              コピー
-                            </Button>
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              onClick={() => handleMaterialCopy(material)}
+                              title="コピー"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </TableCell>

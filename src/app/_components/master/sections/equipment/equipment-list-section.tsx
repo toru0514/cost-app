@@ -2,6 +2,8 @@
 
 import { useState } from "react"
 
+import { Copy, Edit3 } from "lucide-react"
+
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -216,11 +218,10 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                         {isEditing ? (
                           renderActionButtons(handleEquipmentSave, resetEquipment, handleEquipmentDelete)
                         ) : (
-                          <div className="flex justify-end gap-2">
-                            <Button
+                          <div className="master-row-actions flex items-center justify-end gap-1">
+                            <button
                               type="button"
-                              size="sm"
-                              variant="outline"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
                               onClick={() =>
                                 setEditingEquipment({
                                   id: equipment.id,
@@ -232,12 +233,18 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                                   note: equipment.note ?? "",
                                 })
                               }
+                              title="編集"
                             >
-                              編集
-                            </Button>
-                            <Button type="button" size="sm" variant="secondary" onClick={() => handleEquipmentCopy(equipment)}>
-                              コピー
-                            </Button>
+                              <Edit3 className="h-4 w-4" />
+                            </button>
+                            <button
+                              type="button"
+                              className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+                              onClick={() => handleEquipmentCopy(equipment)}
+                              title="コピー"
+                            >
+                              <Copy className="h-4 w-4" />
+                            </button>
                           </div>
                         )}
                       </TableCell>
