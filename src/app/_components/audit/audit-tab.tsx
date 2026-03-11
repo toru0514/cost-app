@@ -127,7 +127,7 @@ export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filter
   }
 
   return (
-    <div className="space-y-4 overflow-hidden">
+    <div className="min-w-0 space-y-4 overflow-hidden">
       {/* ページヘッダー */}
       <div>
         <h1 className="text-2xl font-semibold">監査ログ</h1>

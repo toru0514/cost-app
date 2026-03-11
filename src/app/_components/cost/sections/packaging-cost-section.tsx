@@ -167,8 +167,8 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
   )
 
   return (
-    <div className="space-y-4">
-      <section className="space-y-3 rounded-lg border p-4">
+    <div className="min-w-0 space-y-4">
+      <section className="min-w-0 space-y-3 rounded-lg border p-4">
         {renderSectionToggle(
           packagingDetailOpen,
           () => setPackagingDetailOpen((prev) => !prev),
@@ -250,7 +250,7 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
         )}
       </section>
 
-      <section className="space-y-3 rounded-lg border p-4">
+      <section className="min-w-0 space-y-3 rounded-lg border p-4">
         {renderSectionToggle(
           packagingSummaryOpen,
           () => setPackagingSummaryOpen((prev) => !prev),

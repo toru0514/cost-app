@@ -200,7 +200,7 @@ export function CostDisplay({
   }
 
   return (
-    <section className="space-y-3 rounded-lg border p-4">
+    <section className="min-w-0 space-y-3 rounded-lg border p-4">
       <div>
         <h2 className="text-xl font-semibold">{title}</h2>
         <p className="text-sm text-muted-foreground">{description}</p>
