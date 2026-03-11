@@ -91,7 +91,8 @@ export function RegisteredProductsSection({
         {data.products.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ商品がありません。</p>
         ) : (
-          <Table>
+          <div className="overflow-x-auto overscroll-x-contain touch-pan-x">
+          <Table className="min-w-[640px]">
             <TableHeader>
               <TableRow>
                 <TableHead>商品名</TableHead>
@@ -230,6 +231,7 @@ export function RegisteredProductsSection({
               })}
             </TableBody>
           </Table>
+          </div>
         )}
       </CardContent>
     </Card>
