@@ -4,11 +4,11 @@ import { CostDisplay } from "../../shared/ui"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
 
-interface SectionProps {
+interface CostSectionProps {
   data: AppData
 }
 
-export function LaborCostSection({ data }: SectionProps) {
+export function LaborCostSection({ data }: CostSectionProps) {
   return (
     <CostDisplay
       title="人件費"
@@ -22,23 +22,6 @@ export function LaborCostSection({ data }: SectionProps) {
           product: productName,
           detail: `${role?.name ?? "-"} / ${entry.hours}h × ${entry.peopleCount}人`,
           amount: formatCurrency(hourlyRate * entry.hours * entry.peopleCount, currency),
-        }
-      })}
-    />
-  )
-}
-
-export function OutsourcingCostSection({ data }: SectionProps) {
-  return (
-    <CostDisplay
-      title="外注費"
-      description="委託費用"
-      rows={data.costEntries.outsourcing.map((entry) => {
-        const productName = data.products.find((product) => product.id === entry.productId)?.name ?? "未設定"
-        return {
-          product: productName,
-          detail: entry.note || "-",
-          amount: formatCurrency(entry.costPerUnit, entry.currency),
         }
       })}
     />
