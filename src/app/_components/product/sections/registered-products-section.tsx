@@ -82,7 +82,7 @@ export function RegisteredProductsSection({
   }
 
   return (
-    <Card>
+    <Card className="overflow-hidden">
       <CardHeader>
         <CardTitle>登録済み商品</CardTitle>
         <CardDescription>想定生産量・設備利用状況の一覧。</CardDescription>
