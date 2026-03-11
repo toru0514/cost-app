@@ -6,6 +6,14 @@ import { Copy, Edit3, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { NumberInput } from "@/components/ui/number-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -32,6 +40,8 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
     currency: "JPY",
     note: "",
   })
+
+  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
 
   const { updateShippingMethod, removeShippingMethod, addShippingMethod } = actions
 
@@ -70,9 +80,15 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
     const { id } = editingShipping
     if (!id) return
     const name = editingShipping.name.trim() || "配送方法"
-    removeShippingMethod(id)
-    toast.success("配送方法を削除しました", { description: `「${name}」を削除しました。` })
+    setDeleteTarget({ id, name })
+  }
+
+  const confirmDelete = () => {
+    if (!deleteTarget) return
+    removeShippingMethod(deleteTarget.id)
+    toast.success("配送方法を削除しました", { description: `「${deleteTarget.name}」を削除しました。` })
     resetShipping()
+    setDeleteTarget(null)
   }
 
   const handleShippingCopy = (method: ShippingMethod) => {
@@ -98,7 +114,8 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
   }
 
   return (
-    <Card>
+    <>
+      <Card>
       <CardHeader>
         <CardTitle>配送方法一覧</CardTitle>
       </CardHeader>
@@ -214,10 +231,7 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
                             <button
                               type="button"
                               className="rounded p-1.5 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-950"
-                              onClick={() => {
-                                removeShippingMethod(method.id)
-                                toast.success("配送方法を削除しました", { description: `「${method.name}」を削除しました。` })
-                              }}
+                              onClick={() => setDeleteTarget({ id: method.id, name: method.name })}
                               title="削除"
                             >
                               <Trash2 className="h-4 w-4" />
@@ -233,6 +247,25 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
           </div>
         )}
       </CardContent>
-    </Card>
+      </Card>
+      <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>配送方法を削除しますか？</DialogTitle>
+            <DialogDescription>
+              「{deleteTarget?.name}」を削除します。この操作は取り消せません。
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setDeleteTarget(null)}>
+              キャンセル
+            </Button>
+            <Button type="button" variant="destructive" onClick={confirmDelete}>
+              削除する
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   )
 }
