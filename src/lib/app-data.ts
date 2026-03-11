@@ -128,7 +128,7 @@ export function useAppData() {
   const { state: authState } = useAuth()
   const [data, setData] = useState<AppData>(emptyAppData)
   const [hydrated, setHydrated] = useState(false)
-  const skipNextSaveRef = useRef(false)
+  const skipSaveCounterRef = useRef(0)
   const dataRef = useRef<AppData>(emptyAppData)
   const lastSyncedDataRef = useRef<AppData>(emptyAppData)
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
@@ -546,9 +546,14 @@ export function useAppData() {
     if (hydrated) return
     if (authState.status === "loading") return
     if (authState.status === "authenticated") {
-      skipNextSaveRef.current = true
+      skipSaveCounterRef.current += 1
       window.localStorage.removeItem(STORAGE_KEY)
       setData(emptyAppData)
+      startTransition(() => setHydrated(true))
+      return
+    }
+    if (authStatusRef.current === "authenticated") {
+      window.localStorage.removeItem(STORAGE_KEY)
       startTransition(() => setHydrated(true))
       return
     }
@@ -568,6 +573,9 @@ export function useAppData() {
   }, [authState.status, hydrated])
 
   useLayoutEffect(() => {
+    if (authState.status === "authenticated" && typeof window !== "undefined") {
+      window.localStorage.removeItem(STORAGE_KEY)
+    }
     setRemoteLoadCompleted(authState.status !== "authenticated")
   }, [authState.status])
 
@@ -598,7 +606,7 @@ export function useAppData() {
           await refreshAuditLogs()
           return
         }
-        skipNextSaveRef.current = true
+        skipSaveCounterRef.current += 1
         clearSaveRetry()
         const normalized = normalizeAppData(remote)
         setData(normalized)
@@ -624,8 +632,8 @@ export function useAppData() {
   useEffect(() => {
     if (!hydrated || !remoteLoadCompleted) return
     if (authState.status === "authenticated" && remoteLoadFailed) return
-    if (skipNextSaveRef.current) {
-      skipNextSaveRef.current = false
+    if (skipSaveCounterRef.current > 0) {
+      skipSaveCounterRef.current -= 1
       return
     }
     if (authState.status === "authenticated") {
