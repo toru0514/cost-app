@@ -7,11 +7,31 @@ import { CostDisplay } from "../../shared/ui"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData, Equipment } from "@/lib/types"
 
-interface DevelopmentEquipmentSectionProps {
+interface SectionProps {
   data: AppData
 }
 
-export function DevelopmentEquipmentSection({ data }: DevelopmentEquipmentSectionProps) {
+export function DevelopmentCostSection({ data }: SectionProps) {
+  return (
+    <CostDisplay
+      title="開発コスト"
+      description="試作/道具費の償却"
+      rows={data.costEntries.development.map((entry) => {
+        const product = data.products.find((item) => item.id === entry.productId)
+        const quantity = product?.expectedProduction.quantity || 1
+        const total = entry.prototypeLaborCost + entry.prototypeMaterialCost + entry.toolingCost
+        const amortized = total / Math.max(entry.amortizationYears || 1, 1)
+        return {
+          product: product?.name ?? "未設定",
+          detail: `${entry.title ?? "開発コスト"} / ${entry.amortizationYears}年 / ${quantity}個`,
+          amount: formatCurrency(amortized / Math.max(quantity, 1)),
+        }
+      })}
+    />
+  )
+}
+
+export function EquipmentAllocationSection({ data }: SectionProps) {
   const equipmentUsageGroups = useMemo(() => {
     const groups = new Map<
       string,
@@ -59,79 +79,62 @@ export function DevelopmentEquipmentSection({ data }: DevelopmentEquipmentSectio
   }, [data.costEntries.equipmentAllocations, data.equipments, data.products])
 
   return (
-    <div className="grid gap-6 md:grid-cols-2">
-      <CostDisplay
-        title="開発コスト"
-        description="試作/道具費の償却"
-        rows={data.costEntries.development.map((entry) => {
-          const product = data.products.find((item) => item.id === entry.productId)
-          const quantity = product?.expectedProduction.quantity || 1
-          const total = entry.prototypeLaborCost + entry.prototypeMaterialCost + entry.toolingCost
-          const amortized = total / Math.max(entry.amortizationYears || 1, 1)
-          return {
-            product: product?.name ?? "未設定",
-            detail: `${entry.title ?? "開発コスト"} / ${entry.amortizationYears}年 / ${quantity}個`,
-            amount: formatCurrency(amortized / Math.max(quantity, 1)),
-          }
-        })}
-      />
-      <section className="space-y-3 rounded-lg border p-4">
-        <div>
-          <h2 className="text-xl font-semibold">設備配賦</h2>
-          <p className="text-sm text-muted-foreground">設備単位での配賦状況</p>
-        </div>
-        <div className="space-y-3">
-          {equipmentUsageGroups.length === 0 ? (
-            <p className="text-sm text-muted-foreground">まだ設備配賦が登録されていません。</p>
-          ) : (
-            <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-              <Table className="w-auto min-w-max">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>設備</TableHead>
-                    <TableHead>取得額 / 償却年数</TableHead>
-                    <TableHead>配賦内訳</TableHead>
+    <section className="space-y-3 rounded-lg border p-4">
+      <div>
+        <h2 className="text-xl font-semibold">設備配賦</h2>
+        <p className="text-sm text-muted-foreground">設備単位での配賦状況</p>
+      </div>
+      <div className="space-y-3">
+        {equipmentUsageGroups.length === 0 ? (
+          <p className="text-sm text-muted-foreground">まだ設備配賦が登録されていません。</p>
+        ) : (
+          <div className="relative w-full max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+            <Table className="w-auto min-w-max">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>設備</TableHead>
+                  <TableHead>取得額 / 償却年数</TableHead>
+                  <TableHead>配賦内訳</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {equipmentUsageGroups.map((group) => (
+                  <TableRow key={`equipment-group-${group.equipment.id}`}>
+                    <TableCell>{group.equipment.name}</TableCell>
+                    <TableCell>
+                      {(() => {
+                        const utilizationRate = Math.min(Math.max(group.equipment.utilizationRate ?? 100, 0), 100)
+                        const effectiveCost = (group.equipment.acquisitionCost * utilizationRate) / 100
+                        return (
+                          <>
+                            {formatCurrency(group.equipment.acquisitionCost, group.equipment.currency)} /
+                            {group.equipment.amortizationYears}年
+                            <span className="block text-xs text-muted-foreground">
+                              利用率 {utilizationRate}% / 配賦対象額 {formatCurrency(effectiveCost, group.equipment.currency)}
+                            </span>
+                          </>
+                        )
+                      })()}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {group.entries
+                        .map((entry) => {
+                          const ratio =
+                            group.totalUsageHours && entry.usageHours !== undefined && group.totalUsageHours > 0
+                              ? Math.round((entry.usageHours / group.totalUsageHours) * 100)
+                              : Math.round(entry.allocationRatio * 100)
+                          const hoursText = entry.usageHours !== undefined ? `${entry.usageHours.toFixed(2)}h` : "-"
+                          return `${entry.productName}: ${ratio}% / ${entry.annualQuantity}個 / ${hoursText} / ${formatCurrency(entry.unitCost, group.equipment.currency)}`
+                        })
+                        .join(" / ")}
+                    </TableCell>
                   </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {equipmentUsageGroups.map((group) => (
-                    <TableRow key={`equipment-group-${group.equipment.id}`}>
-                      <TableCell>{group.equipment.name}</TableCell>
-                      <TableCell>
-                        {(() => {
-                          const utilizationRate = Math.min(Math.max(group.equipment.utilizationRate ?? 100, 0), 100)
-                          const effectiveCost = (group.equipment.acquisitionCost * utilizationRate) / 100
-                          return (
-                            <>
-                              {formatCurrency(group.equipment.acquisitionCost, group.equipment.currency)} /
-                              {group.equipment.amortizationYears}年
-                              <span className="block text-xs text-muted-foreground">
-                                利用率 {utilizationRate}% / 配賦対象額 {formatCurrency(effectiveCost, group.equipment.currency)}
-                              </span>
-                            </>
-                          )
-                        })()}
-                      </TableCell>
-                      <TableCell className="text-xs text-muted-foreground">
-                        {group.entries
-                          .map((entry) => {
-                            const ratio =
-                              group.totalUsageHours && entry.usageHours !== undefined && group.totalUsageHours > 0
-                                ? Math.round((entry.usageHours / group.totalUsageHours) * 100)
-                                : Math.round(entry.allocationRatio * 100)
-                            const hoursText = entry.usageHours !== undefined ? `${entry.usageHours.toFixed(2)}h` : "-"
-                            return `${entry.productName}: ${ratio}% / ${entry.annualQuantity}個 / ${hoursText} / ${formatCurrency(entry.unitCost, group.equipment.currency)}`
-                          })
-                          .join(" / ")}
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
-          )}
-        </div>
-      </section>
-    </div>
+                ))}
+              </TableBody>
+            </Table>
+          </div>
+        )}
+      </div>
+    </section>
   )
 }
