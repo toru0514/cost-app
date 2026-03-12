@@ -208,6 +208,13 @@ export type PackagingStock = {
   updatedAt: string
 }
 
+export type StockAlertSetting = {
+  itemType: "product" | "material" | "packaging"
+  itemId: string
+  enabled: boolean
+  threshold: number
+}
+
 export type AuditLogMetadata = {
   changes?: {
     products?: ChangeSummary

@@ -1,13 +1,14 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Copy, Edit3, GripVertical, MoreHorizontal, Trash2 } from "lucide-react"
+import { Bell, BellOff, Copy, Edit3, GripVertical, Trash2 } from "lucide-react"
 
-import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/calculations"
-import type { Product } from "@/lib/types"
+import type { Product, StockAlertSetting } from "@/lib/types"
 import { toast } from "sonner"
 
 export const CUSTOMIZABLE_PRODUCT_COLUMNS = [
@@ -50,6 +51,20 @@ type Props = {
   onEdit: (productId: string) => void
   onCopy: (productId: string) => void
   onDelete: (product: Product) => void
+  stockAlertSettings: Map<string, StockAlertSetting>
+  stockAlertSettingsLoaded: boolean
+  onUpdateStockAlertSetting: (
+    itemType: StockAlertSetting["itemType"],
+    itemId: string,
+    enabled: boolean,
+    threshold: number
+  ) => Promise<void>
+  onCheckAndNotifyLowStock: (
+    itemType: StockAlertSetting["itemType"],
+    itemId: string,
+    itemName: string,
+    newQuantity: number
+  ) => void
 }
 
 const COLUMN_LABELS: Record<CustomizableProductColumnKey, string> = {
@@ -120,10 +135,15 @@ export function CustomizableProductTable({
   onEdit,
   onCopy,
   onDelete,
+  stockAlertSettings,
+  stockAlertSettingsLoaded,
+  onUpdateStockAlertSetting,
+  onCheckAndNotifyLowStock,
 }: Props) {
   const [draggingColumn, setDraggingColumn] = useState<CustomizableProductColumnKey | null>(null)
   const [showHiddenColumns, setShowHiddenColumns] = useState(false)
   const [busyKey, setBusyKey] = useState<string | null>(null)
+  const [thresholdInputs, setThresholdInputs] = useState<Map<string, string>>(new Map())
 
   const hiddenSet = useMemo(() => new Set(columnSettings.hiddenColumns), [columnSettings.hiddenColumns])
   const visibleColumns = useMemo(
@@ -156,10 +176,45 @@ export function CustomizableProductTable({
     })
   }
 
-  const adjustStock = async (productId: string, delta: number) => {
+  const getAlertSetting = (productId: string) =>
+    stockAlertSettings.get(`product:${productId}`)
+
+  const getThresholdValue = (productId: string) => {
+    const inputVal = thresholdInputs.get(productId)
+    if (inputVal !== undefined) return inputVal
+    const setting = getAlertSetting(productId)
+    return String(setting?.threshold ?? 5)
+  }
+
+  const handleToggleAlert = async (productId: string, enabled: boolean) => {
+    const threshold = parseInt(getThresholdValue(productId), 10) || 5
+    try {
+      await onUpdateStockAlertSetting("product", productId, enabled, threshold)
+      toast.success(enabled ? "在庫通知をONにしました" : "在庫通知をOFFにしました")
+    } catch {
+      toast.error("通知設定の更新に失敗しました")
+    }
+  }
+
+  const handleThresholdBlur = async (productId: string) => {
+    const setting = getAlertSetting(productId)
+    if (!setting?.enabled) return
+    const threshold = Math.max(1, parseInt(getThresholdValue(productId), 10) || 5)
+    if (threshold === setting.threshold) return
+    try {
+      await onUpdateStockAlertSetting("product", productId, setting.enabled, threshold)
+    } catch {
+      toast.error("閾値の更新に失敗しました")
+    }
+  }
+
+  const adjustStock = async (productId: string, productName: string, delta: number) => {
     setBusyKey(`${productId}:${delta > 0 ? "add" : "use"}`)
     try {
       await onAdjustStock(productId, delta)
+      const currentQty = stocks.get(productId) ?? 0
+      const newQty = Math.max(0, currentQty + delta)
+      onCheckAndNotifyLowStock("product", productId, productName, newQty)
     } catch {
       toast.error("在庫の更新に失敗しました")
     } finally {
@@ -180,41 +235,73 @@ export function CustomizableProductTable({
             : stockQuantity < 10
               ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
               : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+        const alertSetting = getAlertSetting(product.id)
+        const alertEnabled = alertSetting?.enabled ?? false
         return (
-          <div className="flex items-center gap-2">
-            {isAuthenticated ? (
-              stocksLoaded ? (
-                <span className={`inline-flex min-w-[2rem] justify-center rounded px-1.5 py-0.5 text-xs font-medium ${stockColorClass}`}>
-                  {stockQuantity}
-                </span>
+          <div className="flex flex-col gap-1">
+            <div className="flex items-center gap-2">
+              {isAuthenticated ? (
+                stocksLoaded ? (
+                  <span className={`inline-flex min-w-[2rem] justify-center rounded px-1.5 py-0.5 text-xs font-medium ${stockColorClass}`}>
+                    {stockQuantity}
+                  </span>
+                ) : (
+                  <span className="text-xs text-muted-foreground">読込中...</span>
+                )
               ) : (
-                <span className="text-xs text-muted-foreground">読込中...</span>
-              )
-            ) : (
-              <span className="text-xs text-muted-foreground">-</span>
-            )}
-            <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="h-6 w-6 px-0"
-                onClick={() => adjustStock(product.id, 1)}
-                disabled={!isAuthenticated || !stocksLoaded || isBusy}
-              >
-                +
-              </Button>
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="h-6 w-6 px-0"
-                onClick={() => adjustStock(product.id, -1)}
-                disabled={!isAuthenticated || !stocksLoaded || isBusy || stockQuantity === 0}
-              >
-                -
-              </Button>
+                <span className="text-xs text-muted-foreground">-</span>
+              )}
+              <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-6 w-6 px-0"
+                  onClick={() => adjustStock(product.id, product.name, 1)}
+                  disabled={!isAuthenticated || !stocksLoaded || isBusy}
+                >
+                  +
+                </Button>
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  className="h-6 w-6 px-0"
+                  onClick={() => adjustStock(product.id, product.name, -1)}
+                  disabled={!isAuthenticated || !stocksLoaded || isBusy || stockQuantity === 0}
+                >
+                  -
+                </Button>
+              </div>
             </div>
+            {isAuthenticated && stockAlertSettingsLoaded && (
+              <div className="flex items-center gap-1">
+                <Switch
+                  checked={alertEnabled}
+                  onCheckedChange={(checked) => handleToggleAlert(product.id, checked)}
+                  aria-label="在庫通知"
+                  className="scale-75"
+                />
+                {alertEnabled ? <Bell className="h-3 w-3 text-amber-500" /> : <BellOff className="h-3 w-3 text-muted-foreground" />}
+                {alertEnabled && (
+                  <Input
+                    type="number"
+                    min={1}
+                    value={getThresholdValue(product.id)}
+                    onChange={(e) =>
+                      setThresholdInputs((prev) => {
+                        const next = new Map(prev)
+                        next.set(product.id, e.target.value)
+                        return next
+                      })
+                    }
+                    onBlur={() => handleThresholdBlur(product.id)}
+                    className="h-6 w-12 text-xs"
+                    title="通知閾値"
+                  />
+                )}
+              </div>
+            )}
           </div>
         )
       }
