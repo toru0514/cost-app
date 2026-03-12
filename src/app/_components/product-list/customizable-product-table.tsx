@@ -13,6 +13,7 @@ import { toast } from "sonner"
 
 export const CUSTOMIZABLE_PRODUCT_COLUMNS = [
   "stock",
+  "stockAlert",
   "category",
   "options",
   "shipping",
@@ -69,6 +70,7 @@ type Props = {
 
 const COLUMN_LABELS: Record<CustomizableProductColumnKey, string> = {
   stock: "在庫",
+  stockAlert: "通知",
   category: "カテゴリ",
   options: "オプション/個数",
   shipping: "配送方法",
@@ -235,72 +237,75 @@ export function CustomizableProductTable({
             : stockQuantity < 10
               ? "bg-yellow-100 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
               : "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300"
+        return (
+          <div className="flex items-center gap-2">
+            {isAuthenticated ? (
+              stocksLoaded ? (
+                <span className={`inline-flex min-w-[2rem] justify-center rounded px-1.5 py-0.5 text-xs font-medium ${stockColorClass}`}>
+                  {stockQuantity}
+                </span>
+              ) : (
+                <span className="text-xs text-muted-foreground">読込中...</span>
+              )
+            ) : (
+              <span className="text-xs text-muted-foreground">-</span>
+            )}
+            <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-6 w-6 px-0"
+                onClick={() => adjustStock(product.id, product.name, 1)}
+                disabled={!isAuthenticated || !stocksLoaded || isBusy}
+              >
+                +
+              </Button>
+              <Button
+                type="button"
+                size="sm"
+                variant="outline"
+                className="h-6 w-6 px-0"
+                onClick={() => adjustStock(product.id, product.name, -1)}
+                disabled={!isAuthenticated || !stocksLoaded || isBusy || stockQuantity === 0}
+              >
+                -
+              </Button>
+            </div>
+          </div>
+        )
+      }
+      case "stockAlert": {
+        if (!isAuthenticated || !stockAlertSettingsLoaded) {
+          return <span className="text-xs text-muted-foreground">-</span>
+        }
         const alertSetting = getAlertSetting(product.id)
         const alertEnabled = alertSetting?.enabled ?? false
         return (
-          <div className="flex flex-col gap-1">
-            <div className="flex items-center gap-2">
-              {isAuthenticated ? (
-                stocksLoaded ? (
-                  <span className={`inline-flex min-w-[2rem] justify-center rounded px-1.5 py-0.5 text-xs font-medium ${stockColorClass}`}>
-                    {stockQuantity}
-                  </span>
-                ) : (
-                  <span className="text-xs text-muted-foreground">読込中...</span>
-                )
-              ) : (
-                <span className="text-xs text-muted-foreground">-</span>
-              )}
-              <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-6 w-6 px-0"
-                  onClick={() => adjustStock(product.id, product.name, 1)}
-                  disabled={!isAuthenticated || !stocksLoaded || isBusy}
-                >
-                  +
-                </Button>
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="outline"
-                  className="h-6 w-6 px-0"
-                  onClick={() => adjustStock(product.id, product.name, -1)}
-                  disabled={!isAuthenticated || !stocksLoaded || isBusy || stockQuantity === 0}
-                >
-                  -
-                </Button>
-              </div>
-            </div>
-            {isAuthenticated && stockAlertSettingsLoaded && (
-              <div className="flex items-center gap-1">
-                <Switch
-                  checked={alertEnabled}
-                  onCheckedChange={(checked) => handleToggleAlert(product.id, checked)}
-                  aria-label="在庫通知"
-                  className="scale-75"
-                />
-                {alertEnabled ? <Bell className="h-3 w-3 text-amber-500" /> : <BellOff className="h-3 w-3 text-muted-foreground" />}
-                {alertEnabled && (
-                  <Input
-                    type="number"
-                    min={1}
-                    value={getThresholdValue(product.id)}
-                    onChange={(e) =>
-                      setThresholdInputs((prev) => {
-                        const next = new Map(prev)
-                        next.set(product.id, e.target.value)
-                        return next
-                      })
-                    }
-                    onBlur={() => handleThresholdBlur(product.id)}
-                    className="h-6 w-12 text-xs"
-                    title="通知閾値"
-                  />
-                )}
-              </div>
+          <div className="flex items-center gap-1">
+            <Switch
+              checked={alertEnabled}
+              onCheckedChange={(checked) => handleToggleAlert(product.id, checked)}
+              aria-label="在庫通知"
+              className="scale-75"
+            />
+            {alertEnabled ? <Bell className="h-3 w-3 text-amber-500" /> : <BellOff className="h-3 w-3 text-muted-foreground" />}
+            {alertEnabled && (
+              <Input
+                type="number"
+                min={1}
+                value={getThresholdValue(product.id)}
+                onChange={(e) =>
+                  setThresholdInputs((prev) => {
+                    const next = new Map(prev)
+                    next.set(product.id, e.target.value)
+                    return next
+                  })
+                }
+                onBlur={() => handleThresholdBlur(product.id)}
+                className="h-6 w-12 text-xs"
+                title="通知閾値"
+              />
             )}
           </div>
         )
