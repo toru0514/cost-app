@@ -8,6 +8,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData, StockAlertSetting } from "@/lib/types"
 import {
@@ -285,6 +287,10 @@ export function StockListTab({
     [equipmentRows, equipmentSearch.query, equipmentSearch.checkedFields, equipmentSearch.allFieldKeys]
   )
 
+  const materialPagination = useTablePagination(filteredMaterialRows)
+  const packagingPagination = useTablePagination(filteredPackagingRows)
+  const equipmentPagination = useTablePagination(filteredEquipmentRows)
+
   const renderAlertCell = (itemType: StockAlertSetting["itemType"], itemId: string) => {
     if (!stockAlertSettingsLoaded) return <span className="text-xs text-muted-foreground">-</span>
     const setting = getAlertSetting(itemType, itemId)
@@ -362,7 +368,7 @@ export function StockListTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredMaterialRows.map((row) => (
+                {materialPagination.pagedRows.map((row) => (
                   <TableRow key={row.id} className="group">
                     <TableCell className="font-medium">{row.name}</TableCell>
                     <TableCell>{row.unit}</TableCell>
@@ -422,6 +428,7 @@ export function StockListTab({
                 ))}
               </TableBody>
             </Table>
+            <TablePagination currentPage={materialPagination.currentPage} totalPages={materialPagination.totalPages} onPageChange={materialPagination.onPageChange} />
           </div>
         )}
       </section>
@@ -468,7 +475,7 @@ export function StockListTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredPackagingRows.map((row) => (
+                {packagingPagination.pagedRows.map((row) => (
                   <TableRow key={row.id} className="group">
                     <TableCell className="font-medium">{row.name}</TableCell>
                     <TableCell>{row.unit}</TableCell>
@@ -527,6 +534,7 @@ export function StockListTab({
                 ))}
               </TableBody>
             </Table>
+            <TablePagination currentPage={packagingPagination.currentPage} totalPages={packagingPagination.totalPages} onPageChange={packagingPagination.onPageChange} />
           </div>
         )}
       </section>
@@ -562,7 +570,7 @@ export function StockListTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredEquipmentRows.map((equipment) => (
+                {equipmentPagination.pagedRows.map((equipment) => (
                   <TableRow key={equipment.id}>
                     <TableCell className="font-medium">{equipment.name}</TableCell>
                     <TableCell>{formatCurrency(equipment.acquisitionCost, equipment.currency)}</TableCell>
@@ -573,6 +581,7 @@ export function StockListTab({
                 ))}
               </TableBody>
             </Table>
+            <TablePagination currentPage={equipmentPagination.currentPage} totalPages={equipmentPagination.totalPages} onPageChange={equipmentPagination.onPageChange} />
           </div>
         )}
       </section>

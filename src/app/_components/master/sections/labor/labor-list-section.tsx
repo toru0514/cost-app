@@ -1,11 +1,13 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
 
+import { SearchWithScope, filterRowsBySearch, useSearchWithScope, type SearchField } from "@/app/_components/shared/search-with-scope"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { TablePagination } from "@/components/ui/table-pagination"
 import {
   Dialog,
   DialogContent,
@@ -22,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea"
 import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import type { AppData, LaborRole } from "@/lib/types"
 import { toast } from "sonner"
 
@@ -41,6 +44,11 @@ export function LaborListSection({ data, actions, createTempId }: LaborListSecti
   })
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+
+  const searchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }, { key: "note", label: "備考" }], [])
+  const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
+  const filteredRows = useMemo(() => filterRowsBySearch(data.laborRoles, query, checkedFields, allFieldKeys), [data.laborRoles, query, checkedFields, allFieldKeys])
+  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(filteredRows)
 
   const { updateLaborRole, removeLaborRole, addLaborRole } = actions
 
@@ -107,6 +115,8 @@ export function LaborListSection({ data, actions, createTempId }: LaborListSecti
         {data.laborRoles.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
+          <div className="space-y-2">
+          <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="min-w-[600px]">
               <TableHeader>
@@ -120,7 +130,7 @@ export function LaborListSection({ data, actions, createTempId }: LaborListSecti
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.laborRoles.map((role) => {
+                {pagedRows.map((role) => {
                   const isEditing = editingLabor.id === role.id
                   return (
                     <TableRow key={role.id} className="group">
@@ -216,6 +226,8 @@ export function LaborListSection({ data, actions, createTempId }: LaborListSecti
                 })}
               </TableBody>
             </Table>
+          </div>
+          <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
           </div>
         )}
       </CardContent>

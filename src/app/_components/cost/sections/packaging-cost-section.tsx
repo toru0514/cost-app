@@ -7,8 +7,16 @@ import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
+import {
+  SearchWithScope,
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
 
 interface PackagingCostSectionProps {
   data: AppData
@@ -27,6 +35,15 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
   const [summaryProductFilter, setSummaryProductFilter] = useState("all")
   const [summarySortDirection, setSummarySortDirection] = useState<SummarySortDirection>("desc")
+
+  const detailSearchFields: SearchField[] = useMemo(
+    () => [
+      { key: "productName", label: "商品名" },
+      { key: "packagingName", label: "梱包材名" },
+    ],
+    []
+  )
+  const detailSearch = useSearchWithScope(detailSearchFields)
 
   const sortLabelMap: Record<SortKey, string> = {
     product: "商品名",
@@ -80,6 +97,24 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
       return collator.compare(a.product, b.product) * direction
     })
   }, [baseRows, packagingFilter, productFilter, sortDirection, sortKey])
+
+  const searchableDetailRows = useMemo(
+    () => rows.map((row, i) => ({ _index: i, productName: row.product, packagingName: row.packagingName })),
+    [rows]
+  )
+
+  const searchFilteredRows = useMemo(() => {
+    const filtered = filterRowsBySearch(
+      searchableDetailRows,
+      detailSearch.query,
+      detailSearch.checkedFields,
+      detailSearch.allFieldKeys
+    )
+    const filteredIndices = new Set(filtered.map((r) => r._index as number))
+    return rows.filter((_, i) => filteredIndices.has(i))
+  }, [rows, searchableDetailRows, detailSearch.query, detailSearch.checkedFields, detailSearch.allFieldKeys])
+
+  const detailPagination = useTablePagination(searchFilteredRows)
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -141,6 +176,8 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
       return (a.totalValue - b.totalValue) * direction
     })
   }, [data, summaryProductFilter, summarySortDirection])
+
+  const summaryPagination = useTablePagination(summaryRows)
 
   const renderSectionToggle = (isOpen: boolean, toggle: () => void, title: string, description: string) => (
     <div
@@ -205,12 +242,20 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
               </SelectContent>
             </Select>
           </div>
+          <SearchWithScope
+            fields={detailSearchFields}
+            query={detailSearch.query}
+            onQueryChange={detailSearch.setQuery}
+            checkedFields={detailSearch.checkedFields}
+            onCheckedFieldsChange={detailSearch.setCheckedFields}
+            placeholder="梱包材費を検索..."
+          />
           <p className="text-xs text-muted-foreground">
             並び順: {sortLabelMap[sortKey]}（{sortDirection === "asc" ? "昇順" : "降順"}）
             {(productFilter !== "all" || packagingFilter !== "all") &&
               ` / フィルター: 商品「${productFilter === "all" ? "未指定" : productFilter}」、梱包材「${packagingFilter === "all" ? "未指定" : packagingFilter}」`}
           </p>
-          {rows.length === 0 ? (
+          {searchFilteredRows.length === 0 ? (
             <p className="text-sm text-muted-foreground">条件に一致するデータがありません。</p>
           ) : (
             <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
@@ -235,7 +280,7 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {rows.map((row, index) => (
+                  {detailPagination.pagedRows.map((row, index) => (
                     <TableRow key={`${row.product}-${row.packagingName}-${index}`}>
                       <TableCell>{row.product}</TableCell>
                       <TableCell>{row.detail}</TableCell>
@@ -244,6 +289,7 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
                   ))}
                 </TableBody>
               </Table>
+              <TablePagination currentPage={detailPagination.currentPage} totalPages={detailPagination.totalPages} onPageChange={detailPagination.onPageChange} />
             </div>
           )}
         </div>
@@ -298,7 +344,7 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {summaryRows.map((row, index) => (
+                  {summaryPagination.pagedRows.map((row, index) => (
                     <TableRow key={`${row.product}-${index}`}>
                       <TableCell className="font-medium">{row.product}</TableCell>
                       <TableCell>{row.details.map((detail) => detail.text).join(" | ")}</TableCell>
@@ -307,6 +353,7 @@ export function PackagingCostSection({ data }: PackagingCostSectionProps) {
                   ))}
                 </TableBody>
               </Table>
+              <TablePagination currentPage={summaryPagination.currentPage} totalPages={summaryPagination.totalPages} onPageChange={summaryPagination.onPageChange} />
             </div>
           )}
         </div>

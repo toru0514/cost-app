@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 import { toast } from "sonner"
 
 import { Badge } from "@/components/ui/badge"
@@ -8,7 +8,15 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import type { AppData, Product } from "@/lib/types"
+import {
+  SearchWithScope,
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
 
 import { MaterialStockSimulator } from "./material-stock-simulator"
 
@@ -29,6 +37,22 @@ export function StockTab({ data, products, stocks, stocksLoaded, materialStocks,
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
   const [editingStock, setEditingStock] = useState<{ productId: string; value: string } | null>(null)
+
+  const searchFields: SearchField[] = useMemo(() => [{ key: "name", label: "商品名" }], [])
+  const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
+
+  const productRows = useMemo(
+    () => products.map((p) => ({ ...p, name: p.name } as Record<string, unknown>)),
+    [products]
+  )
+
+  const filteredProducts = useMemo(() => {
+    const filtered = filterRowsBySearch(productRows, query, checkedFields, allFieldKeys)
+    const filteredIds = new Set(filtered.map((r) => r.id as string))
+    return products.filter((p) => filteredIds.has(p.id))
+  }, [products, productRows, query, checkedFields, allFieldKeys])
+
+  const pagination = useTablePagination(filteredProducts)
 
   const getAdjustAmount = (productId: string) => {
     const raw = adjustAmounts.get(productId) ?? "1"
@@ -114,7 +138,21 @@ export function StockTab({ data, products, stocks, stocksLoaded, materialStocks,
           ) : products.length === 0 ? (
             <p className="text-sm text-muted-foreground">商品が登録されていません。</p>
           ) : (
-            <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+            <div className="space-y-3">
+              {products.length > 0 && (
+                <SearchWithScope
+                  fields={searchFields}
+                  query={query}
+                  onQueryChange={setQuery}
+                  checkedFields={checkedFields}
+                  onCheckedFieldsChange={setCheckedFields}
+                  placeholder="商品名を検索..."
+                />
+              )}
+              {filteredProducts.length === 0 ? (
+                <p className="text-sm text-muted-foreground">条件に一致する商品がありません。</p>
+              ) : (
+            <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -125,7 +163,7 @@ export function StockTab({ data, products, stocks, stocksLoaded, materialStocks,
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {products.map((product) => {
+                  {pagination.pagedRows.map((product) => {
                     const quantity = stocks.get(product.id) ?? 0
                     const isEditing = editingStock?.productId === product.id
                     const isBusy = busy?.startsWith(product.id) ?? false
@@ -213,6 +251,9 @@ export function StockTab({ data, products, stocks, stocksLoaded, materialStocks,
                   })}
                 </TableBody>
               </Table>
+              <TablePagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} onPageChange={pagination.onPageChange} />
+            </div>
+              )}
             </div>
           )}
         </CardContent>

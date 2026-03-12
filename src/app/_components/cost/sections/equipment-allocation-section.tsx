@@ -3,8 +3,16 @@
 import { useMemo } from "react"
 
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData, Equipment } from "@/lib/types"
+import {
+  SearchWithScope,
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
 
 interface CostSectionProps {
   data: AppData
@@ -57,6 +65,25 @@ export function EquipmentAllocationSection({ data }: CostSectionProps) {
     return Array.from(groups.values())
   }, [data.costEntries.equipmentAllocations, data.equipments, data.products])
 
+  const searchFields: SearchField[] = useMemo(
+    () => [{ key: "equipmentName", label: "設備名" }],
+    []
+  )
+  const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
+
+  const searchableRows = useMemo(
+    () => equipmentUsageGroups.map((g) => ({ id: g.equipment.id, equipmentName: g.equipment.name })),
+    [equipmentUsageGroups]
+  )
+
+  const filteredGroups = useMemo(() => {
+    const filtered = filterRowsBySearch(searchableRows, query, checkedFields, allFieldKeys)
+    const filteredIds = new Set(filtered.map((r) => r.id as string))
+    return equipmentUsageGroups.filter((g) => filteredIds.has(g.equipment.id))
+  }, [equipmentUsageGroups, searchableRows, query, checkedFields, allFieldKeys])
+
+  const pagination = useTablePagination(filteredGroups)
+
   return (
     <section className="min-w-0 space-y-3 rounded-lg border p-4">
       <div>
@@ -67,7 +94,19 @@ export function EquipmentAllocationSection({ data }: CostSectionProps) {
         {equipmentUsageGroups.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ設備配賦が登録されていません。</p>
         ) : (
-          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+          <>
+            <SearchWithScope
+              fields={searchFields}
+              query={query}
+              onQueryChange={setQuery}
+              checkedFields={checkedFields}
+              onCheckedFieldsChange={setCheckedFields}
+              placeholder="設備名を検索..."
+            />
+            {filteredGroups.length === 0 ? (
+              <p className="text-sm text-muted-foreground">条件に一致する設備がありません。</p>
+            ) : (
+          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="w-auto min-w-max">
               <TableHeader>
                 <TableRow>
@@ -77,7 +116,7 @@ export function EquipmentAllocationSection({ data }: CostSectionProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {equipmentUsageGroups.map((group) => (
+                {pagination.pagedRows.map((group) => (
                   <TableRow key={`equipment-group-${group.equipment.id}`}>
                     <TableCell>{group.equipment.name}</TableCell>
                     <TableCell>
@@ -111,7 +150,10 @@ export function EquipmentAllocationSection({ data }: CostSectionProps) {
                 ))}
               </TableBody>
             </Table>
+            <TablePagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} onPageChange={pagination.onPageChange} />
           </div>
+            )}
+          </>
         )}
       </div>
     </section>
