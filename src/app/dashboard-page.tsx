@@ -794,7 +794,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
           onChange={handleImportBackupJson}
         />
 
-        <div className="flex min-h-screen flex-1 flex-col">
+        <div className="flex min-h-screen flex-1 flex-col min-w-0">
           {/* スティッキーヘッダー */}
           <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
             <div className="flex h-14 items-center justify-between gap-2 px-3 md:px-6">
