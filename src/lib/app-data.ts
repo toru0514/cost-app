@@ -304,6 +304,9 @@ export function useAppData() {
       setPackagingStocks(new Map())
       setPackagingStockUnits(new Map())
       setMasterStocksLoaded(false)
+      setStockAlertSettings(new Map())
+      stockAlertSettingsRef.current = new Map()
+      setStockAlertSettingsLoaded(false)
     }
   }, [authState.status])
 
@@ -462,9 +465,10 @@ export function useAppData() {
       settings.forEach((s) => map.set(`${s.itemType}:${s.itemId}`, s))
       setStockAlertSettings(map)
       stockAlertSettingsRef.current = map
-      setStockAlertSettingsLoaded(true)
     } catch (error) {
       console.error("Failed to load stock alert settings", error)
+    } finally {
+      setStockAlertSettingsLoaded(true)
     }
   }, [authState])
 

@@ -144,6 +144,7 @@ export function CustomizableProductTable({
   const [showHiddenColumns, setShowHiddenColumns] = useState(false)
   const [busyKey, setBusyKey] = useState<string | null>(null)
   const [thresholdInputs, setThresholdInputs] = useState<Map<string, string>>(new Map())
+  const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
 
   const hiddenSet = useMemo(() => new Set(columnSettings.hiddenColumns), [columnSettings.hiddenColumns])
   const visibleColumns = useMemo(
@@ -208,6 +209,9 @@ export function CustomizableProductTable({
     }
   }
 
+  const getAdjustAmount = (productId: string) =>
+    Math.max(1, parseInt(adjustAmounts.get(productId) ?? "1", 10) || 1)
+
   const adjustStock = async (productId: string, productName: string, delta: number) => {
     setBusyKey(`${productId}:${delta > 0 ? "add" : "use"}`)
     try {
@@ -251,13 +255,27 @@ export function CustomizableProductTable({
               ) : (
                 <span className="text-xs text-muted-foreground">-</span>
               )}
+              <Input
+                type="number"
+                min={1}
+                value={adjustAmounts.get(product.id) ?? "1"}
+                onChange={(e) =>
+                  setAdjustAmounts((prev) => {
+                    const next = new Map(prev)
+                    next.set(product.id, e.target.value)
+                    return next
+                  })
+                }
+                className="h-6 w-12 text-xs"
+                disabled={!isAuthenticated || !stocksLoaded}
+              />
               <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
                 <Button
                   type="button"
                   size="sm"
                   variant="outline"
                   className="h-6 w-6 px-0"
-                  onClick={() => adjustStock(product.id, product.name, 1)}
+                  onClick={() => adjustStock(product.id, product.name, getAdjustAmount(product.id))}
                   disabled={!isAuthenticated || !stocksLoaded || isBusy}
                 >
                   +
@@ -267,7 +285,7 @@ export function CustomizableProductTable({
                   size="sm"
                   variant="outline"
                   className="h-6 w-6 px-0"
-                  onClick={() => adjustStock(product.id, product.name, -1)}
+                  onClick={() => adjustStock(product.id, product.name, -getAdjustAmount(product.id))}
                   disabled={!isAuthenticated || !stocksLoaded || isBusy || stockQuantity === 0}
                 >
                   -
