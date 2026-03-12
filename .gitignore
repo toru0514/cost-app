@@ -14,4 +14,5 @@ supabase/.temp/
 supabase_backup_*.sql
 docs/PR解説/
 tsconfig.tsbuildinfo
-.claude/
+.claude/*
+!.claude/settings.json
