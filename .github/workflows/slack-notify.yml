@@ -21,7 +21,7 @@ jobs:
       - name: Notify Slack about new PR
         uses: slackapi/slack-github-action@v2.1.0
         with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL_PR_OPENED }}
           webhook-type: incoming-webhook
           payload: |
             {
@@ -68,7 +68,7 @@ jobs:
       - name: Notify Slack about PR comment
         uses: slackapi/slack-github-action@v2.1.0
         with:
-          webhook: ${{ secrets.SLACK_WEBHOOK_URL }}
+          webhook: ${{ secrets.SLACK_WEBHOOK_URL_PR_COMMENT }}
           webhook-type: incoming-webhook
           payload: |
             {
@@ -98,7 +98,7 @@ jobs:
                   "type": "section",
                   "text": {
                     "type": "mrkdwn",
-                    "text": "*コメント:*\n${{ github.event.comment.body || github.event.review.body }}"
+                    "text": ${{ toJSON(github.event.comment.body || github.event.review.body) }}
                   }
                 }
               ]

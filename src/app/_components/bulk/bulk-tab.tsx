@@ -23,14 +23,12 @@ export function BulkTab({ data, actions }: BulkTabProps) {
         title="マスタ一括反映"
         description="マスタ用シートの差分確認・書き出し・読み込みを実行します。"
         placeholder='{"materials":[],"packaging_items":[],"shipping_methods":[],"labor_roles":[],"equipments":[],"fees":[],"categories_large":[],"categories_medium":[],"categories_small":[]}'
-        helpText="マスタ項目はテンプレートのヘッダーと入力例に従ってください。"
         target="master"
       />
       <BulkSyncSection
         title="商品一括反映"
         description="商品シートの差分確認・書き出し・読み込みを実行します。"
         placeholder='{"products":[]}'
-        helpText="商品項目はテンプレートのヘッダーと入力例に従ってください。"
         target="products"
       />
       <ProductImportSection data={data} actions={actions} />

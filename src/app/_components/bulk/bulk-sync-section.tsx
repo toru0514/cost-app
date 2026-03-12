@@ -64,7 +64,6 @@ type BulkSyncSectionProps = {
   title: string
   description: string
   placeholder: string
-  helpText: string
   target: "master" | "products"
 }
 const filterDiffByTarget = (diff: DiffResponse, target: "master" | "products") => {
@@ -83,7 +82,7 @@ const filterDiffByTarget = (diff: DiffResponse, target: "master" | "products") =
   return { summary, items }
 }
 
-export function BulkSyncSection({ title, description, placeholder, helpText, target }: BulkSyncSectionProps) {
+export function BulkSyncSection({ title, description, placeholder, target }: BulkSyncSectionProps) {
   const [payloadInput, setPayloadInput] = useState("")
   const [diffResult, setDiffResult] = useState<DiffResponse | null>(null)
   const [applyResult, setApplyResult] = useState<ApplyResponse | null>(null)
@@ -93,8 +92,6 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
   const [historyLogs, setHistoryLogs] = useState<HistoryLog[] | null>(null)
   const [selectedLogId, setSelectedLogId] = useState<string | null>(null)
   const [showHistory, setShowHistory] = useState(false)
-  const [dryRun, setDryRun] = useState(false)
-  const [recordAuditLog, setRecordAuditLog] = useState(true)
   const [exportMode, setExportMode] = useState<"overwrite" | "append">("overwrite")
   const [useManualJson, setUseManualJson] = useState(false)
   const [openingSheet, setOpeningSheet] = useState(false)
@@ -187,7 +184,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
               method: "POST",
               headers,
               credentials: "include",
-              body: JSON.stringify({ payload: parsedPayload.payload, options: { dryRun, recordAuditLog } }),
+              body: JSON.stringify({ payload: parsedPayload.payload, options: { dryRun: false, recordAuditLog: true } }),
             })
             if (!result.ok) {
               const error = await result.json().catch(() => ({}))
@@ -201,7 +198,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
             method: "POST",
             headers,
             credentials: "include",
-            body: JSON.stringify({ target, options: { dryRun, recordAuditLog } }),
+            body: JSON.stringify({ target, options: { dryRun: false, recordAuditLog: true } }),
           })
           if (!result.ok) {
             const error = await result.json().catch(() => ({}))
@@ -358,7 +355,7 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
               ? "ロールバック中..."
               : busy === "history"
                 ? "履歴を取得中..."
-                : "待機中"
+                : "準備完了"
 
   return (
     <section className="space-y-4 rounded-lg border p-4">
@@ -378,7 +375,6 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
             <Label>スプレッドシート連携</Label>
             <Badge variant={busy ? "default" : "secondary"}>{statusText}</Badge>
           </div>
-          <p className="text-xs text-muted-foreground">{helpText}</p>
         </div>
 
         <div className="grid gap-4 md:grid-cols-2">
@@ -395,19 +391,6 @@ export function BulkSyncSection({ title, description, placeholder, helpText, tar
                 <option value="append">追記</option>
               </select>
             </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input type="checkbox" checked={dryRun} onChange={(event) => setDryRun(event.target.checked)} />
-              Dry Run（反映せず検証のみ）
-            </label>
-            <label className="flex items-center gap-2 text-sm">
-              <input
-                type="checkbox"
-                checked={recordAuditLog}
-                onChange={(event) => setRecordAuditLog(event.target.checked)}
-              />
-              監査ログを記録する
-            </label>
-            <p className="text-xs text-muted-foreground">失敗時は最大 {RETRY_LIMIT} 回まで自動リトライします。</p>
           </div>
           <div className="flex flex-col gap-2">
             <Button onClick={handleDiff} disabled={busy !== null}>
