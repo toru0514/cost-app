@@ -1,26 +1,10 @@
-import { NextResponse, type NextRequest } from "next/server"
-import { createClient } from "@supabase/supabase-js"
+import { NextResponse } from "next/server"
 
-export async function POST(request: NextRequest) {
-  const authHeader = request.headers.get("authorization")
-  if (!authHeader?.startsWith("Bearer ")) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
-  const token = authHeader.slice(7)
+import { authenticateApiRequest } from "@/lib/server/api-auth"
 
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.json({ error: "Server configuration error" }, { status: 500 })
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: { headers: { Authorization: `Bearer ${token}` } },
-  })
-  const { data: userData, error: authError } = await supabase.auth.getUser()
-  if (authError || !userData.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+export async function POST(request: Request) {
+  const auth = await authenticateApiRequest(request)
+  if ("error" in auth) return auth.error
 
   const webhookUrl = process.env.SLACK_WEBHOOK_URL
   if (!webhookUrl) {

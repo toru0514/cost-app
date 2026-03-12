@@ -1,7 +1,6 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { createClient } from "@supabase/supabase-js"
 
+import { authenticateApiRequest } from "@/lib/server/api-auth"
 import { prepareBulkSyncApply } from "@/lib/bulk-sync/apply"
 import { validateBulkSyncPayload, buildBulkSyncDiff } from "@/lib/bulk-sync"
 import { buildBulkSyncAuditChanges } from "@/lib/bulk-sync/audit"
@@ -19,59 +18,9 @@ type ApplyOptions = {
 type ImportTarget = "master" | "products"
 
 export async function POST(request: Request) {
-  const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL
-  const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
-  if (!supabaseUrl || !supabaseAnonKey) {
-    return NextResponse.json({ error: "Supabase env vars missing" }, { status: 500 })
-  }
-
-  let accessToken: string | undefined
-  const authHeader = request.headers.get("authorization")
-  if (authHeader?.toLowerCase().startsWith("bearer ")) {
-    accessToken = authHeader.slice(7)
-  }
-
-  const cookieStore = await cookies()
-  if (!accessToken) {
-    const projectRef = extractProjectRef(supabaseUrl)
-    const cookieName = projectRef ? `sb-${projectRef}-auth-token` : undefined
-    const tokenCookie = cookieName ? cookieStore.get(cookieName) : undefined
-    if (!tokenCookie?.value) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    try {
-      const [access] = JSON.parse(tokenCookie.value)
-      accessToken = access
-    } catch (error) {
-      console.error("Failed to parse Supabase auth cookie", { cookieName, error })
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-
-    if (!accessToken) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
-  }
-
-  const supabase = createClient(supabaseUrl, supabaseAnonKey, {
-    global: {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    },
-    auth: {
-      persistSession: false,
-    },
-  })
-
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser()
-
-  if (userError || !user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const auth = await authenticateApiRequest(request)
+  if ("error" in auth) return auth.error
+  const { user, supabase } = auth
 
   let options: ApplyOptions = {}
   let target: ImportTarget | undefined
@@ -181,10 +130,4 @@ export async function POST(request: Request) {
     console.error("Failed to process bulk sync import", error)
     return NextResponse.json({ error: "Failed to import sheet" }, { status: 500 })
   }
-}
-
-const projectRefPattern = /https?:\/\/([a-z0-9-]+)\.supabase\.co/i
-
-function extractProjectRef(url: string) {
-  return url.match(projectRefPattern)?.[1]
 }
