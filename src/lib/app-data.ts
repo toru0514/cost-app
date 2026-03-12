@@ -32,6 +32,7 @@ import {
 } from "./types"
 import { useAuth } from "./auth"
 import type { AuthState } from "./auth"
+import type { StockAlertSetting } from "./types"
 import {
   deletePackagingStock,
   deleteMaterialStock,
@@ -40,11 +41,13 @@ import {
   loadMaterialStocks,
   loadPackagingStocks,
   loadProductStocks,
+  loadStockAlertSettings,
   loadUserAppData,
   saveUserAppData,
   upsertMaterialStock,
   upsertPackagingStock,
   upsertProductStock,
+  upsertStockAlertSetting,
 } from "./app-data-sync"
 
 const STORAGE_KEY = "cost-app-data-v1"
@@ -180,6 +183,10 @@ export function useAppData() {
   const packagingStocksRef = useRef<Map<string, number>>(new Map())
   const [packagingStockUnits, setPackagingStockUnits] = useState<Map<string, string>>(new Map())
   const [masterStocksLoaded, setMasterStocksLoaded] = useState(false)
+  // Stock alert settings: key = `${itemType}:${itemId}`
+  const [stockAlertSettings, setStockAlertSettings] = useState<Map<string, StockAlertSetting>>(new Map())
+  const stockAlertSettingsRef = useRef<Map<string, StockAlertSetting>>(new Map())
+  const [stockAlertSettingsLoaded, setStockAlertSettingsLoaded] = useState(false)
   const [remoteLoadCompleted, setRemoteLoadCompleted] = useState(authState.status !== "authenticated")
   const [remoteLoadFailed, setRemoteLoadFailed] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -447,12 +454,77 @@ export function useAppData() {
     [authState]
   )
 
+  const refreshStockAlertSettings = useCallback(async () => {
+    if (authState.status !== "authenticated") return
+    try {
+      const settings = await loadStockAlertSettings(authState.user.id)
+      const map = new Map<string, StockAlertSetting>()
+      settings.forEach((s) => map.set(`${s.itemType}:${s.itemId}`, s))
+      setStockAlertSettings(map)
+      stockAlertSettingsRef.current = map
+      setStockAlertSettingsLoaded(true)
+    } catch (error) {
+      console.error("Failed to load stock alert settings", error)
+    }
+  }, [authState])
+
+  const updateStockAlertSetting = useCallback(
+    async (itemType: StockAlertSetting["itemType"], itemId: string, enabled: boolean, threshold: number) => {
+      if (authState.status !== "authenticated") return
+      await upsertStockAlertSetting(authState.user.id, itemType, itemId, enabled, threshold)
+      const key = `${itemType}:${itemId}`
+      const setting: StockAlertSetting = { itemType, itemId, enabled, threshold }
+      setStockAlertSettings((prev) => {
+        const next = new Map(prev)
+        next.set(key, setting)
+        return next
+      })
+      stockAlertSettingsRef.current = new Map(stockAlertSettingsRef.current).set(key, setting)
+    },
+    [authState]
+  )
+
+  const sendLowStockNotification = useCallback(
+    async (itemType: string, itemName: string, currentStock: number, threshold: number) => {
+      if (authState.status !== "authenticated") return
+      try {
+        const session = await (await import("./supabase-client")).supabaseClient.auth.getSession()
+        const accessToken = session.data.session?.access_token
+        if (!accessToken) return
+        await fetch("/api/slack/notify-low-stock", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${accessToken}`,
+          },
+          body: JSON.stringify({ itemType, itemName, currentStock, threshold }),
+        })
+      } catch (error) {
+        console.error("Failed to send low stock notification", error)
+      }
+    },
+    [authState]
+  )
+
+  const checkAndNotifyLowStock = useCallback(
+    (itemType: StockAlertSetting["itemType"], itemId: string, itemName: string, newQuantity: number) => {
+      const key = `${itemType}:${itemId}`
+      const setting = stockAlertSettingsRef.current.get(key)
+      if (!setting?.enabled) return
+      if (newQuantity <= setting.threshold) {
+        void sendLowStockNotification(itemType, itemName, newQuantity, setting.threshold)
+      }
+    },
+    [sendLowStockNotification]
+  )
+
   useEffect(() => {
     if (remoteLoadCompleted && authState.status === "authenticated") {
       void refreshStocks()
       void refreshMasterStocks()
+      void refreshStockAlertSettings()
     }
-  }, [remoteLoadCompleted, authState.status, refreshStocks, refreshMasterStocks])
+  }, [remoteLoadCompleted, authState.status, refreshStocks, refreshMasterStocks, refreshStockAlertSettings])
 
   const consumeMasterStocksForProductIncrease = useCallback(
     async (productId: string, deltaQuantity: number) => {
@@ -1367,6 +1439,10 @@ export function useAppData() {
     setPackagingStock,
     adjustMaterialStock,
     adjustPackagingStock,
+    stockAlertSettings,
+    stockAlertSettingsLoaded,
+    updateStockAlertSetting,
+    checkAndNotifyLowStock,
     actions: {
       addLargeCategory,
       updateLargeCategory,
