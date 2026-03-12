@@ -123,9 +123,9 @@ export function PrototypeShell({ children }: { children: ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex min-h-screen">
         {/* 案B: サイドバーにナビ + アクションを統合 */}
-        <aside className={`hidden h-full overflow-y-auto border-r bg-card p-3 md:flex md:flex-col ${sidebarWidthClass}`}>
+        <aside className={`hidden border-r bg-card p-3 md:flex md:flex-col ${sidebarWidthClass}`}>
           <div className="mb-3 flex items-center justify-between gap-2 px-1">
             {!collapsed && <p className="text-sm font-semibold">Cost App</p>}
             <Button type="button" variant="ghost" size="sm" onClick={() => setCollapsed((prev) => !prev)}>
@@ -165,7 +165,7 @@ export function PrototypeShell({ children }: { children: ReactNode }) {
           </div>
         </aside>
 
-        <div className="flex flex-1 flex-col overflow-y-auto">
+        <div className="flex min-h-screen flex-1 flex-col">
           <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
             <div className="flex h-14 items-center justify-between gap-2 px-3 md:px-6">
               <div className="flex items-center gap-2">

@@ -665,9 +665,9 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <div className="flex h-screen overflow-hidden">
+      <div className="flex min-h-screen">
         {/* サイドバー */}
-        <aside className={`hidden h-full overflow-y-auto border-r bg-card p-3 md:flex md:flex-col ${sidebarWidthClass}`}>
+        <aside className={`hidden sticky top-0 h-screen overflow-y-auto border-r bg-card p-3 md:flex md:flex-col ${sidebarWidthClass}`}>
           <div className="mb-3 flex items-center justify-between gap-2 px-1">
             {!sidebarCollapsed && <p className="text-sm font-semibold">Cost App</p>}
             <Button type="button" variant="ghost" size="sm" onClick={() => setSidebarCollapsed((prev) => !prev)}>
@@ -772,7 +772,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
           onChange={handleImportBackupJson}
         />
 
-        <div className="flex flex-1 flex-col overflow-y-auto">
+        <div className="flex min-h-screen flex-1 flex-col">
           {/* スティッキーヘッダー */}
           <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
             <div className="flex h-14 items-center justify-between gap-2 px-3 md:px-6">
