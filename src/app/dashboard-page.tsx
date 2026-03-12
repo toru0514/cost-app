@@ -64,7 +64,7 @@ const tabPathMap: Record<TabValue, string> = {
   audit: "/audit",
 }
 
-export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
+export default function DashboardPage({ routeTab, initialData }: { routeTab: TabValue; initialData?: AppData | null }) {
   const {
     data,
     hydrated,
@@ -98,7 +98,7 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
     stockAlertSettingsLoaded,
     updateStockAlertSetting,
     checkAndNotifyLowStock,
-  } = useAppData()
+  } = useAppData(initialData)
   const handleAuditFiltersChange = useCallback(
     (next: AuditFilters) => {
       updateAuditFilters(next)

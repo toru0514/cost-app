@@ -1,18 +1,11 @@
 import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+
+import { authenticateApiRequest } from "@/lib/server/api-auth"
 
 export async function GET(request: Request) {
-  const cookieStore = cookies()
-  const supabase = createRouteHandlerClient({ cookies: () => cookieStore })
-  const {
-    data: { session },
-    error: sessionError,
-  } = await supabase.auth.getSession()
-
-  if (sessionError || !session?.user) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-  }
+  const auth = await authenticateApiRequest(request)
+  if ("error" in auth) return auth.error
+  const { user, supabase } = auth
 
   const url = new URL(request.url)
   const from = url.searchParams.get("from") ?? undefined
@@ -21,7 +14,7 @@ export async function GET(request: Request) {
   let query = supabase
     .from("sync_audit_logs")
     .select("*")
-    .eq("user_id", session.user.id)
+    .eq("user_id", user.id)
     .order("created_at", { ascending: false })
 
   if (from) {
