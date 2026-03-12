@@ -40,7 +40,7 @@ import { StockListTab } from "./_components/stock-list/stock-list-tab"
 import { BarChart3, Box, Boxes, ChevronDown, ClipboardList, FileDown, FileText, FileUp, Filter, LayoutDashboard, LogIn, LogOut, Menu, Package, PanelLeftClose, PanelLeftOpen, Plus, X } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 
 const tabOptions = [
   { value: "cost", label: "原価サマリ", icon: LayoutDashboard },
@@ -106,10 +106,11 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
     [updateAuditFilters]
   )
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [activeTab, setActiveTabState] = useState<TabValue>(routeTab)
-  const [editingProductId, setEditingProductId] = useState<string | null>(null)
-  const [copyProductId, setCopyProductId] = useState<string | null>(null)
-  const [copyProductNonce, setCopyProductNonce] = useState(0)
+  const [editingProductId, setEditingProductId] = useState<string | null>(() => searchParams.get("edit"))
+  const [copyProductId, setCopyProductId] = useState<string | null>(() => searchParams.get("copy"))
+  const [copyProductNonce, setCopyProductNonce] = useState(() => searchParams.get("copy") ? 1 : 0)
   const [productSearchQuery, setProductSearchQuery] = useState("")
   const productSearchFields: SearchField[] = useMemo(
     () => [
@@ -331,9 +332,9 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
     (productId: string) => {
       setEditingProductId(productId)
       setCopyProductId(null)
-      handleTabChange("product")
+      router.push(`/product?edit=${encodeURIComponent(productId)}`)
     },
-    [handleTabChange]
+    [router]
   )
 
   const handleCopyProduct = useCallback(
@@ -341,9 +342,9 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
       setCopyProductId(productId)
       setCopyProductNonce((nonce) => nonce + 1)
       setEditingProductId(null)
-      handleTabChange("product")
+      router.push(`/product?copy=${encodeURIComponent(productId)}`)
     },
-    [handleTabChange]
+    [router]
   )
 
   const handleDeleteProduct = useCallback(
@@ -943,7 +944,13 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
             isAuthenticated={isAuthenticated}
             onSetStock={setStock}
             editingProductId={editingProductId}
-            onRequestEditClear={() => setEditingProductId(null)}
+            onRequestEditClear={() => {
+              setEditingProductId(null)
+              setCopyProductId(null)
+              if (searchParams.get("edit") || searchParams.get("copy")) {
+                router.replace("/product")
+              }
+            }}
             copySourceProductId={copyProductId}
             copyRequestNonce={copyProductNonce}
           />

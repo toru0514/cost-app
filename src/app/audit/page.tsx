@@ -1,5 +1,10 @@
+import { Suspense } from "react"
 import DashboardPage from "../dashboard-page"
 
 export default function AuditPage() {
-  return <DashboardPage routeTab="audit" />
+  return (
+    <Suspense>
+      <DashboardPage routeTab="audit" />
+    </Suspense>
+  )
 }
