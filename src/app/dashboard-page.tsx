@@ -94,6 +94,10 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
     setPackagingStock,
     adjustMaterialStock,
     adjustPackagingStock,
+    stockAlertSettings,
+    stockAlertSettingsLoaded,
+    updateStockAlertSetting,
+    checkAndNotifyLowStock,
   } = useAppData()
   const handleAuditFiltersChange = useCallback(
     (next: AuditFilters) => {
@@ -1056,6 +1060,10 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
                 onEdit={handleEditProduct}
                 onCopy={handleCopyProduct}
                 onDelete={handleDeleteProduct}
+                stockAlertSettings={stockAlertSettings}
+                stockAlertSettingsLoaded={stockAlertSettingsLoaded}
+                onUpdateStockAlertSetting={updateStockAlertSetting}
+                onCheckAndNotifyLowStock={checkAndNotifyLowStock}
               />
             )}
           </div>
@@ -1070,6 +1078,10 @@ export default function DashboardPage({ routeTab }: { routeTab: TabValue }) {
             isAuthenticated={isAuthenticated}
             onAdjustMaterialStock={adjustMaterialStock}
             onAdjustPackagingStock={adjustPackagingStock}
+            stockAlertSettings={stockAlertSettings}
+            stockAlertSettingsLoaded={stockAlertSettingsLoaded}
+            onUpdateStockAlertSetting={updateStockAlertSetting}
+            onCheckAndNotifyLowStock={checkAndNotifyLowStock}
           />
         </TabsContent>
 

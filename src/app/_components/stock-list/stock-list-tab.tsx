@@ -2,12 +2,14 @@
 
 import { useMemo, useState } from "react"
 import { toast } from "sonner"
+import { Bell, BellOff } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { formatCurrency } from "@/lib/calculations"
-import type { AppData } from "@/lib/types"
+import type { AppData, StockAlertSetting } from "@/lib/types"
 import {
   SearchWithScope,
   filterRowsBySearch,
@@ -25,6 +27,20 @@ type StockListTabProps = {
   isAuthenticated: boolean
   onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
+  stockAlertSettings: Map<string, StockAlertSetting>
+  stockAlertSettingsLoaded: boolean
+  onUpdateStockAlertSetting: (
+    itemType: StockAlertSetting["itemType"],
+    itemId: string,
+    enabled: boolean,
+    threshold: number
+  ) => Promise<void>
+  onCheckAndNotifyLowStock: (
+    itemType: StockAlertSetting["itemType"],
+    itemId: string,
+    itemName: string,
+    newQuantity: number
+  ) => void
 }
 
 const formatRoundedQuantity = (quantity: number) => {
@@ -54,9 +70,14 @@ export function StockListTab({
   isAuthenticated,
   onAdjustMaterialStock,
   onAdjustPackagingStock,
+  stockAlertSettings,
+  stockAlertSettingsLoaded,
+  onUpdateStockAlertSetting,
+  onCheckAndNotifyLowStock,
 }: StockListTabProps) {
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
+  const [thresholdInputs, setThresholdInputs] = useState<Map<string, string>>(new Map())
 
   // Search fields per section
   const materialSearchFields: SearchField[] = useMemo(
@@ -98,10 +119,58 @@ export function StockListTab({
 
   const getAdjustAmount = (key: string) => Math.max(1, parseInt(adjustAmounts.get(key) ?? "1", 10) || 1)
 
-  const handleAddMaterial = async (id: string) => {
+  const getAlertSetting = (itemType: StockAlertSetting["itemType"], itemId: string) =>
+    stockAlertSettings.get(`${itemType}:${itemId}`)
+
+  const getThresholdValue = (itemType: StockAlertSetting["itemType"], itemId: string) => {
+    const inputKey = `${itemType}:${itemId}`
+    const inputVal = thresholdInputs.get(inputKey)
+    if (inputVal !== undefined) return inputVal
+    const setting = getAlertSetting(itemType, itemId)
+    return String(setting?.threshold ?? 5)
+  }
+
+  const handleToggleAlert = async (
+    itemType: StockAlertSetting["itemType"],
+    itemId: string,
+    enabled: boolean
+  ) => {
+    const threshold = parseInt(getThresholdValue(itemType, itemId), 10) || 5
+    try {
+      await onUpdateStockAlertSetting(itemType, itemId, enabled, threshold)
+      toast.success(enabled ? "在庫通知をONにしました" : "在庫通知をOFFにしました")
+    } catch {
+      toast.error("通知設定の更新に失敗しました")
+    }
+  }
+
+  const handleThresholdChange = (itemType: StockAlertSetting["itemType"], itemId: string, value: string) => {
+    setThresholdInputs((prev) => {
+      const next = new Map(prev)
+      next.set(`${itemType}:${itemId}`, value)
+      return next
+    })
+  }
+
+  const handleThresholdBlur = async (itemType: StockAlertSetting["itemType"], itemId: string) => {
+    const setting = getAlertSetting(itemType, itemId)
+    if (!setting?.enabled) return
+    const threshold = Math.max(1, parseInt(getThresholdValue(itemType, itemId), 10) || 5)
+    if (threshold === setting.threshold) return
+    try {
+      await onUpdateStockAlertSetting(itemType, itemId, setting.enabled, threshold)
+    } catch {
+      toast.error("閾値の更新に失敗しました")
+    }
+  }
+
+  const handleAddMaterial = async (id: string, name: string) => {
     setBusy(`material:${id}:add`)
     try {
-      await onAdjustMaterialStock(id, getAdjustAmount(`material:${id}`))
+      const delta = getAdjustAmount(`material:${id}`)
+      await onAdjustMaterialStock(id, delta)
+      const newQty = (materialStocks.get(id) ?? 0) + delta
+      onCheckAndNotifyLowStock("material", id, name, Math.max(0, newQty))
     } catch {
       toast.error("材料在庫の追加に失敗しました")
     } finally {
@@ -109,10 +178,13 @@ export function StockListTab({
     }
   }
 
-  const handleUseMaterial = async (id: string) => {
+  const handleUseMaterial = async (id: string, name: string) => {
     setBusy(`material:${id}:use`)
     try {
-      await onAdjustMaterialStock(id, -getAdjustAmount(`material:${id}`))
+      const delta = getAdjustAmount(`material:${id}`)
+      await onAdjustMaterialStock(id, -delta)
+      const newQty = Math.max(0, (materialStocks.get(id) ?? 0) - delta)
+      onCheckAndNotifyLowStock("material", id, name, newQty)
     } catch {
       toast.error("材料在庫の使用に失敗しました")
     } finally {
@@ -120,10 +192,13 @@ export function StockListTab({
     }
   }
 
-  const handleAddPackaging = async (id: string) => {
+  const handleAddPackaging = async (id: string, name: string) => {
     setBusy(`packaging:${id}:add`)
     try {
-      await onAdjustPackagingStock(id, getAdjustAmount(`packaging:${id}`))
+      const delta = getAdjustAmount(`packaging:${id}`)
+      await onAdjustPackagingStock(id, delta)
+      const newQty = (packagingStocks.get(id) ?? 0) + delta
+      onCheckAndNotifyLowStock("packaging", id, name, Math.max(0, newQty))
     } catch {
       toast.error("梱包材在庫の追加に失敗しました")
     } finally {
@@ -131,10 +206,13 @@ export function StockListTab({
     }
   }
 
-  const handleUsePackaging = async (id: string) => {
+  const handleUsePackaging = async (id: string, name: string) => {
     setBusy(`packaging:${id}:use`)
     try {
-      await onAdjustPackagingStock(id, -getAdjustAmount(`packaging:${id}`))
+      const delta = getAdjustAmount(`packaging:${id}`)
+      await onAdjustPackagingStock(id, -delta)
+      const newQty = Math.max(0, (packagingStocks.get(id) ?? 0) - delta)
+      onCheckAndNotifyLowStock("packaging", id, name, newQty)
     } catch {
       toast.error("梱包材在庫の使用に失敗しました")
     } finally {
@@ -207,6 +285,33 @@ export function StockListTab({
     [equipmentRows, equipmentSearch.query, equipmentSearch.checkedFields, equipmentSearch.allFieldKeys]
   )
 
+  const renderAlertCell = (itemType: StockAlertSetting["itemType"], itemId: string) => {
+    if (!stockAlertSettingsLoaded) return <span className="text-xs text-muted-foreground">-</span>
+    const setting = getAlertSetting(itemType, itemId)
+    const enabled = setting?.enabled ?? false
+    return (
+      <div className="flex items-center gap-1.5">
+        <Switch
+          checked={enabled}
+          onCheckedChange={(checked) => handleToggleAlert(itemType, itemId, checked)}
+          aria-label="在庫通知"
+        />
+        {enabled ? <Bell className="h-3.5 w-3.5 text-amber-500" /> : <BellOff className="h-3.5 w-3.5 text-muted-foreground" />}
+        {enabled && (
+          <Input
+            type="number"
+            min={1}
+            value={getThresholdValue(itemType, itemId)}
+            onChange={(e) => handleThresholdChange(itemType, itemId, e.target.value)}
+            onBlur={() => handleThresholdBlur(itemType, itemId)}
+            className="h-7 w-14 text-xs"
+            title="通知閾値"
+          />
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-6">
       <section className="space-y-1">
@@ -238,7 +343,7 @@ export function StockListTab({
           <p className="text-sm text-muted-foreground">条件に一致する材料がありません。</p>
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
-            <Table className="min-w-[980px]">
+            <Table className="min-w-[1100px]">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
                   <TableHead className="font-semibold">名称</TableHead>
@@ -249,6 +354,7 @@ export function StockListTab({
                   <TableHead className="font-semibold">仕入先</TableHead>
                   <TableHead className="font-semibold">備考</TableHead>
                   <TableHead className="text-right font-semibold">現在残数</TableHead>
+                  <TableHead className="font-semibold">通知</TableHead>
                   <TableHead className="font-semibold">増減量</TableHead>
                   <TableHead>
                     <span className="sr-only">増減操作</span>
@@ -270,6 +376,7 @@ export function StockListTab({
                         {formatStock(row.stock, row.stockUnit)}
                       </span>
                     </TableCell>
+                    <TableCell>{renderAlertCell("material", row.id)}</TableCell>
                     <TableCell>
                       <Input
                         type="number"
@@ -292,7 +399,7 @@ export function StockListTab({
                           size="sm"
                           variant="outline"
                           className="h-8 w-8 px-0"
-                          onClick={() => handleAddMaterial(row.id)}
+                          onClick={() => handleAddMaterial(row.id, row.name)}
                           disabled={busy !== null}
                           title="追加"
                         >
@@ -303,7 +410,7 @@ export function StockListTab({
                           size="sm"
                           variant="outline"
                           className="h-8 w-8 px-0"
-                          onClick={() => handleUseMaterial(row.id)}
+                          onClick={() => handleUseMaterial(row.id, row.name)}
                           disabled={busy !== null || (row.stock ?? 0) === 0}
                           title="使用（減算）"
                         >
@@ -343,7 +450,7 @@ export function StockListTab({
           <p className="text-sm text-muted-foreground">条件に一致する梱包材がありません。</p>
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
-            <Table className="min-w-[980px]">
+            <Table className="min-w-[1100px]">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
                   <TableHead className="font-semibold">名称</TableHead>
@@ -353,6 +460,7 @@ export function StockListTab({
                   <TableHead className="font-semibold">仕様</TableHead>
                   <TableHead className="font-semibold">備考</TableHead>
                   <TableHead className="text-right font-semibold">現在残数</TableHead>
+                  <TableHead className="font-semibold">通知</TableHead>
                   <TableHead className="font-semibold">増減量</TableHead>
                   <TableHead>
                     <span className="sr-only">増減操作</span>
@@ -373,6 +481,7 @@ export function StockListTab({
                         {formatStock(row.stock, row.stockUnit)}
                       </span>
                     </TableCell>
+                    <TableCell>{renderAlertCell("packaging", row.id)}</TableCell>
                     <TableCell>
                       <Input
                         type="number"
@@ -395,7 +504,7 @@ export function StockListTab({
                           size="sm"
                           variant="outline"
                           className="h-8 w-8 px-0"
-                          onClick={() => handleAddPackaging(row.id)}
+                          onClick={() => handleAddPackaging(row.id, row.name)}
                           disabled={busy !== null}
                           title="追加"
                         >
@@ -406,7 +515,7 @@ export function StockListTab({
                           size="sm"
                           variant="outline"
                           className="h-8 w-8 px-0"
-                          onClick={() => handleUsePackaging(row.id)}
+                          onClick={() => handleUsePackaging(row.id, row.name)}
                           disabled={busy !== null || (row.stock ?? 0) === 0}
                           title="使用（減算）"
                         >
