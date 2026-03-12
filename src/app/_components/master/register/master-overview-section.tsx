@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
 
@@ -210,6 +212,8 @@ export function MasterOverviewSection({ data }: MasterOverviewSectionProps) {
     overviewBuilders,
   ])
 
+  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(masterOverviewRows)
+
   return (
     <Card>
       <CardHeader>
@@ -252,6 +256,7 @@ export function MasterOverviewSection({ data }: MasterOverviewSectionProps) {
         {masterOverviewRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致するマスタはありません。</p>
         ) : (
+          <div className="space-y-2">
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="w-auto min-w-max">
               <TableHeader>
@@ -262,7 +267,7 @@ export function MasterOverviewSection({ data }: MasterOverviewSectionProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {masterOverviewRows.map((row) => (
+                {pagedRows.map((row) => (
                   <TableRow key={row.id}>
                     <TableCell className="font-medium whitespace-nowrap">{row.name}</TableCell>
                     <TableCell className="text-sm text-muted-foreground">{row.detail || "-"}</TableCell>
@@ -277,6 +282,8 @@ export function MasterOverviewSection({ data }: MasterOverviewSectionProps) {
                 ))}
               </TableBody>
             </Table>
+          </div>
+          <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
           </div>
         )}
       </CardContent>

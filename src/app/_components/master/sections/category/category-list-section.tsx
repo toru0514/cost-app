@@ -1,9 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
 
+import {
+  SearchWithScope,
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -17,7 +23,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
 import { Textarea } from "@/components/ui/textarea"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import type { AppActions } from "@/lib/app-data"
 import type { AppData, CategoryLarge, CategoryMedium, CategorySmall } from "@/lib/types"
 import { toast } from "sonner"
@@ -66,6 +74,24 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
     mediumId: "",
   })
   const [pendingDeleteCategory, setPendingDeleteCategory] = useState<PendingCategoryDelete | null>(null)
+
+  // Search & pagination for large categories
+  const largeSearchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }], [])
+  const { query: largeQuery, setQuery: setLargeQuery, checkedFields: largeCheckedFields, setCheckedFields: setLargeCheckedFields, allFieldKeys: largeAllFieldKeys } = useSearchWithScope(largeSearchFields)
+  const filteredLarge = useMemo(() => filterRowsBySearch(data.categories.large, largeQuery, largeCheckedFields, largeAllFieldKeys), [data.categories.large, largeQuery, largeCheckedFields, largeAllFieldKeys])
+  const { pagedRows: pagedLarge, currentPage: largeCurrentPage, totalPages: largeTotalPages, onPageChange: onLargePageChange } = useTablePagination(filteredLarge)
+
+  // Search & pagination for medium categories
+  const mediumSearchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }], [])
+  const { query: mediumQuery, setQuery: setMediumQuery, checkedFields: mediumCheckedFields, setCheckedFields: setMediumCheckedFields, allFieldKeys: mediumAllFieldKeys } = useSearchWithScope(mediumSearchFields)
+  const filteredMedium = useMemo(() => filterRowsBySearch(data.categories.medium, mediumQuery, mediumCheckedFields, mediumAllFieldKeys), [data.categories.medium, mediumQuery, mediumCheckedFields, mediumAllFieldKeys])
+  const { pagedRows: pagedMedium, currentPage: mediumCurrentPage, totalPages: mediumTotalPages, onPageChange: onMediumPageChange } = useTablePagination(filteredMedium)
+
+  // Search & pagination for small categories
+  const smallSearchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }], [])
+  const { query: smallQuery, setQuery: setSmallQuery, checkedFields: smallCheckedFields, setCheckedFields: setSmallCheckedFields, allFieldKeys: smallAllFieldKeys } = useSearchWithScope(smallSearchFields)
+  const filteredSmall = useMemo(() => filterRowsBySearch(data.categories.small, smallQuery, smallCheckedFields, smallAllFieldKeys), [data.categories.small, smallQuery, smallCheckedFields, smallAllFieldKeys])
+  const { pagedRows: pagedSmall, currentPage: smallCurrentPage, totalPages: smallTotalPages, onPageChange: onSmallPageChange } = useTablePagination(filteredSmall)
 
   const {
     addLargeCategory,
@@ -285,6 +311,8 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
           {data.categories.large.length === 0 ? (
             <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
           ) : (
+            <div className="space-y-2">
+            <SearchWithScope fields={largeSearchFields} query={largeQuery} onQueryChange={setLargeQuery} checkedFields={largeCheckedFields} onCheckedFieldsChange={setLargeCheckedFields} />
             <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
               <Table className="min-w-[640px]">
                 <TableHeader>
@@ -297,7 +325,7 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.categories.large.map((category) => {
+                  {pagedLarge.map((category) => {
                     const isEditing = editingLarge.id === category.id
                     return (
                       <TableRow key={category.id} className="group">
@@ -375,6 +403,8 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                 </TableBody>
               </Table>
             </div>
+            <TablePagination currentPage={largeCurrentPage} totalPages={largeTotalPages} onPageChange={onLargePageChange} />
+            </div>
           )}
         </div>
 
@@ -383,6 +413,8 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
           {data.categories.medium.length === 0 ? (
             <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
           ) : (
+            <div className="space-y-2">
+            <SearchWithScope fields={mediumSearchFields} query={mediumQuery} onQueryChange={setMediumQuery} checkedFields={mediumCheckedFields} onCheckedFieldsChange={setMediumCheckedFields} />
             <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
               <Table className="min-w-[700px]">
                 <TableHeader>
@@ -396,7 +428,7 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.categories.medium.map((category) => {
+                  {pagedMedium.map((category) => {
                     const isEditing = editingMedium.id === category.id
                     const parentName = data.categories.large.find((c) => c.id === category.largeId)?.name ?? "-"
                     return (
@@ -498,6 +530,8 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                 </TableBody>
               </Table>
             </div>
+            <TablePagination currentPage={mediumCurrentPage} totalPages={mediumTotalPages} onPageChange={onMediumPageChange} />
+            </div>
           )}
         </div>
 
@@ -506,6 +540,8 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
           {data.categories.small.length === 0 ? (
             <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
           ) : (
+            <div className="space-y-2">
+            <SearchWithScope fields={smallSearchFields} query={smallQuery} onQueryChange={setSmallQuery} checkedFields={smallCheckedFields} onCheckedFieldsChange={setSmallCheckedFields} />
             <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
               <Table className="min-w-[720px]">
                 <TableHeader>
@@ -519,7 +555,7 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {data.categories.small.map((category) => {
+                  {pagedSmall.map((category) => {
                     const isEditing = editingSmall.id === category.id
                     const parent = data.categories.medium.find((c) => c.id === category.mediumId)?.name ?? "-"
                     return (
@@ -617,6 +653,8 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                   })}
                 </TableBody>
               </Table>
+            </div>
+            <TablePagination currentPage={smallCurrentPage} totalPages={smallTotalPages} onPageChange={onSmallPageChange} />
             </div>
           )}
         </div>

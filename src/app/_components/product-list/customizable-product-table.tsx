@@ -7,9 +7,17 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import { formatCurrency } from "@/lib/calculations"
 import type { Product, StockAlertSetting } from "@/lib/types"
 import { toast } from "sonner"
+import {
+  SearchWithScope,
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
 
 export const CUSTOMIZABLE_PRODUCT_COLUMNS = [
   "stock",
@@ -145,6 +153,33 @@ export function CustomizableProductTable({
   const [busyKey, setBusyKey] = useState<string | null>(null)
   const [thresholdInputs, setThresholdInputs] = useState<Map<string, string>>(new Map())
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
+
+  const searchFields: SearchField[] = useMemo(
+    () => [
+      { key: "name", label: "商品名" },
+      { key: "notes", label: "備考" },
+    ],
+    []
+  )
+  const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
+
+  const entryRows = useMemo(
+    () =>
+      entries.map((e) => ({
+        id: e.product.id,
+        name: e.product.name,
+        notes: e.product.notes ?? "",
+      })),
+    [entries]
+  )
+
+  const filteredEntries = useMemo(() => {
+    const filtered = filterRowsBySearch(entryRows, query, checkedFields, allFieldKeys)
+    const filteredIds = new Set(filtered.map((r) => r.id as string))
+    return entries.filter((e) => filteredIds.has(e.product.id))
+  }, [entries, entryRows, query, checkedFields, allFieldKeys])
+
+  const pagination = useTablePagination(filteredEntries)
 
   const hiddenSet = useMemo(() => new Set(columnSettings.hiddenColumns), [columnSettings.hiddenColumns])
   const visibleColumns = useMemo(
@@ -356,6 +391,16 @@ export function CustomizableProductTable({
 
   return (
     <div className="min-w-0 space-y-3 overflow-hidden">
+      {entries.length > 0 && (
+        <SearchWithScope
+          fields={searchFields}
+          query={query}
+          onQueryChange={setQuery}
+          checkedFields={checkedFields}
+          onCheckedFieldsChange={setCheckedFields}
+          placeholder="商品を検索..."
+        />
+      )}
       <div className="flex flex-col gap-2 rounded-md border border-dashed p-3 md:flex-row md:items-center md:justify-between">
         <p className="text-xs text-muted-foreground">
           {isAuthenticated
@@ -451,7 +496,7 @@ export function CustomizableProductTable({
             </TableRow>
           </TableHeader>
           <TableBody>
-            {entries.map((entry) => (
+            {pagination.pagedRows.map((entry) => (
               <TableRow key={entry.product.id} className="group">
                 <TableCell className="font-medium">{entry.product.name}</TableCell>
                 {visibleColumns.map((key) => (
@@ -503,11 +548,12 @@ export function CustomizableProductTable({
             ))}
           </TableBody>
         </Table>
+        <TablePagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} onPageChange={pagination.onPageChange} />
       </div>
 
       {/* フッター: 件数表示 */}
       <div className="flex items-center justify-between text-sm text-muted-foreground">
-        <span>{entries.length} 件表示中</span>
+        <span>{filteredEntries.length} 件表示中</span>
       </div>
     </div>
   )

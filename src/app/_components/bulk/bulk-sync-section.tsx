@@ -16,6 +16,8 @@ import {
 } from "@/components/ui/dialog"
 import { Label } from "@/components/ui/label"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import { Textarea } from "@/components/ui/textarea"
 import { parsePayloadJson } from "@/lib/bulk-sync/ui-utils"
 import { retry } from "@/lib/bulk-sync/retry"
@@ -99,6 +101,8 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
   const [importConfirmOpen, setImportConfirmOpen] = useState(false)
 
   const parsedPayload = useMemo(() => parsePayloadJson(payloadInput), [payloadInput])
+
+  const historyPagination = useTablePagination(historyLogs ?? [])
 
   const resolveAccessToken = async () => {
     try {
@@ -519,7 +523,7 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {historyLogs.map((log) => (
+                    {historyPagination.pagedRows.map((log) => (
                       <TableRow
                         key={log.id}
                         className={selectedLogId === log.id ? "bg-muted" : undefined}
@@ -557,6 +561,7 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
                     ))}
                   </TableBody>
                 </Table>
+                <TablePagination currentPage={historyPagination.currentPage} totalPages={historyPagination.totalPages} onPageChange={historyPagination.onPageChange} />
               </>
             )}
           </div>

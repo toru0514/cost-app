@@ -1,9 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
 
+import {
+  SearchWithScope,
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -17,6 +23,8 @@ import {
 import { Input } from "@/components/ui/input"
 import { NumberInput } from "@/components/ui/number-input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import type { AppActions } from "@/lib/app-data"
 import type { AppData, OptionPreset, ProductSizeVariant } from "@/lib/types"
 import { toast } from "sonner"
@@ -35,6 +43,11 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
   })
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
+
+  const searchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }], [])
+  const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
+  const filteredRows = useMemo(() => filterRowsBySearch(data.optionPresets ?? [], query, checkedFields, allFieldKeys), [data.optionPresets, query, checkedFields, allFieldKeys])
+  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(filteredRows)
 
   const { updateOptionPreset, removeOptionPreset, addOptionPreset } = actions
 
@@ -121,6 +134,8 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
         {(data.optionPresets ?? []).length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
+          <div className="space-y-2">
+          <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="min-w-[640px]">
               <TableHeader>
@@ -133,7 +148,7 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {(data.optionPresets ?? []).map((preset) => {
+                {pagedRows.map((preset) => {
                   const isEditing = editingOptionPreset.id === preset.id
                   const detailText =
                     preset.variants.length > 0
@@ -237,6 +252,8 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
                 })}
               </TableBody>
             </Table>
+          </div>
+          <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
           </div>
         )}
       </CardContent>

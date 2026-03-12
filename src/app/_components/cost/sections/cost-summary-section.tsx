@@ -2,14 +2,17 @@
 
 import { useMemo, useState } from "react"
 
-import { Button } from "@/components/ui/button"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
+import {
+  SearchWithScope,
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
 
 interface CostSummarySectionProps {
   data: AppData
@@ -18,41 +21,18 @@ interface CostSummarySectionProps {
 type SortKey = "product" | "detail" | "amount"
 type SortDirection = "asc" | "desc"
 
-type SearchField = "name" | "material" | "packaging" | "labor" | "outsourcing" | "development" | "equipment" | "logistics" | "electricity" | "fees" | "total"
-
-const ALL_SEARCH_FIELDS: SearchField[] = [
-  "name",
-  "material",
-  "packaging",
-  "labor",
-  "outsourcing",
-  "development",
-  "equipment",
-  "logistics",
-  "electricity",
-  "fees",
-  "total",
-]
-
-const SEARCH_FIELD_LABELS: Record<SearchField, string> = {
-  name: "商品名",
-  material: "材料",
-  packaging: "梱包",
-  labor: "人件費",
-  outsourcing: "外注",
-  development: "開発",
-  equipment: "設備",
-  logistics: "物流",
-  electricity: "電気",
-  fees: "手数料",
-  total: "合計",
-}
-
 export function CostSummarySection({ data }: CostSummarySectionProps) {
-  const [productFilter, setProductFilter] = useState("")
   const [sortKey, setSortKey] = useState<SortKey>("product")
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
-  const [searchFields, setSearchFields] = useState<Set<SearchField>>(new Set(ALL_SEARCH_FIELDS))
+
+  const searchFields: SearchField[] = useMemo(
+    () => [
+      { key: "productName", label: "商品名" },
+      { key: "detailText", label: "内容" },
+    ],
+    []
+  )
+  const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
 
   const sortLabelMap: Record<SortKey, string> = {
     product: "商品名",
@@ -60,69 +40,41 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
     amount: "金額",
   }
 
-  const toggleSearchField = (field: SearchField) => {
-    setSearchFields((prev) => {
-      const next = new Set(prev)
-      if (next.has(field)) {
-        next.delete(field)
-      } else {
-        next.add(field)
-      }
-      return next
+  const allRows = useMemo(() => {
+    return data.products.map((product) => {
+      const costs = calculateProductUnitCosts(product.id, data)
+      const detailText = [
+        `材料 ${formatCurrency(costs.material)}`,
+        `梱包 ${formatCurrency(costs.packaging)}`,
+        `人件費 ${formatCurrency(costs.labor)}`,
+        `外注 ${formatCurrency(costs.outsourcing)}`,
+        `開発 ${formatCurrency(costs.development)}`,
+        `設備 ${formatCurrency(costs.equipment)}`,
+        `物流 ${formatCurrency(costs.logistics)}`,
+        `電気 ${formatCurrency(costs.electricity)}`,
+        `手数料 ${formatCurrency(costs.fees)}`,
+      ].join(" / ")
+      return { product, costs, detailText, productName: product.name }
     })
-  }
+  }, [data])
 
-  const allFieldsChecked = searchFields.size === ALL_SEARCH_FIELDS.length
-
-  const getFieldValue = (
-    field: SearchField,
-    row: { product: { name: string }; costs: Record<string, number> }
-  ): string => {
-    if (field === "name") return row.product.name.toLowerCase()
-    return formatCurrency(row.costs[field] ?? 0).toLowerCase()
-  }
+  const filteredRows = useMemo(
+    () => filterRowsBySearch(allRows, query, checkedFields, allFieldKeys),
+    [allRows, query, checkedFields, allFieldKeys]
+  )
 
   const productSummaries = useMemo(() => {
     const collator = new Intl.Collator("ja-JP")
-    const query = productFilter.trim().toLowerCase()
-    const rows = data.products.map((product) => {
-      const costs = calculateProductUnitCosts(product.id, data)
-      const detailText = [
-        `材料 ${costs.material}`,
-        `梱包 ${costs.packaging}`,
-        `人件費 ${costs.labor}`,
-        `外注 ${costs.outsourcing}`,
-        `開発 ${costs.development}`,
-        `設備 ${costs.equipment}`,
-        `物流 ${costs.logistics}`,
-        `電気 ${costs.electricity}`,
-        `手数料 ${costs.fees}`,
-      ].join(" / ")
-      return { product, costs, detailText }
-    })
 
-    const filtered = rows.filter((row) => {
-      if (!query) return true
-      if (searchFields.size === 0) return true
-
-      const checkedFields = Array.from(searchFields)
-
-      if (allFieldsChecked) {
-        // Default (all fields checked): OR logic - match ANY field
-        return checkedFields.some((field) => getFieldValue(field, row).includes(query))
-      }
-
-      // Specific fields selected: AND logic - must match ALL checked fields
-      return checkedFields.every((field) => getFieldValue(field, row).includes(query))
-    })
-
-    return filtered.sort((a, b) => {
+    return [...filteredRows].sort((a, b) => {
       const direction = sortDirection === "asc" ? 1 : -1
       if (sortKey === "amount") return (a.costs.total - b.costs.total) * direction
       if (sortKey === "detail") return collator.compare(a.detailText, b.detailText) * direction
       return collator.compare(a.product.name, b.product.name) * direction
     })
-  }, [data, productFilter, sortDirection, sortKey, searchFields, allFieldsChecked])
+  }, [filteredRows, sortDirection, sortKey])
+
+  const pagination = useTablePagination(productSummaries)
 
   const toggleSort = (key: SortKey) => {
     if (sortKey === key) {
@@ -145,46 +97,17 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
         <p className="text-sm text-muted-foreground">カテゴリ別の積み上げと合計を確認できます。</p>
       </div>
       <div className="space-y-3">
-        <div className="flex items-center gap-2">
-          <Input
-            value={productFilter}
-            onChange={(event) => setProductFilter(event.target.value)}
-            placeholder="キーワードで絞り込み"
-            className="w-full md:w-72"
-          />
-          <Popover>
-            <PopoverTrigger asChild>
-              <Button variant="outline" size="sm" className="shrink-0">
-                検索範囲{" "}
-                <span className="ml-1 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-primary px-1 text-xs text-primary-foreground">
-                  {searchFields.size}
-                </span>
-              </Button>
-            </PopoverTrigger>
-            <PopoverContent align="start" className="w-48 p-3">
-              <div className="space-y-2">
-                {ALL_SEARCH_FIELDS.map((field) => (
-                  <div key={field} className="flex items-center gap-2">
-                    <Checkbox
-                      id={`search-field-${field}`}
-                      checked={searchFields.has(field)}
-                      onCheckedChange={() => toggleSearchField(field)}
-                    />
-                    <Label htmlFor={`search-field-${field}`} className="cursor-pointer text-sm font-normal">
-                      {SEARCH_FIELD_LABELS[field]}
-                    </Label>
-                  </div>
-                ))}
-              </div>
-            </PopoverContent>
-          </Popover>
-        </div>
+        <SearchWithScope
+          fields={searchFields}
+          query={query}
+          onQueryChange={setQuery}
+          checkedFields={checkedFields}
+          onCheckedFieldsChange={setCheckedFields}
+          placeholder="キーワードで絞り込み"
+        />
         <p className="text-xs text-muted-foreground">
           並び順: {sortLabelMap[sortKey]}（{sortDirection === "asc" ? "昇順" : "降順"}）
-          {productFilter && ` / フィルター: 「${productFilter}」`}
-          {!allFieldsChecked && searchFields.size > 0 && (
-            <> / 検索範囲: {Array.from(searchFields).map((f) => SEARCH_FIELD_LABELS[f]).join("、")}</>
-          )}
+          {query && ` / フィルター: 「${query}」`}
         </p>
         <div className="flex flex-wrap gap-2">
           <button type="button" className="text-xs text-muted-foreground hover:underline" onClick={() => toggleSort("product")}>
@@ -228,7 +151,7 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {productSummaries.map(({ product, costs }) => (
+                {pagination.pagedRows.map(({ product, costs }) => (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>{formatCurrency(costs.material)}</TableCell>
@@ -245,6 +168,7 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
                 ))}
               </TableBody>
             </Table>
+            <TablePagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} onPageChange={pagination.onPageChange} />
           </div>
         )}
       </div>

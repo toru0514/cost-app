@@ -1,9 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
 
+import {
+  SearchWithScope,
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -18,7 +24,9 @@ import { Input } from "@/components/ui/input"
 import { NumberInput } from "@/components/ui/number-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
 import { Textarea } from "@/components/ui/textarea"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
@@ -67,6 +75,11 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
   const [savingStockId, setSavingStockId] = useState<string | null>(null)
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
+
+  const searchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }, { key: "supplier", label: "仕入先" }, { key: "note", label: "備考" }], [])
+  const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
+  const filteredRows = useMemo(() => filterRowsBySearch(data.materials, query, checkedFields, allFieldKeys), [data.materials, query, checkedFields, allFieldKeys])
+  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(filteredRows)
 
   const { updateMaterial, removeMaterial, addMaterial } = actions
 
@@ -208,6 +221,8 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
         {data.materials.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
+          <div className="space-y-2">
+          <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="min-w-[980px]">
               <TableHeader>
@@ -228,7 +243,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.materials.map((material) => {
+                {pagedRows.map((material) => {
                   const isEditing = editingMaterial.id === material.id
                   const displayStockUnit = materialStockUnits.get(material.id)?.trim() || material.unit
                   return (
@@ -508,6 +523,8 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                 })}
               </TableBody>
             </Table>
+          </div>
+          <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
           </div>
         )}
       </CardContent>

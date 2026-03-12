@@ -1,9 +1,15 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
 
+import {
+  SearchWithScope,
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -18,7 +24,9 @@ import { Input } from "@/components/ui/input"
 import { NumberInput } from "@/components/ui/number-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
 import { Textarea } from "@/components/ui/textarea"
+import { useTablePagination } from "@/hooks/use-table-pagination"
 import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
@@ -65,6 +73,11 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
   const [savingStockId, setSavingStockId] = useState<string | null>(null)
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
+
+  const searchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }, { key: "note", label: "備考" }], [])
+  const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
+  const filteredRows = useMemo(() => filterRowsBySearch(data.packagingItems, query, checkedFields, allFieldKeys), [data.packagingItems, query, checkedFields, allFieldKeys])
+  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(filteredRows)
 
   const { updatePackagingItem, removePackagingItem, addPackagingItem } = actions
 
@@ -200,6 +213,8 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
         {data.packagingItems.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
+          <div className="space-y-2">
+          <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="min-w-[980px]">
               <TableHeader>
@@ -219,7 +234,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {data.packagingItems.map((item) => {
+                {pagedRows.map((item) => {
                   const isEditing = editingPackaging.id === item.id
                   const displayStockUnit = packagingStockUnits.get(item.id)?.trim() || item.unit
                   return (
@@ -480,6 +495,8 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                 })}
               </TableBody>
             </Table>
+          </div>
+          <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
           </div>
         )}
       </CardContent>
