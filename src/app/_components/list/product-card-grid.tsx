@@ -3,6 +3,8 @@
 import { Copy, Edit3, ImageOff, Trash2 } from "lucide-react"
 import type { Product } from "@/lib/types"
 import { formatCurrency } from "@/lib/calculations"
+import { useTablePagination } from "@/hooks/use-table-pagination"
+import { TablePagination } from "@/components/ui/table-pagination"
 
 type ProductCardEntry = {
   product: Product
@@ -19,9 +21,12 @@ interface ProductCardGridProps {
 }
 
 export function ProductCardGrid({ entries, onEdit, onCopy, onDelete }: ProductCardGridProps) {
+  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(entries, 20)
+
   return (
+    <div className="space-y-3">
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-      {entries.map(({ product, salePrice, profit }) => (
+      {pagedRows.map(({ product, salePrice, profit }) => (
         <div
           key={product.id}
           className="group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition-shadow hover:shadow-md"
@@ -80,6 +85,8 @@ export function ProductCardGrid({ entries, onEdit, onCopy, onDelete }: ProductCa
           </div>
         </div>
       ))}
+    </div>
+    <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
     </div>
   )
 }

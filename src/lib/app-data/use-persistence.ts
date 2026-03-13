@@ -1,6 +1,6 @@
 "use client"
 
-import { startTransition, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react"
+import { startTransition, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import type { AppData } from "../types"
 import { emptyAppData } from "../types"
@@ -10,6 +10,7 @@ import { normalizeAppData, cloneAppData, hasMeaningfulData, mergeAppData } from 
 
 const STORAGE_KEY = "cost-app-data-v1"
 const MAX_SAVE_RETRIES = 3
+const DEBOUNCE_DELAY_MS = 1000
 
 export function usePersistence(
   authState: AuthState,
@@ -30,6 +31,8 @@ export function usePersistence(
   const authStatusRef = useRef<AuthState["status"]>(authState.status)
   const previousAuthStatus = authStatusRef.current
   const saveRetryRef = useRef<{ attempts: number; timeoutId: ReturnType<typeof setTimeout> | null }>({ attempts: 0, timeoutId: null })
+  const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const [hasPendingDebounce, setHasPendingDebounce] = useState(false)
 
   const clearSaveRetry = useCallback(() => {
     if (saveRetryRef.current.timeoutId) {
@@ -74,21 +77,42 @@ export function usePersistence(
     void attemptSave()
   }, [authState, clearSaveRetry, refreshAuditLogs])
 
+  const debouncedPersist = useMemo(
+    () => () => {
+      if (debounceTimerRef.current) clearTimeout(debounceTimerRef.current)
+      setHasPendingDebounce(true)
+      debounceTimerRef.current = setTimeout(() => {
+        debounceTimerRef.current = null
+        setHasPendingDebounce(false)
+        persistSupabaseWithRetry()
+      }, DEBOUNCE_DELAY_MS)
+    },
+    [persistSupabaseWithRetry]
+  )
+
   useEffect(() => {
     return () => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+      }
       clearSaveRetry()
     }
   }, [clearSaveRetry])
 
   useEffect(() => {
-    if (!isSaving) return
+    if (!isSaving && !hasPendingDebounce) return
     const handler = (e: BeforeUnloadEvent) => {
+      if (debounceTimerRef.current) {
+        clearTimeout(debounceTimerRef.current)
+        debounceTimerRef.current = null
+        persistSupabaseWithRetry()
+      }
       e.preventDefault()
       e.returnValue = ""
     }
     window.addEventListener("beforeunload", handler)
     return () => window.removeEventListener("beforeunload", handler)
-  }, [isSaving])
+  }, [isSaving, hasPendingDebounce, persistSupabaseWithRetry])
 
   useEffect(() => {
     dataRef.current = data
@@ -229,7 +253,7 @@ export function usePersistence(
       return
     }
     if (authState.status === "authenticated") {
-      persistSupabaseWithRetry()
+      debouncedPersist()
     } else if (authState.status === "guest") {
       if (previousAuthStatus === "authenticated") {
         if (typeof window !== "undefined") {
@@ -247,7 +271,7 @@ export function usePersistence(
     authState,
     remoteLoadCompleted,
     remoteLoadFailed,
-    persistSupabaseWithRetry,
+    debouncedPersist,
     previousAuthStatus,
   ])
 
