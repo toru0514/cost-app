@@ -64,6 +64,7 @@ export function buildSyncPayload(data: AppData, previous?: AppData) {
       supplier: item.supplier ?? null,
       note: item.note ?? null,
       units_per_batch: item.unitsPerBatch ?? null,
+      image_url: item.imageUrl ?? null,
     })),
     materials_deleted: toDeletePayload(prev.materials, data.materials),
     packaging_items: data.packagingItems.map((item) => ({
@@ -135,6 +136,7 @@ export function buildSyncPayload(data: AppData, previous?: AppData) {
       expected_production_period_years: item.expectedProduction.periodYears,
       expected_production_quantity: item.expectedProduction.quantity,
       equipment_ids: item.equipmentIds ?? [],
+      image_url: item.imageUrl ?? null,
     })),
     products_deleted: toDeletePayload(prev.products, data.products),
     cost_entries_materials: data.costEntries.materials.map((item) => ({

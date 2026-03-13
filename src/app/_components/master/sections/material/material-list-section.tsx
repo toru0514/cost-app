@@ -3,6 +3,8 @@
 import { useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
+import { ViewToggle } from "@/app/_components/shared/view-toggle"
+import { MaterialCardGrid } from "@/app/_components/master/sections/material/material-card-grid"
 
 import {
   SearchWithScope,
@@ -68,7 +70,17 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
     usePercentageMode: false,
     supplier: "",
     note: "",
+    imageUrl: "",
   })
+  const [viewMode, setViewMode] = useState<"table" | "grid">(() => {
+    if (typeof window === "undefined") return "table"
+    return (localStorage.getItem("view-mode-materials") as "table" | "grid") ?? "table"
+  })
+
+  const handleViewModeChange = (next: "table" | "grid") => {
+    setViewMode(next)
+    localStorage.setItem("view-mode-materials", next)
+  }
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [editingStock, setEditingStock] = useState<{ id: string; value: string; unit: string } | null>(null)
@@ -136,6 +148,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
       usePercentageMode: false,
       supplier: "",
       note: "",
+      imageUrl: "",
     })
 
   const renderActionButtons = (onSave: () => void, onCancel: () => void, onDelete?: () => void) => (
@@ -195,6 +208,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
       usePercentageMode: material.usePercentageMode ?? false,
       supplier: material.supplier,
       note: material.note,
+      imageUrl: material.imageUrl,
     })
     toast.success("材料をコピーしました", { description: `「${name}」を作成しました。` })
     setEditingMaterial({
@@ -208,18 +222,42 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
       usePercentageMode: material.usePercentageMode ?? false,
       supplier: material.supplier ?? "",
       note: material.note ?? "",
+      imageUrl: material.imageUrl ?? "",
     })
   }
 
   return (
     <>
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>材料一覧</CardTitle>
+        <ViewToggle value={viewMode} onChange={handleViewModeChange} />
       </CardHeader>
       <CardContent>
         {data.materials.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
+        ) : viewMode === "grid" ? (
+          <MaterialCardGrid
+            items={data.materials}
+            onEdit={(material) => {
+              setEditingStock(null)
+              setEditingMaterial({
+                id: material.id,
+                name: material.name,
+                unit: material.unit,
+                sizeDescription: material.sizeDescription ?? "",
+                currency: material.currency,
+                unitCost: material.unitCost,
+                unitsPerBatch: material.unitsPerBatch ?? 1,
+                usePercentageMode: material.usePercentageMode ?? false,
+                supplier: material.supplier ?? "",
+                note: material.note ?? "",
+                imageUrl: material.imageUrl ?? "",
+              })
+            }}
+            onCopy={handleMaterialCopy}
+            onDelete={(material) => setDeleteTarget({ id: material.id, name: material.name })}
+          />
         ) : (
           <div className="space-y-2">
           <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
@@ -491,8 +529,10 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                                   currency: material.currency,
                                   unitCost: material.unitCost,
                                   unitsPerBatch: material.unitsPerBatch ?? 1,
+                                  usePercentageMode: material.usePercentageMode ?? false,
                                   supplier: material.supplier ?? "",
                                   note: material.note ?? "",
+                                  imageUrl: material.imageUrl ?? "",
                                 })
                               }}
                               title="編集"

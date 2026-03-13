@@ -9,6 +9,7 @@ export type Material = {
   usePercentageMode?: boolean
   supplier?: string
   note?: string
+  imageUrl?: string
 }
 
 export type MaterialCostEntry = {

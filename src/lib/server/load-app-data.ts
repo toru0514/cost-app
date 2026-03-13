@@ -68,6 +68,7 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       usePercentageMode: Boolean(row.use_percentage_mode ?? false),
       supplier: row.supplier ?? undefined,
       note: row.note ?? undefined,
+      imageUrl: row.image_url ?? undefined,
     })),
     packagingItems: packaging.map((row: any) => ({
       id: row.id,
@@ -134,6 +135,7 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
         quantity: row.expected_production_quantity ?? 0,
       },
       equipmentIds: Array.isArray(row.equipment_ids) ? row.equipment_ids : [],
+      imageUrl: row.image_url ?? undefined,
     })),
   }
 }

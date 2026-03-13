@@ -20,6 +20,8 @@ import { SearchWithScope, type SearchField } from "@/app/_components/shared/sear
 import { StockListTab } from "@/app/_components/stock-list/stock-list-tab"
 import { ChevronDown, FileDown, Filter, Plus } from "lucide-react"
 import { toast } from "sonner"
+import { ViewToggle } from "@/app/_components/shared/view-toggle"
+import { ProductCardGrid } from "@/app/_components/list/product-card-grid"
 
 type ListTabProps = {
   data: AppData
@@ -91,6 +93,15 @@ export function ListTab({
   const [productTableColumnSettings, setProductTableColumnSettings] = useState<ProductTableColumnSettings>(
     () => defaultProductTableColumnSettings()
   )
+  const [viewMode, setViewMode] = useState<"table" | "grid">(() => {
+    if (typeof window === "undefined") return "table"
+    return (localStorage.getItem("view-mode-products") as "table" | "grid") ?? "table"
+  })
+
+  const handleViewModeChange = (next: "table" | "grid") => {
+    setViewMode(next)
+    localStorage.setItem("view-mode-products", next)
+  }
 
   const productCostMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateProductUnitCosts>>()
@@ -461,6 +472,7 @@ export function ListTab({
             </Select>
           </div>
           <div className="flex items-center gap-2">
+            <ViewToggle value={viewMode} onChange={handleViewModeChange} />
             <Button
               type="button"
               size="sm"
@@ -490,6 +502,13 @@ export function ListTab({
           <p className="text-sm text-muted-foreground">まだ商品がありません。</p>
         ) : filteredProductEntries.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致する商品がありません。</p>
+        ) : viewMode === "grid" ? (
+          <ProductCardGrid
+            entries={filteredProductEntries}
+            onEdit={onEditProduct}
+            onCopy={onCopyProduct}
+            onDelete={onDeleteProduct}
+          />
         ) : (
           <CustomizableProductTable
             entries={filteredProductEntries}

@@ -16,6 +16,7 @@ export type MaterialRow = {
   supplier: string | null
   note: string | null
   units_per_batch: number | null
+  image_url: string | null
 }
 export type PackagingRow = MaterialRow
 export type ShippingMethodRow = {
@@ -67,6 +68,7 @@ export type ProductRow = {
   expected_production_period_years: number | null
   expected_production_quantity: number | null
   equipment_ids: string[] | null
+  image_url: string | null
 }
 
 export type MaterialCostRow = {

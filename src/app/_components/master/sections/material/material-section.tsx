@@ -34,6 +34,7 @@ const INITIAL_FORM: Omit<Material, "id"> = {
   usePercentageMode: false,
   supplier: "",
   note: "",
+  imageUrl: "",
 }
 
 export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialStock, openSignal }: MaterialSectionProps) {
@@ -191,6 +192,15 @@ export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialS
               placeholder="為替やメモ"
               value={materialForm.note}
               onChange={(event) => setMaterialForm((prev) => ({ ...prev, note: event.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">画像URL</Label>
+            <Input
+              type="url"
+              placeholder="https://example.com/image.jpg"
+              value={materialForm.imageUrl ?? ""}
+              onChange={(event) => setMaterialForm((prev) => ({ ...prev, imageUrl: event.target.value || undefined }))}
             />
           </div>
           <div className="flex justify-end pt-2">
