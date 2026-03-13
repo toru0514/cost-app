@@ -20,6 +20,7 @@ export function OnboardingBanner({ onNavigateToMaster, isAuthenticated, hasExist
   useEffect(() => {
     // ログイン済みでデータが既にある場合はスキップ（既存ユーザーの新端末アクセス対策）
     if (isAuthenticated && hasExistingData) {
+      setVisible(false)
       localStorage.setItem(STORAGE_KEY, "true")
       return
     }

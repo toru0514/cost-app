@@ -42,10 +42,7 @@ export class ErrorBoundary extends Component<Props, State> {
           <Button
             variant="outline"
             size="sm"
-            onClick={() => {
-              this.setState({ hasError: false, error: null })
-              window.location.reload()
-            }}
+            onClick={() => window.location.reload()}
           >
             再読み込み
           </Button>

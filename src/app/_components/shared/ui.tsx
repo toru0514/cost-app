@@ -116,7 +116,7 @@ export function RegisteredList({
     <div className="space-y-1 text-sm">
       <p className="font-semibold text-muted-foreground">{title}</p>
       {items.length === 0 ? (
-        <EmptyState title={emptyLabel ?? "まだ登録がありません。"} />
+        <p className="text-xs text-muted-foreground">{emptyLabel ?? "まだ登録がありません。"}</p>
       ) : (
         <ul className="space-y-1 text-xs text-muted-foreground">
           {items.map((rawItem, index) => {
