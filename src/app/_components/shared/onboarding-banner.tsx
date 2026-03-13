@@ -9,17 +9,25 @@ const STORAGE_KEY = "cost-app-onboarding-seen"
 
 type Props = {
   onNavigateToMaster: () => void
+  /** ログイン済みかつデータがある場合は非表示 */
+  isAuthenticated?: boolean
+  hasExistingData?: boolean
 }
 
-export function OnboardingBanner({ onNavigateToMaster }: Props) {
+export function OnboardingBanner({ onNavigateToMaster, isAuthenticated, hasExistingData }: Props) {
   const [visible, setVisible] = useState(false)
 
   useEffect(() => {
+    // ログイン済みでデータが既にある場合はスキップ（既存ユーザーの新端末アクセス対策）
+    if (isAuthenticated && hasExistingData) {
+      localStorage.setItem(STORAGE_KEY, "true")
+      return
+    }
     const seen = localStorage.getItem(STORAGE_KEY)
     if (!seen) {
       setVisible(true)
     }
-  }, [])
+  }, [isAuthenticated, hasExistingData])
 
   const dismiss = () => {
     localStorage.setItem(STORAGE_KEY, "true")

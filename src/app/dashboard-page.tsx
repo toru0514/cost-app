@@ -276,7 +276,11 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
 
           <main className={`flex-1 min-w-0 overflow-x-hidden p-4 md:p-6 ${mainMaxWidth}`}>
             {/* オンボーディングバナー（初回訪問時のみ表示） */}
-            <OnboardingBanner onNavigateToMaster={() => handleTabChange("master")} />
+            <OnboardingBanner
+              onNavigateToMaster={() => handleTabChange("master")}
+              isAuthenticated={isAuthenticated}
+              hasExistingData={data.products.length > 0 || data.materials.length > 0}
+            />
 
             {/* ログインパネル */}
             {loginPanelOpen && authState.status !== "authenticated" && (

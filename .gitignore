@@ -15,4 +15,4 @@ supabase_backup_*.sql
 docs/PR解説/
 tsconfig.tsbuildinfo
 .claude/*
-!.claude/settings.json
+.env*.local

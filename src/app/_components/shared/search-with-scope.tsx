@@ -13,21 +13,40 @@ export type SearchField = {
   label: string
 }
 
-/** Highlight matching text within a string. Returns plain string if no query. */
+/** Highlight all matching occurrences of query within text. */
 export function HighlightText({ text, query }: { text: string; query: string }): ReactNode {
   const trimmed = query.trim()
   if (!trimmed) return text
-  const index = text.toLowerCase().indexOf(trimmed.toLowerCase())
-  if (index < 0) return text
-  return (
-    <>
-      {text.slice(0, index)}
-      <mark className="bg-yellow-200 text-yellow-900 dark:bg-yellow-800 dark:text-yellow-100 rounded-sm px-0.5">
-        {text.slice(index, index + trimmed.length)}
+
+  const lowerText = text.toLowerCase()
+  const lowerQuery = trimmed.toLowerCase()
+  const parts: ReactNode[] = []
+  let lastIndex = 0
+  let matchIndex = lowerText.indexOf(lowerQuery, lastIndex)
+
+  if (matchIndex < 0) return text
+
+  while (matchIndex >= 0) {
+    if (matchIndex > lastIndex) {
+      parts.push(text.slice(lastIndex, matchIndex))
+    }
+    parts.push(
+      <mark
+        key={matchIndex}
+        className="rounded-sm bg-yellow-200 px-0.5 text-yellow-900 dark:bg-yellow-800 dark:text-yellow-100"
+      >
+        {text.slice(matchIndex, matchIndex + trimmed.length)}
       </mark>
-      {text.slice(index + trimmed.length)}
-    </>
-  )
+    )
+    lastIndex = matchIndex + trimmed.length
+    matchIndex = lowerText.indexOf(lowerQuery, lastIndex)
+  }
+
+  if (lastIndex < text.length) {
+    parts.push(text.slice(lastIndex))
+  }
+
+  return <>{parts}</>
 }
 
 type SearchWithScopeProps = {
