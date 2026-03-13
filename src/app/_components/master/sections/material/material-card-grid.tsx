@@ -3,6 +3,8 @@
 import { Copy, Edit3, ImageOff, Trash2 } from "lucide-react"
 import type { Material } from "@/lib/types"
 import { formatCurrency } from "@/lib/calculations"
+import { useTablePagination } from "@/hooks/use-table-pagination"
+import { TablePagination } from "@/components/ui/table-pagination"
 
 interface MaterialCardGridProps {
   items: Material[]
@@ -12,9 +14,12 @@ interface MaterialCardGridProps {
 }
 
 export function MaterialCardGrid({ items, onEdit, onCopy, onDelete }: MaterialCardGridProps) {
+  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(items, 20)
+
   return (
+    <div className="space-y-3">
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-      {items.map((material) => (
+      {pagedRows.map((material) => (
         <div
           key={material.id}
           className="group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition-shadow hover:shadow-md"
@@ -76,6 +81,8 @@ export function MaterialCardGrid({ items, onEdit, onCopy, onDelete }: MaterialCa
           </div>
         </div>
       ))}
+    </div>
+    <TablePagination currentPage={currentPage} totalPages={totalPages} onPageChange={onPageChange} />
     </div>
   )
 }
