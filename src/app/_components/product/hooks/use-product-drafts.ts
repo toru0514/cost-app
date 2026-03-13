@@ -180,6 +180,7 @@ export function useProductDraftState({
       quantity: 1000,
     },
     equipmentIds: [],
+    imageUrl: "",
   })
 
   const buildInitialMaterialDrafts = () => {
@@ -487,6 +488,7 @@ export function useProductDraftState({
         productionLotSize: product.productionLotSize,
         expectedProduction: product.expectedProduction,
         equipmentIds: product.equipmentIds ?? [],
+        imageUrl: product.imageUrl ?? "",
       })
       setInitialStockValue(Math.max(0, Number(product.productionLotSize) || 0))
       setInitialStockOverridden(false)
