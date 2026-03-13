@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import type { AppActions } from "@/lib/app-data"
@@ -25,6 +26,9 @@ interface MasterTabProps {
 }
 
 export function MasterTab({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterTabProps) {
+  const searchParams = useSearchParams()
+  const sectionParam = searchParams.get("section")
+
   const [view, setView] = useState<"register" | "list">(() => {
     if (typeof window === "undefined") return "register"
     const stored = window.localStorage.getItem("cost-app-master-view")
@@ -92,6 +96,7 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, mate
           onSetPackagingStock={onSetPackagingStock}
           onAdjustMaterialStock={onAdjustMaterialStock}
           onAdjustPackagingStock={onAdjustPackagingStock}
+          focusSection={sectionParam}
         />
       )}
     </div>

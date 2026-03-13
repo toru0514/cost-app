@@ -5,6 +5,19 @@ import { formatCurrency } from "@/lib/calculations"
 import { useTablePagination } from "@/hooks/use-table-pagination"
 import { TablePagination } from "@/components/ui/table-pagination"
 
+function EditMasterCardButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className="absolute right-1.5 top-1.5 rounded bg-background/80 p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
+      onClick={onClick}
+      title="マスタ編集"
+    >
+      <Edit3 className="h-3.5 w-3.5" />
+    </button>
+  )
+}
+
 const formatRoundedQuantity = (quantity: number) => {
   const rounded = Math.round((quantity + Number.EPSILON) * 10) / 10
   return Number.isInteger(rounded) ? String(rounded) : rounded.toFixed(1)
@@ -67,16 +80,7 @@ export function MaterialStockCardGrid({ rows, onEditMaster }: MaterialStockCardG
                 </div>
               )}
             </div>
-            {onEditMaster && (
-              <button
-                type="button"
-                className="absolute right-1.5 top-1.5 rounded bg-background/80 p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
-                onClick={onEditMaster}
-                title="マスタ編集"
-              >
-                <Edit3 className="h-3.5 w-3.5" />
-              </button>
-            )}
+            {onEditMaster && <EditMasterCardButton onClick={onEditMaster} />}
             <div className="flex flex-1 flex-col gap-1 p-2">
               <p className="line-clamp-2 text-sm font-medium leading-tight">{row.name}</p>
               <p className="text-sm font-semibold">{formatCurrency(row.unitCost, row.currency)}</p>
@@ -141,16 +145,7 @@ export function PackagingStockCardGrid({ rows, onEditMaster }: PackagingStockCar
                 </div>
               )}
             </div>
-            {onEditMaster && (
-              <button
-                type="button"
-                className="absolute right-1.5 top-1.5 rounded bg-background/80 p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
-                onClick={onEditMaster}
-                title="マスタ編集"
-              >
-                <Edit3 className="h-3.5 w-3.5" />
-              </button>
-            )}
+            {onEditMaster && <EditMasterCardButton onClick={onEditMaster} />}
             <div className="flex flex-1 flex-col gap-1 p-2">
               <p className="line-clamp-2 text-sm font-medium leading-tight">{row.name}</p>
               <p className="text-sm font-semibold">{formatCurrency(row.unitCost, row.currency)}</p>
@@ -213,16 +208,7 @@ export function EquipmentCardGrid({ rows, onEditMaster }: EquipmentCardGridProps
                 </div>
               )}
             </div>
-            {onEditMaster && (
-              <button
-                type="button"
-                className="absolute right-1.5 top-1.5 rounded bg-background/80 p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
-                onClick={onEditMaster}
-                title="マスタ編集"
-              >
-                <Edit3 className="h-3.5 w-3.5" />
-              </button>
-            )}
+            {onEditMaster && <EditMasterCardButton onClick={onEditMaster} />}
             <div className="flex flex-1 flex-col gap-1 p-2">
               <p className="line-clamp-2 text-sm font-medium leading-tight">{row.name}</p>
               <p className="text-sm font-semibold">{formatCurrency(row.acquisitionCost, row.currency)}</p>

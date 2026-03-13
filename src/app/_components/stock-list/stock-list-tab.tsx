@@ -22,6 +22,21 @@ import {
 import { ViewToggle } from "@/app/_components/shared/view-toggle"
 import { MaterialStockCardGrid, PackagingStockCardGrid, EquipmentCardGrid } from "./stock-card-grids"
 
+function EditMasterTableButton({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="flex items-center justify-end md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+      <button
+        type="button"
+        className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={onClick}
+        title="マスタ編集"
+      >
+        <Edit3 className="h-4 w-4" />
+      </button>
+    </div>
+  )
+}
+
 type StockListTabProps = {
   data: AppData
   materialStocks: Map<string, number>
@@ -85,9 +100,9 @@ export function StockListTab({
   const [busy, setBusy] = useState<string | null>(null)
   const [thresholdInputs, setThresholdInputs] = useState<Map<string, string>>(new Map())
 
-  const handleEditMaster = () => {
+  const handleEditMaster = (section: string) => {
     window.localStorage.setItem("cost-app-master-view", "list")
-    router.push("/master")
+    router.push(`/master?section=${section}`)
   }
 
   const [materialViewMode, setMaterialViewMode] = useState<"table" | "grid">(() => {
@@ -389,7 +404,7 @@ export function StockListTab({
         ) : filteredMaterialRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致する材料がありません。</p>
         ) : materialViewMode === "grid" ? (
-          <MaterialStockCardGrid rows={filteredMaterialRows} onEditMaster={handleEditMaster} />
+          <MaterialStockCardGrid rows={filteredMaterialRows} onEditMaster={() => handleEditMaster("material")} />
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[1100px]">
@@ -479,16 +494,7 @@ export function StockListTab({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-end md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-                        <button
-                          type="button"
-                          className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                          onClick={handleEditMaster}
-                          title="マスタ編集"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      <EditMasterTableButton onClick={() => handleEditMaster("material")} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -525,7 +531,7 @@ export function StockListTab({
         ) : filteredPackagingRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致する梱包材がありません。</p>
         ) : packagingViewMode === "grid" ? (
-          <PackagingStockCardGrid rows={filteredPackagingRows} onEditMaster={handleEditMaster} />
+          <PackagingStockCardGrid rows={filteredPackagingRows} onEditMaster={() => handleEditMaster("packaging")} />
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[1100px]">
@@ -613,16 +619,7 @@ export function StockListTab({
                       </div>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-end md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-                        <button
-                          type="button"
-                          className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                          onClick={handleEditMaster}
-                          title="マスタ編集"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      <EditMasterTableButton onClick={() => handleEditMaster("packaging")} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -655,7 +652,7 @@ export function StockListTab({
         ) : filteredEquipmentRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致する設備がありません。</p>
         ) : equipmentViewMode === "grid" ? (
-          <EquipmentCardGrid rows={filteredEquipmentRows} onEditMaster={handleEditMaster} />
+          <EquipmentCardGrid rows={filteredEquipmentRows} onEditMaster={() => handleEditMaster("equipment")} />
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[720px]">
@@ -688,16 +685,7 @@ export function StockListTab({
                     <TableCell>{`${equipment.utilizationRate}%`}</TableCell>
                     <TableCell>{equipment.note || "-"}</TableCell>
                     <TableCell>
-                      <div className="flex items-center justify-end md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-within:opacity-100">
-                        <button
-                          type="button"
-                          className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
-                          onClick={handleEditMaster}
-                          title="マスタ編集"
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </button>
-                      </div>
+                      <EditMasterTableButton onClick={() => handleEditMaster("equipment")} />
                     </TableCell>
                   </TableRow>
                 ))}
