@@ -246,6 +246,7 @@ export function StockListTab({
     unitsPerBatch: item.unitsPerBatch ?? 1,
     sizeDescription: item.sizeDescription,
     note: item.note,
+    imageUrl: item.imageUrl,
     stock: packagingStocks.get(item.id),
     stockUnit: packagingStockUnits.get(item.id)?.trim() || item.unit,
   }))
@@ -258,6 +259,7 @@ export function StockListTab({
     amortizationYears: equipment.amortizationYears,
     utilizationRate: equipment.utilizationRate ?? 100,
     note: equipment.note,
+    imageUrl: equipment.imageUrl,
   }))
 
   const filteredMaterialRows = useMemo(
@@ -486,7 +488,15 @@ export function StockListTab({
               <TableBody>
                 {packagingPagination.pagedRows.map((row) => (
                   <TableRow key={row.id} className="group">
-                    <TableCell className="font-medium">{row.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <span className="flex items-center gap-1.5">
+                        {row.imageUrl && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={row.imageUrl} alt={row.name} className="h-5 w-5 shrink-0 rounded object-cover" />
+                        )}
+                        {row.name}
+                      </span>
+                    </TableCell>
                     <TableCell>{row.unit}</TableCell>
                     <TableCell>{formatCurrency(row.unitCost, row.currency)}</TableCell>
                     <TableCell>{`${row.unitsPerBatch}単位/セット`}</TableCell>
@@ -581,7 +591,15 @@ export function StockListTab({
               <TableBody>
                 {equipmentPagination.pagedRows.map((equipment) => (
                   <TableRow key={equipment.id}>
-                    <TableCell className="font-medium">{equipment.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <span className="flex items-center gap-1.5">
+                        {equipment.imageUrl && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={equipment.imageUrl} alt={equipment.name} className="h-5 w-5 shrink-0 rounded object-cover" />
+                        )}
+                        {equipment.name}
+                      </span>
+                    </TableCell>
                     <TableCell>{formatCurrency(equipment.acquisitionCost, equipment.currency)}</TableCell>
                     <TableCell>{`${equipment.amortizationYears}年`}</TableCell>
                     <TableCell>{`${equipment.utilizationRate}%`}</TableCell>
