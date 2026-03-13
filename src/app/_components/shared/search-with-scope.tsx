@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useCallback } from "react"
+import { useState, useMemo, useCallback, type ReactNode } from "react"
 import { Search, SlidersHorizontal } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
@@ -13,6 +13,23 @@ export type SearchField = {
   label: string
 }
 
+/** Highlight matching text within a string. Returns plain string if no query. */
+export function HighlightText({ text, query }: { text: string; query: string }): ReactNode {
+  const trimmed = query.trim()
+  if (!trimmed) return text
+  const index = text.toLowerCase().indexOf(trimmed.toLowerCase())
+  if (index < 0) return text
+  return (
+    <>
+      {text.slice(0, index)}
+      <mark className="bg-yellow-200 text-yellow-900 dark:bg-yellow-800 dark:text-yellow-100 rounded-sm px-0.5">
+        {text.slice(index, index + trimmed.length)}
+      </mark>
+      {text.slice(index + trimmed.length)}
+    </>
+  )
+}
+
 type SearchWithScopeProps = {
   fields: SearchField[]
   query: string
@@ -20,6 +37,8 @@ type SearchWithScopeProps = {
   checkedFields: Set<string>
   onCheckedFieldsChange: (fields: Set<string>) => void
   placeholder?: string
+  resultCount?: number
+  totalCount?: number
 }
 
 export function SearchWithScope({
@@ -29,6 +48,8 @@ export function SearchWithScope({
   checkedFields,
   onCheckedFieldsChange,
   placeholder = "検索...",
+  resultCount,
+  totalCount,
 }: SearchWithScopeProps) {
   const allChecked = checkedFields.size === fields.length
   const noneChecked = checkedFields.size === 0
@@ -57,7 +78,7 @@ export function SearchWithScope({
   const scopeLabel = allChecked || noneChecked ? "すべて" : `${checkedFields.size}項目`
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex flex-wrap items-center gap-2">
       <div className="relative">
         <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
         <input
@@ -66,6 +87,7 @@ export function SearchWithScope({
           onChange={(e) => onQueryChange(e.target.value)}
           placeholder={placeholder}
           className="h-9 w-64 rounded-md border bg-transparent pl-9 pr-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+          data-search-input
         />
       </div>
       <Popover>
@@ -106,6 +128,11 @@ export function SearchWithScope({
           </div>
         </PopoverContent>
       </Popover>
+      {query.trim() && resultCount !== undefined && (
+        <span className="text-xs text-muted-foreground">
+          {resultCount}{totalCount !== undefined ? `/${totalCount}` : ""}件ヒット
+        </span>
+      )}
     </div>
   )
 }

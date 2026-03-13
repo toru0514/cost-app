@@ -5,6 +5,7 @@ import { Bell, BellOff, Copy, Edit3, GripVertical, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TablePagination } from "@/components/ui/table-pagination"
@@ -13,6 +14,7 @@ import { formatCurrency } from "@/lib/calculations"
 import type { Product, StockAlertSetting } from "@/lib/types"
 import { toast } from "sonner"
 import {
+  HighlightText,
   SearchWithScope,
   filterRowsBySearch,
   useSearchWithScope,
@@ -284,7 +286,7 @@ export function CustomizableProductTable({
                   {stockQuantity}
                 </span>
               ) : (
-                <span className="text-xs text-muted-foreground">読込中...</span>
+                <Spinner size="sm" />
               )
             ) : (
               <span className="text-xs text-muted-foreground">-</span>
@@ -303,7 +305,7 @@ export function CustomizableProductTable({
               className="h-6 w-12 text-xs"
               disabled={!isAuthenticated || !stocksLoaded}
             />
-            <div className="flex gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+            <div className="flex gap-1 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
               <Button
                 type="button"
                 size="sm"
@@ -404,6 +406,8 @@ export function CustomizableProductTable({
           checkedFields={checkedFields}
           onCheckedFieldsChange={setCheckedFields}
           placeholder="商品を検索..."
+          resultCount={query.trim() ? filteredEntries.length : undefined}
+          totalCount={query.trim() ? entries.length : undefined}
         />
       )}
       <div className="flex flex-col gap-2 rounded-md border border-dashed p-3 md:flex-row md:items-center md:justify-between">
@@ -503,7 +507,9 @@ export function CustomizableProductTable({
           <TableBody>
             {pagination.pagedRows.map((entry) => (
               <TableRow key={entry.product.id} className="group">
-                <TableCell className="font-medium">{entry.product.name}</TableCell>
+                <TableCell className="font-medium">
+                  <HighlightText text={entry.product.name} query={query} />
+                </TableCell>
                 {visibleColumns.map((key) => (
                   <TableCell
                     key={`${entry.product.id}-${key}`}
@@ -521,8 +527,8 @@ export function CustomizableProductTable({
                   </TableCell>
                 ))}
                 <TableCell>
-                  {/* 行ホバーでアクション表示 */}
-                  <div className="flex items-center justify-end gap-1 opacity-0 transition-opacity group-hover:opacity-100">
+                  {/* 行ホバーでアクション表示（モバイルでは常時表示） */}
+                  <div className="flex items-center justify-end gap-1 md:opacity-0 md:transition-opacity md:group-hover:opacity-100">
                     <button
                       type="button"
                       className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"

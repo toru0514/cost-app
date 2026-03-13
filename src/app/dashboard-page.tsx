@@ -16,6 +16,7 @@ import { MasterTab } from "./_components/master/master-tab"
 import { ProductTab } from "./_components/product/product-tab"
 import { ConfirmationDialogs } from "./_components/shared/confirmation-dialogs"
 import { LoginPanel } from "./_components/shared/login-panel"
+import { OnboardingBanner } from "./_components/shared/onboarding-banner"
 import { Sidebar } from "./_components/shared/sidebar"
 import { useBackup } from "./_components/shared/use-backup"
 import { BarChart3, Box, Boxes, ClipboardList, FileText, LayoutDashboard, LogIn, Menu, Package } from "lucide-react"
@@ -116,6 +117,21 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
   useEffect(() => {
     setActiveTabState(routeTab)
   }, [routeTab])
+
+  // グローバルキーボードショートカット
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const mod = e.metaKey || e.ctrlKey
+      // Ctrl/Cmd+K: 検索フォーカス
+      if (mod && e.key === "k") {
+        e.preventDefault()
+        const searchInput = document.querySelector<HTMLInputElement>("[data-search-input]")
+        searchInput?.focus()
+      }
+    }
+    window.addEventListener("keydown", handleKeyDown)
+    return () => window.removeEventListener("keydown", handleKeyDown)
+  }, [])
 
   const handleCreateProduct = useCallback(() => {
     setEditingProductId(null)
@@ -235,8 +251,14 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
                 <Button type="button" variant="ghost" size="sm" className="md:hidden" onClick={() => setMobileNavOpen(true)}>
                   <Menu className="h-4 w-4" />
                 </Button>
-                <span className="text-sm font-semibold">コスト設計ダッシュボード</span>
-                {isSaving && <Badge variant="outline" className="text-xs text-muted-foreground">保存中...</Badge>}
+                <div className="flex items-center gap-1.5">
+                  <span className="hidden text-xs text-muted-foreground sm:inline">Cost App</span>
+                  <span className="hidden text-xs text-muted-foreground sm:inline">/</span>
+                  <span className="text-sm font-semibold">
+                    {tabOptions.find((t) => t.value === activeTab)?.label ?? activeTab}
+                  </span>
+                  {isSaving && <Badge variant="outline" className="text-xs text-muted-foreground">保存中...</Badge>}
+                </div>
               </div>
               {/* ヘッダー右上: ゲスト時はログインボタン、ログイン時はメールアドレス */}
               <div className="flex items-center gap-2">
@@ -253,6 +275,9 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
           </header>
 
           <main className={`flex-1 min-w-0 overflow-x-hidden p-4 md:p-6 ${mainMaxWidth}`}>
+            {/* オンボーディングバナー（初回訪問時のみ表示） */}
+            <OnboardingBanner onNavigateToMaster={() => handleTabChange("master")} />
+
             {/* ログインパネル */}
             {loginPanelOpen && authState.status !== "authenticated" && (
               <LoginPanel onClose={() => setLoginPanelOpen(false)} />

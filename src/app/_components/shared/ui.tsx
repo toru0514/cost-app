@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
+import { EmptyState } from "@/components/ui/empty-state"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 
@@ -115,7 +116,7 @@ export function RegisteredList({
     <div className="space-y-1 text-sm">
       <p className="font-semibold text-muted-foreground">{title}</p>
       {items.length === 0 ? (
-        <p className="text-xs text-muted-foreground">{emptyLabel ?? "まだ登録がありません。"}</p>
+        <EmptyState title={emptyLabel ?? "まだ登録がありません。"} />
       ) : (
         <ul className="space-y-1 text-xs text-muted-foreground">
           {items.map((rawItem, index) => {
@@ -217,9 +218,10 @@ export function CostDisplay({
           {productFilter && ` / フィルター: 商品「${productFilter}」`}
         </p>
         {displayedRows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            {rows.length === 0 ? "まだデータがありません。" : "条件に一致するデータがありません。"}
-          </p>
+          <EmptyState
+            title={rows.length === 0 ? "まだデータがありません。" : "条件に一致するデータがありません。"}
+            description={rows.length > 0 ? "検索条件を変更してください。" : undefined}
+          />
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="w-auto min-w-max">
