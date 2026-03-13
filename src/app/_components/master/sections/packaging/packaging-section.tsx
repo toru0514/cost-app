@@ -32,6 +32,7 @@ const INITIAL_FORM: Omit<PackagingItem, "id"> = {
   unitCost: 0,
   unitsPerBatch: 1,
   note: "",
+  imageUrl: "",
 }
 
 export function PackagingSection({ data, actions, isAuthenticated, onSetPackagingStock, openSignal }: PackagingSectionProps) {
@@ -134,6 +135,15 @@ export function PackagingSection({ data, actions, isAuthenticated, onSetPackagin
               placeholder="仕入先や材質"
               value={packagingForm.note}
               onChange={(event) => setPackagingForm((prev) => ({ ...prev, note: event.target.value }))}
+            />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs text-muted-foreground">画像URL</Label>
+            <Input
+              type="url"
+              placeholder="https://..."
+              value={packagingForm.imageUrl}
+              onChange={(event) => setPackagingForm((prev) => ({ ...prev, imageUrl: event.target.value }))}
             />
           </div>
           <div className="space-y-1">

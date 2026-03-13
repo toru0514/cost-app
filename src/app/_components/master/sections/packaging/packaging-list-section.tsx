@@ -66,6 +66,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
     unitCost: 0,
     unitsPerBatch: 1,
     note: "",
+    imageUrl: "",
   })
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
@@ -132,6 +133,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
       unitCost: 0,
       unitsPerBatch: 1,
       note: "",
+      imageUrl: "",
     })
 
   const renderActionButtons = (onSave: () => void, onCancel: () => void, onDelete?: () => void) => (
@@ -189,6 +191,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
       unitCost: item.unitCost,
       unitsPerBatch: item.unitsPerBatch ?? 1,
       note: item.note,
+      imageUrl: item.imageUrl,
     })
     toast.success("梱包材をコピーしました", { description: `「${name}」を作成しました。` })
     setEditingPackaging({
@@ -200,6 +203,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
       unitCost: item.unitCost,
       unitsPerBatch: item.unitsPerBatch ?? 1,
       note: item.note ?? "",
+      imageUrl: item.imageUrl ?? "",
     })
   }
 
@@ -216,7 +220,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
           <div className="space-y-2">
           <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="min-w-[980px]">
+            <Table className="min-w-[1080px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>名称</TableHead>
@@ -225,6 +229,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                   <TableHead>セット数</TableHead>
                   <TableHead>仕様</TableHead>
                   <TableHead>備考</TableHead>
+                  <TableHead>画像</TableHead>
                   <TableHead>現在残数</TableHead>
                   <TableHead>増減量</TableHead>
                   <TableHead></TableHead>
@@ -333,6 +338,22 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                           ) : (
                             "-"
                           )
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {isEditing ? (
+                          <Input
+                            type="url"
+                            placeholder="https://..."
+                            value={editingPackaging.imageUrl}
+                            onChange={(event) => setEditingPackaging((prev) => ({ ...prev, imageUrl: event.target.value }))}
+                            className="w-40"
+                          />
+                        ) : item.imageUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={item.imageUrl} alt={item.name} className="h-6 w-6 rounded object-cover" />
+                        ) : (
+                          "-"
                         )}
                       </TableCell>
                       <TableCell>
@@ -465,6 +486,7 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
                                   unitCost: item.unitCost,
                                   unitsPerBatch: item.unitsPerBatch ?? 1,
                                   note: item.note ?? "",
+                                  imageUrl: item.imageUrl ?? "",
                                 })
                               }}
                               title="編集"

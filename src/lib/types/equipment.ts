@@ -6,6 +6,7 @@ export type Equipment = {
   amortizationYears: number
   utilizationRate?: number
   note?: string
+  imageUrl?: string
 }
 
 export type EquipmentAllocationEntry = {

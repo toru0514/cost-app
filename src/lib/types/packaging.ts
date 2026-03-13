@@ -7,6 +7,7 @@ export type PackagingItem = {
   currency: string
   unitsPerBatch?: number
   note?: string
+  imageUrl?: string
 }
 
 export type PackagingCostEntry = {

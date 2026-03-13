@@ -75,6 +75,7 @@ export const buildBulkSyncSheetRows = (data: AppData, stocks?: StockMaps) => {
       item.unitCost,
       item.unitsPerBatch ?? "",
       item.note ?? "",
+      item.imageUrl ?? "",
       stocks?.packagingStocks?.get(item.id) ?? "",
       stocks?.packagingStockUnits?.get(item.id) ?? "",
       "",
@@ -104,6 +105,7 @@ export const buildBulkSyncSheetRows = (data: AppData, stocks?: StockMaps) => {
       item.amortizationYears,
       item.utilizationRate ?? 100,
       item.note ?? "",
+      item.imageUrl ?? "",
       "",
     ]),
     fees: data.fees.map((item) => [

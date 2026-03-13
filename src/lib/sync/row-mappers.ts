@@ -90,6 +90,7 @@ export const mapPackaging = (row: PackagingRow): PackagingItem => ({
   unitCost: Number(row.unit_cost ?? 0),
   note: row.note ?? undefined,
   unitsPerBatch: row.units_per_batch ?? undefined,
+  imageUrl: row.image_url ?? undefined,
 })
 
 export const mapShipping = (row: ShippingMethodRow): ShippingMethod => ({
@@ -117,6 +118,7 @@ export const mapEquipment = (row: EquipmentRow): Equipment => ({
   amortizationYears: Number(row.amortization_years ?? 1),
   utilizationRate: Number(row.utilization_rate ?? 100),
   note: row.note ?? undefined,
+  imageUrl: row.image_url ?? undefined,
 })
 
 export const mapFee = (row: FeeRow): Fee => ({
