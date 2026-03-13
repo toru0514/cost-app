@@ -208,7 +208,7 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
     cost: "max-w-6xl",
     analytics: "max-w-6xl",
     product: "max-w-4xl",
-    master: "max-w-5xl",
+    master: "max-w-full",
     list: "max-w-full",
     bulk: "max-w-4xl",
     audit: "max-w-full",
