@@ -491,6 +491,7 @@ export function StockListTab({
                     <TableCell className="font-medium">
                       <span className="flex items-center gap-1.5">
                         {row.imageUrl && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
                           <img src={row.imageUrl} alt={row.name} className="h-5 w-5 shrink-0 rounded object-cover" />
                         )}
                         {row.name}
@@ -593,6 +594,7 @@ export function StockListTab({
                     <TableCell className="font-medium">
                       <span className="flex items-center gap-1.5">
                         {equipment.imageUrl && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
                           <img src={equipment.imageUrl} alt={equipment.name} className="h-5 w-5 shrink-0 rounded object-cover" />
                         )}
                         {equipment.name}
