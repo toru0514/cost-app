@@ -1,8 +1,9 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useRouter } from "next/navigation"
 import { toast } from "sonner"
-import { Bell, BellOff } from "lucide-react"
+import { Bell, BellOff, Edit3 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -20,6 +21,21 @@ import {
 } from "@/app/_components/shared/search-with-scope"
 import { ViewToggle } from "@/app/_components/shared/view-toggle"
 import { MaterialStockCardGrid, PackagingStockCardGrid, EquipmentCardGrid } from "./stock-card-grids"
+
+function EditMasterTableButton({ onClick }: { onClick: () => void }) {
+  return (
+    <div className="flex items-center justify-end md:opacity-0 md:transition-opacity md:group-hover:opacity-100 md:group-focus-within:opacity-100">
+      <button
+        type="button"
+        className="rounded p-1.5 text-muted-foreground hover:bg-muted hover:text-foreground"
+        onClick={onClick}
+        title="マスタ編集"
+      >
+        <Edit3 className="h-4 w-4" />
+      </button>
+    </div>
+  )
+}
 
 type StockListTabProps = {
   data: AppData
@@ -79,9 +95,15 @@ export function StockListTab({
   onUpdateStockAlertSetting,
   onCheckAndNotifyLowStock,
 }: StockListTabProps) {
+  const router = useRouter()
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
   const [thresholdInputs, setThresholdInputs] = useState<Map<string, string>>(new Map())
+
+  const handleEditMaster = (section: string) => {
+    window.localStorage.setItem("cost-app-master-view", "list")
+    router.push(`/master?section=${section}`)
+  }
 
   const [materialViewMode, setMaterialViewMode] = useState<"table" | "grid">(() => {
     if (typeof window === "undefined") return "table"
@@ -382,7 +404,7 @@ export function StockListTab({
         ) : filteredMaterialRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致する材料がありません。</p>
         ) : materialViewMode === "grid" ? (
-          <MaterialStockCardGrid rows={filteredMaterialRows} />
+          <MaterialStockCardGrid rows={filteredMaterialRows} onEditMaster={() => handleEditMaster("material")} />
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[1100px]">
@@ -400,6 +422,9 @@ export function StockListTab({
                   <TableHead className="font-semibold">増減量</TableHead>
                   <TableHead>
                     <span className="sr-only">増減操作</span>
+                  </TableHead>
+                  <TableHead>
+                    <span className="sr-only">編集</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -468,6 +493,9 @@ export function StockListTab({
                         </Button>
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <EditMasterTableButton onClick={() => handleEditMaster("material")} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -503,7 +531,7 @@ export function StockListTab({
         ) : filteredPackagingRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致する梱包材がありません。</p>
         ) : packagingViewMode === "grid" ? (
-          <PackagingStockCardGrid rows={filteredPackagingRows} />
+          <PackagingStockCardGrid rows={filteredPackagingRows} onEditMaster={() => handleEditMaster("packaging")} />
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[1100px]">
@@ -520,6 +548,9 @@ export function StockListTab({
                   <TableHead className="font-semibold">増減量</TableHead>
                   <TableHead>
                     <span className="sr-only">増減操作</span>
+                  </TableHead>
+                  <TableHead>
+                    <span className="sr-only">編集</span>
                   </TableHead>
                 </TableRow>
               </TableHeader>
@@ -587,6 +618,9 @@ export function StockListTab({
                         </Button>
                       </div>
                     </TableCell>
+                    <TableCell>
+                      <EditMasterTableButton onClick={() => handleEditMaster("packaging")} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -618,7 +652,7 @@ export function StockListTab({
         ) : filteredEquipmentRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致する設備がありません。</p>
         ) : equipmentViewMode === "grid" ? (
-          <EquipmentCardGrid rows={filteredEquipmentRows} />
+          <EquipmentCardGrid rows={filteredEquipmentRows} onEditMaster={() => handleEditMaster("equipment")} />
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[720px]">
@@ -629,11 +663,14 @@ export function StockListTab({
                   <TableHead className="font-semibold">償却年数</TableHead>
                   <TableHead className="font-semibold">使用率</TableHead>
                   <TableHead className="font-semibold">備考</TableHead>
+                  <TableHead>
+                    <span className="sr-only">編集</span>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {equipmentPagination.pagedRows.map((equipment) => (
-                  <TableRow key={equipment.id}>
+                  <TableRow key={equipment.id} className="group">
                     <TableCell className="font-medium">
                       <span className="flex items-center gap-1.5">
                         {equipment.imageUrl && (
@@ -647,6 +684,9 @@ export function StockListTab({
                     <TableCell>{`${equipment.amortizationYears}年`}</TableCell>
                     <TableCell>{`${equipment.utilizationRate}%`}</TableCell>
                     <TableCell>{equipment.note || "-"}</TableCell>
+                    <TableCell>
+                      <EditMasterTableButton onClick={() => handleEditMaster("equipment")} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

@@ -60,9 +60,9 @@ export function Sidebar({
     <>
       {/* デスクトップサイドバー */}
       <aside className={`hidden h-full overflow-y-auto border-r bg-card p-3 md:flex md:flex-col ${sidebarWidthClass}`}>
-        <div className="mb-3 flex items-center justify-between gap-2 px-1">
+        <div className={`mb-3 flex items-center px-1 ${sidebarCollapsed ? "flex-col gap-1" : "justify-between gap-2"}`}>
           {!sidebarCollapsed && <p className="text-sm font-semibold">Cost App</p>}
-          <div className="flex items-center gap-1">
+          <div className={`flex items-center ${sidebarCollapsed ? "flex-col gap-1" : "gap-1"}`}>
             <ThemeToggle />
             <Button type="button" variant="ghost" size="sm" onClick={onToggleSidebar}>
               {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}

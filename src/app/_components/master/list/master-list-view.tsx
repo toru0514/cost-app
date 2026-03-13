@@ -31,6 +31,7 @@ interface MasterListViewProps {
   onSetPackagingStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
+  focusSection?: string | null
 }
 
 type MasterListSectionKey =
@@ -77,13 +78,27 @@ const loadMasterListOpenState = (): Record<MasterListSectionKey, boolean> => {
   }
 }
 
-export function MasterListView({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterListViewProps) {
+export function MasterListView({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock, focusSection }: MasterListViewProps) {
   const [openState, setOpenState] = useState<Record<MasterListSectionKey, boolean>>(() => loadMasterListOpenState())
 
   useEffect(() => {
     if (typeof window === "undefined") return
     window.localStorage.setItem(MASTER_LIST_OPEN_STATE_STORAGE_KEY, JSON.stringify(openState))
   }, [openState])
+
+  // focusSection が指定された場合、該当セクションを開いてスクロール
+  useEffect(() => {
+    if (!focusSection) return
+    const key = focusSection as MasterListSectionKey
+    if (!(key in defaultOpenState)) return
+    setOpenState((prev) => ({ ...prev, [key]: true }))
+    // DOMレンダリング後にスクロール
+    const timer = setTimeout(() => {
+      const el = document.getElementById(`master-section-${key}`)
+      el?.scrollIntoView({ behavior: "smooth", block: "start" })
+    }, 100)
+    return () => clearTimeout(timer)
+  }, [focusSection])
 
   const setAllOpenState = (value: boolean) => {
     setOpenState({
@@ -104,6 +119,7 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
 
   const renderSectionToggle = (key: MasterListSectionKey, label: string) => (
     <div
+      id={`master-section-${key}`}
       className="master-section-toggle flex items-center justify-between cursor-pointer select-none rounded-md px-2 py-1 hover:bg-muted/50"
       role="button"
       tabIndex={0}

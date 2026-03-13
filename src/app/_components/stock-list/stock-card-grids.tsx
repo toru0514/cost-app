@@ -1,9 +1,22 @@
 "use client"
 
-import { ImageOff } from "lucide-react"
+import { Edit3, ImageOff } from "lucide-react"
 import { formatCurrency } from "@/lib/calculations"
 import { useTablePagination } from "@/hooks/use-table-pagination"
 import { TablePagination } from "@/components/ui/table-pagination"
+
+function EditMasterCardButton({ onClick }: { onClick: () => void }) {
+  return (
+    <button
+      type="button"
+      className="absolute right-1.5 top-1.5 rounded bg-background/80 p-1 text-muted-foreground opacity-0 transition-opacity hover:bg-muted hover:text-foreground group-hover:opacity-100"
+      onClick={onClick}
+      title="マスタ編集"
+    >
+      <Edit3 className="h-3.5 w-3.5" />
+    </button>
+  )
+}
 
 const formatRoundedQuantity = (quantity: number) => {
   const rounded = Math.round((quantity + Number.EPSILON) * 10) / 10
@@ -38,9 +51,10 @@ type MaterialStockRow = {
 
 interface MaterialStockCardGridProps {
   rows: MaterialStockRow[]
+  onEditMaster?: () => void
 }
 
-export function MaterialStockCardGrid({ rows }: MaterialStockCardGridProps) {
+export function MaterialStockCardGrid({ rows, onEditMaster }: MaterialStockCardGridProps) {
   const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(rows, 20)
 
   return (
@@ -66,6 +80,7 @@ export function MaterialStockCardGrid({ rows }: MaterialStockCardGridProps) {
                 </div>
               )}
             </div>
+            {onEditMaster && <EditMasterCardButton onClick={onEditMaster} />}
             <div className="flex flex-1 flex-col gap-1 p-2">
               <p className="line-clamp-2 text-sm font-medium leading-tight">{row.name}</p>
               <p className="text-sm font-semibold">{formatCurrency(row.unitCost, row.currency)}</p>
@@ -101,9 +116,10 @@ type PackagingStockRow = {
 
 interface PackagingStockCardGridProps {
   rows: PackagingStockRow[]
+  onEditMaster?: () => void
 }
 
-export function PackagingStockCardGrid({ rows }: PackagingStockCardGridProps) {
+export function PackagingStockCardGrid({ rows, onEditMaster }: PackagingStockCardGridProps) {
   const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(rows, 20)
 
   return (
@@ -129,6 +145,7 @@ export function PackagingStockCardGrid({ rows }: PackagingStockCardGridProps) {
                 </div>
               )}
             </div>
+            {onEditMaster && <EditMasterCardButton onClick={onEditMaster} />}
             <div className="flex flex-1 flex-col gap-1 p-2">
               <p className="line-clamp-2 text-sm font-medium leading-tight">{row.name}</p>
               <p className="text-sm font-semibold">{formatCurrency(row.unitCost, row.currency)}</p>
@@ -162,9 +179,10 @@ type EquipmentRow = {
 
 interface EquipmentCardGridProps {
   rows: EquipmentRow[]
+  onEditMaster?: () => void
 }
 
-export function EquipmentCardGrid({ rows }: EquipmentCardGridProps) {
+export function EquipmentCardGrid({ rows, onEditMaster }: EquipmentCardGridProps) {
   const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(rows, 20)
 
   return (
@@ -190,6 +208,7 @@ export function EquipmentCardGrid({ rows }: EquipmentCardGridProps) {
                 </div>
               )}
             </div>
+            {onEditMaster && <EditMasterCardButton onClick={onEditMaster} />}
             <div className="flex flex-1 flex-col gap-1 p-2">
               <p className="line-clamp-2 text-sm font-medium leading-tight">{row.name}</p>
               <p className="text-sm font-semibold">{formatCurrency(row.acquisitionCost, row.currency)}</p>
