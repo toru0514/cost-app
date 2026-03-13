@@ -77,7 +77,9 @@ export type PackagingInput = {
   unit_cost?: number | string
   units_per_batch?: number | string
   note?: string
+  image_url?: string
   stock?: number | string
+  stock_unit?: string
   is_deleted?: boolean
 }
 
@@ -108,6 +110,7 @@ export type EquipmentInput = {
   amortization_years?: number | string
   utilization_rate?: number | string
   note?: string
+  image_url?: string
   is_deleted?: boolean
 }
 

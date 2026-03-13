@@ -397,6 +397,7 @@ export const prepareBulkSyncApply = (
           supplier: record.data.supplier ?? null,
           note: record.data.note ?? null,
           units_per_batch: record.data.units_per_batch ?? null,
+          image_url: record.data.image_url ?? null,
         })
         if (id) {
           const stock = getNumber(record.data.stock)
@@ -418,6 +419,7 @@ export const prepareBulkSyncApply = (
           unit_cost: record.data.unit_cost ?? null,
           note: record.data.note ?? null,
           units_per_batch: record.data.units_per_batch ?? null,
+          image_url: record.data.image_url ?? null,
         })
         if (id) {
           const stock = getNumber(record.data.stock)
@@ -461,6 +463,7 @@ export const prepareBulkSyncApply = (
           amortization_years: record.data.amortization_years ?? null,
           utilization_rate: record.data.utilization_rate ?? 100,
           note: record.data.note ?? null,
+          image_url: record.data.image_url ?? null,
         })
         if (resolvedId) updateCount += 1
         else createCount += 1

@@ -48,6 +48,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
     amortizationYears: 5,
     utilizationRate: 100,
     note: "",
+    imageUrl: "",
   })
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
@@ -68,6 +69,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
       amortizationYears: 5,
       utilizationRate: 100,
       note: "",
+      imageUrl: "",
     })
 
   const renderActionButtons = (onSave: () => void, onCancel: () => void, onDelete?: () => void) => (
@@ -124,6 +126,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
       amortizationYears: equipment.amortizationYears,
       utilizationRate: equipment.utilizationRate ?? 100,
       note: equipment.note,
+      imageUrl: equipment.imageUrl,
     })
     toast.success("設備をコピーしました", { description: `「${name}」を作成しました。` })
     setEditingEquipment({
@@ -134,6 +137,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
       amortizationYears: equipment.amortizationYears,
       utilizationRate: equipment.utilizationRate ?? 100,
       note: equipment.note ?? "",
+      imageUrl: equipment.imageUrl ?? "",
     })
   }
 
@@ -150,7 +154,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
           <div className="space-y-2">
           <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="min-w-[640px]">
+            <Table className="min-w-[740px]">
               <TableHeader>
                 <TableRow>
                   <TableHead>名称</TableHead>
@@ -158,6 +162,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                   <TableHead>償却年数</TableHead>
                   <TableHead>使用率</TableHead>
                   <TableHead>備考</TableHead>
+                  <TableHead>画像</TableHead>
                   <TableHead className="w-36 text-right">
                     <span className="sr-only">操作</span>
                   </TableHead>
@@ -246,6 +251,22 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                           equipment.note || "-"
                         )}
                       </TableCell>
+                      <TableCell>
+                        {isEditing ? (
+                          <Input
+                            type="url"
+                            placeholder="https://..."
+                            value={editingEquipment.imageUrl}
+                            onChange={(event) => setEditingEquipment((prev) => ({ ...prev, imageUrl: event.target.value }))}
+                            className="w-40"
+                          />
+                        ) : equipment.imageUrl ? (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={equipment.imageUrl} alt={equipment.name} className="h-6 w-6 rounded object-cover" />
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
                       <TableCell className="text-right">
                         {isEditing ? (
                           renderActionButtons(handleEquipmentSave, resetEquipment, handleEquipmentDelete)
@@ -263,6 +284,7 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                                   amortizationYears: equipment.amortizationYears,
                                   utilizationRate: equipment.utilizationRate ?? 100,
                                   note: equipment.note ?? "",
+                                  imageUrl: equipment.imageUrl ?? "",
                                 })
                               }
                               title="編集"

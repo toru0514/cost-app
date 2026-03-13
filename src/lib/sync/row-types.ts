@@ -42,6 +42,7 @@ export type EquipmentRow = {
   amortization_years: number | null
   utilization_rate: number | null
   note: string | null
+  image_url: string | null
 }
 export type FeeRow = {
   id: string

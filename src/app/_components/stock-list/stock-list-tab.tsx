@@ -225,6 +225,7 @@ export function StockListTab({
   const materialRows = data.materials.map((material) => ({
     id: material.id,
     name: material.name,
+    imageUrl: material.imageUrl,
     unit: material.unit,
     unitCost: material.unitCost,
     currency: material.currency,
@@ -370,7 +371,15 @@ export function StockListTab({
               <TableBody>
                 {materialPagination.pagedRows.map((row) => (
                   <TableRow key={row.id} className="group">
-                    <TableCell className="font-medium">{row.name}</TableCell>
+                    <TableCell className="font-medium">
+                      <span className="flex items-center gap-1.5">
+                        {row.imageUrl && (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img src={row.imageUrl} alt={row.name} className="h-5 w-5 shrink-0 rounded object-cover" />
+                        )}
+                        {row.name}
+                      </span>
+                    </TableCell>
                     <TableCell>{row.unit}</TableCell>
                     <TableCell>{formatCurrency(row.unitCost, row.currency)}</TableCell>
                     <TableCell>{`${row.unitsPerBatch}単位/セット`}</TableCell>
