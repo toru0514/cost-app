@@ -22,6 +22,7 @@ export function MaterialCardGrid({ items, onEdit, onCopy, onDelete }: MaterialCa
           {/* 画像エリア */}
           <div className="relative aspect-square w-full overflow-hidden bg-muted">
             {material.imageUrl ? (
+              // ユーザー入力URLをそのまま使用。将来的に next/image + remotePatterns での制限を検討
               <img
                 src={material.imageUrl}
                 alt={material.name}

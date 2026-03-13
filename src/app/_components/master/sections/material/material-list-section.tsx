@@ -74,7 +74,8 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
   })
   const [viewMode, setViewMode] = useState<"table" | "grid">(() => {
     if (typeof window === "undefined") return "table"
-    return (localStorage.getItem("view-mode-materials") as "table" | "grid") ?? "table"
+    const stored = localStorage.getItem("view-mode-materials")
+    return stored === "grid" ? "grid" : "table"
   })
 
   const handleViewModeChange = (next: "table" | "grid") => {

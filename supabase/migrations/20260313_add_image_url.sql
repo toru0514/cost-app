@@ -4,7 +4,15 @@ ALTER TABLE products ADD COLUMN IF NOT EXISTS image_url TEXT;
 -- materials テーブルに image_url カラムを追加
 ALTER TABLE materials ADD COLUMN IF NOT EXISTS image_url TEXT;
 
--- sync_app_data RPC を更新（materials と products に image_url を追加）
+-- sync_app_data RPC を全面更新（CREATE OR REPLACE）
+--
+-- 【意図的な全関数再定義について】
+-- この関数は元の 20241117_sync_app_data.sql で定義されており、
+-- 以降のマイグレーションで追加されたカラム（use_percentage_mode 等）が
+-- RPC 内の tmp テーブル定義・INSERT・ON CONFLICT に反映されていなかった。
+-- 今回 image_url を追加するにあたり、未反映だった use_percentage_mode の
+-- 同期も合わせて修正するため、関数全体を CREATE OR REPLACE で置き換えている。
+-- 意図しないロジックの変更はなく、既存の動作を維持した上で2カラムを追加している。
 CREATE OR REPLACE FUNCTION sync_app_data(p_user_id uuid, p_payload jsonb)
 RETURNS void
 LANGUAGE plpgsql

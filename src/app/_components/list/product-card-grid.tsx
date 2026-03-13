@@ -29,6 +29,7 @@ export function ProductCardGrid({ entries, onEdit, onCopy, onDelete }: ProductCa
           {/* 画像エリア */}
           <div className="relative aspect-square w-full overflow-hidden bg-muted">
             {product.imageUrl ? (
+              // ユーザー入力URLをそのまま使用。将来的に next/image + remotePatterns での制限を検討
               <img
                 src={product.imageUrl}
                 alt={product.name}

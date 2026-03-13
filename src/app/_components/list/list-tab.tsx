@@ -95,7 +95,8 @@ export function ListTab({
   )
   const [viewMode, setViewMode] = useState<"table" | "grid">(() => {
     if (typeof window === "undefined") return "table"
-    return (localStorage.getItem("view-mode-products") as "table" | "grid") ?? "table"
+    const stored = localStorage.getItem("view-mode-products")
+    return stored === "grid" ? "grid" : "table"
   })
 
   const handleViewModeChange = (next: "table" | "grid") => {
