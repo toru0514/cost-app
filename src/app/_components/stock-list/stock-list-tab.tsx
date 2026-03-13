@@ -18,6 +18,8 @@ import {
   useSearchWithScope,
   type SearchField,
 } from "@/app/_components/shared/search-with-scope"
+import { ViewToggle } from "@/app/_components/shared/view-toggle"
+import { MaterialStockCardGrid, PackagingStockCardGrid, EquipmentCardGrid } from "./stock-card-grids"
 
 type StockListTabProps = {
   data: AppData
@@ -80,6 +82,32 @@ export function StockListTab({
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
   const [thresholdInputs, setThresholdInputs] = useState<Map<string, string>>(new Map())
+
+  const [materialViewMode, setMaterialViewMode] = useState<"table" | "grid">(() => {
+    if (typeof window === "undefined") return "table"
+    return localStorage.getItem("view-mode-stock-materials") === "grid" ? "grid" : "table"
+  })
+  const [packagingViewMode, setPackagingViewMode] = useState<"table" | "grid">(() => {
+    if (typeof window === "undefined") return "table"
+    return localStorage.getItem("view-mode-stock-packaging") === "grid" ? "grid" : "table"
+  })
+  const [equipmentViewMode, setEquipmentViewMode] = useState<"table" | "grid">(() => {
+    if (typeof window === "undefined") return "table"
+    return localStorage.getItem("view-mode-stock-equipment") === "grid" ? "grid" : "table"
+  })
+
+  const handleMaterialViewModeChange = (mode: "table" | "grid") => {
+    setMaterialViewMode(mode)
+    localStorage.setItem("view-mode-stock-materials", mode)
+  }
+  const handlePackagingViewModeChange = (mode: "table" | "grid") => {
+    setPackagingViewMode(mode)
+    localStorage.setItem("view-mode-stock-packaging", mode)
+  }
+  const handleEquipmentViewModeChange = (mode: "table" | "grid") => {
+    setEquipmentViewMode(mode)
+    localStorage.setItem("view-mode-stock-equipment", mode)
+  }
 
   // Search fields per section
   const materialSearchFields: SearchField[] = useMemo(
@@ -332,14 +360,17 @@ export function StockListTab({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-lg font-semibold">材料在庫</h3>
           {isAuthenticated && masterStocksLoaded && materialRows.length > 0 && (
-            <SearchWithScope
-              fields={materialSearchFields}
-              query={materialSearch.query}
-              onQueryChange={materialSearch.setQuery}
-              checkedFields={materialSearch.checkedFields}
-              onCheckedFieldsChange={materialSearch.setCheckedFields}
-              placeholder="材料を検索..."
-            />
+            <div className="flex items-center gap-2">
+              <SearchWithScope
+                fields={materialSearchFields}
+                query={materialSearch.query}
+                onQueryChange={materialSearch.setQuery}
+                checkedFields={materialSearch.checkedFields}
+                onCheckedFieldsChange={materialSearch.setCheckedFields}
+                placeholder="材料を検索..."
+              />
+              <ViewToggle value={materialViewMode} onChange={handleMaterialViewModeChange} />
+            </div>
           )}
         </div>
         {!isAuthenticated ? (
@@ -350,6 +381,8 @@ export function StockListTab({
           <p className="text-sm text-muted-foreground">材料が登録されていません。</p>
         ) : filteredMaterialRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致する材料がありません。</p>
+        ) : materialViewMode === "grid" ? (
+          <MaterialStockCardGrid rows={filteredMaterialRows} />
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[1100px]">
@@ -448,14 +481,17 @@ export function StockListTab({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-lg font-semibold">梱包材在庫</h3>
           {isAuthenticated && masterStocksLoaded && packagingRows.length > 0 && (
-            <SearchWithScope
-              fields={packagingSearchFields}
-              query={packagingSearch.query}
-              onQueryChange={packagingSearch.setQuery}
-              checkedFields={packagingSearch.checkedFields}
-              onCheckedFieldsChange={packagingSearch.setCheckedFields}
-              placeholder="梱包材を検索..."
-            />
+            <div className="flex items-center gap-2">
+              <SearchWithScope
+                fields={packagingSearchFields}
+                query={packagingSearch.query}
+                onQueryChange={packagingSearch.setQuery}
+                checkedFields={packagingSearch.checkedFields}
+                onCheckedFieldsChange={packagingSearch.setCheckedFields}
+                placeholder="梱包材を検索..."
+              />
+              <ViewToggle value={packagingViewMode} onChange={handlePackagingViewModeChange} />
+            </div>
           )}
         </div>
         {!isAuthenticated ? (
@@ -466,6 +502,8 @@ export function StockListTab({
           <p className="text-sm text-muted-foreground">梱包材が登録されていません。</p>
         ) : filteredPackagingRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致する梱包材がありません。</p>
+        ) : packagingViewMode === "grid" ? (
+          <PackagingStockCardGrid rows={filteredPackagingRows} />
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[1100px]">
@@ -562,20 +600,25 @@ export function StockListTab({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-lg font-semibold">設備一覧</h3>
           {equipmentRows.length > 0 && (
-            <SearchWithScope
-              fields={equipmentSearchFields}
-              query={equipmentSearch.query}
-              onQueryChange={equipmentSearch.setQuery}
-              checkedFields={equipmentSearch.checkedFields}
-              onCheckedFieldsChange={equipmentSearch.setCheckedFields}
-              placeholder="設備を検索..."
-            />
+            <div className="flex items-center gap-2">
+              <SearchWithScope
+                fields={equipmentSearchFields}
+                query={equipmentSearch.query}
+                onQueryChange={equipmentSearch.setQuery}
+                checkedFields={equipmentSearch.checkedFields}
+                onCheckedFieldsChange={equipmentSearch.setCheckedFields}
+                placeholder="設備を検索..."
+              />
+              <ViewToggle value={equipmentViewMode} onChange={handleEquipmentViewModeChange} />
+            </div>
           )}
         </div>
         {equipmentRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">設備が登録されていません。</p>
         ) : filteredEquipmentRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致する設備がありません。</p>
+        ) : equipmentViewMode === "grid" ? (
+          <EquipmentCardGrid rows={filteredEquipmentRows} />
         ) : (
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
             <Table className="min-w-[720px]">
