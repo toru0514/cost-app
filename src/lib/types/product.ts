@@ -21,6 +21,7 @@ export type Product = {
     quantity: number
   }
   equipmentIds: string[]
+  imageUrl?: string
 }
 
 export type OptionPreset = {

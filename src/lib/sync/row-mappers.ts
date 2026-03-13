@@ -78,6 +78,7 @@ export const mapMaterial = (row: MaterialRow): Material => ({
   supplier: row.supplier ?? undefined,
   note: row.note ?? undefined,
   unitsPerBatch: row.units_per_batch ?? undefined,
+  imageUrl: row.image_url ?? undefined,
 })
 
 export const mapPackaging = (row: PackagingRow): PackagingItem => ({
@@ -151,6 +152,7 @@ export const mapProduct = (row: ProductRow): Product => ({
     quantity: Number(row.expected_production_quantity ?? 1),
   },
   equipmentIds: Array.isArray(row.equipment_ids) ? row.equipment_ids : [],
+  imageUrl: row.image_url ?? undefined,
 })
 
 export const mapMaterialEntry = (row: MaterialCostRow): MaterialCostEntry => ({

@@ -277,6 +277,15 @@ export function ProductBasicsSection({
           onChange={(event) => setProductForm((prev) => ({ ...prev, notes: event.target.value }))}
         />
       </div>
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">画像URL</Label>
+        <Input
+          type="url"
+          placeholder="https://example.com/image.jpg"
+          value={productForm.imageUrl ?? ""}
+          onChange={(event) => setProductForm((prev) => ({ ...prev, imageUrl: event.target.value || undefined }))}
+        />
+      </div>
       <div className="grid gap-2 md:grid-cols-3">
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">制作工数 (時間)</Label>

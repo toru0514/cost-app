@@ -62,6 +62,7 @@ export type MaterialInput = {
   use_percentage_mode?: boolean | string
   supplier?: string
   note?: string
+  image_url?: string
   stock?: number | string
   stock_unit?: string
   is_deleted?: boolean
@@ -142,6 +143,7 @@ export type ProductInput = {
   production_lot_size?: number | string
   equipment_names?: string
   notes?: string
+  image_url?: string
   stock?: number | string
   is_deleted?: boolean
 }
