@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { ThemeToggle } from "@/components/theme-toggle"
 import {
   FileDown,
   FileUp,
@@ -61,9 +62,12 @@ export function Sidebar({
       <aside className={`hidden h-full overflow-y-auto border-r bg-card p-3 md:flex md:flex-col ${sidebarWidthClass}`}>
         <div className="mb-3 flex items-center justify-between gap-2 px-1">
           {!sidebarCollapsed && <p className="text-sm font-semibold">Cost App</p>}
-          <Button type="button" variant="ghost" size="sm" onClick={onToggleSidebar}>
-            {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
-          </Button>
+          <div className="flex items-center gap-1">
+            <ThemeToggle />
+            <Button type="button" variant="ghost" size="sm" onClick={onToggleSidebar}>
+              {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
+            </Button>
+          </div>
         </div>
         <nav className="space-y-1">
           {tabOptions.map((tab) => {
@@ -162,9 +166,12 @@ export function Sidebar({
           <aside className="absolute left-0 top-0 flex h-full w-72 flex-col border-r bg-card p-3 shadow-lg">
             <div className="mb-3 flex items-center justify-between">
               <p className="text-sm font-semibold">Cost App</p>
-              <Button type="button" variant="ghost" size="sm" onClick={() => onMobileNavOpenChange(false)}>
-                <X className="h-4 w-4" />
-              </Button>
+              <div className="flex items-center gap-1">
+                <ThemeToggle />
+                <Button type="button" variant="ghost" size="sm" onClick={() => onMobileNavOpenChange(false)}>
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
             <nav className="space-y-1">
               {tabOptions.map((tab) => {

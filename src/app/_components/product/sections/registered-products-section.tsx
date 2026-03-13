@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { Spinner } from "@/components/ui/spinner"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { AppData } from "@/lib/types"
 import { toast } from "sonner"
@@ -146,7 +147,7 @@ export function RegisteredProductsSection({
                           {!authenticated ? (
                             "-"
                           ) : !stockLoaded ? (
-                            "..."
+                            <Spinner size="sm" />
                           ) : isEditing ? (
                             <div className="flex items-center justify-end gap-1">
                               <Input
