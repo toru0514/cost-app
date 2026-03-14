@@ -45,7 +45,9 @@ export function NotificationSettingsSection() {
   const fetchSettings = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/notifications/settings")
+      const response = await fetch("/api/notifications/settings", {
+        credentials: "include",
+      })
       if (!response.ok) {
         throw new Error("Failed to fetch settings")
       }
@@ -69,6 +71,7 @@ export function NotificationSettingsSection() {
       const response = await fetch("/api/notifications/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           notification_type: type,
           enabled,

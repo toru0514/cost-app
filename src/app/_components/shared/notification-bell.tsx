@@ -29,7 +29,9 @@ export function NotificationBell({ isAuthenticated }: NotificationBellProps) {
 
     try {
       setLoading(true)
-      const response = await fetch("/api/notifications/list?limit=20")
+      const response = await fetch("/api/notifications/list?limit=20", {
+        credentials: "include",
+      })
       if (!response.ok) return
 
       const data = await response.json()
@@ -54,6 +56,7 @@ export function NotificationBell({ isAuthenticated }: NotificationBellProps) {
       const response = await fetch("/api/notifications/list", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ notification_ids: [notificationId] }),
       })
 
@@ -73,6 +76,7 @@ export function NotificationBell({ isAuthenticated }: NotificationBellProps) {
       const response = await fetch("/api/notifications/list", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ mark_all_read: true }),
       })
 
@@ -90,6 +94,7 @@ export function NotificationBell({ isAuthenticated }: NotificationBellProps) {
       const response = await fetch("/api/notifications/list", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({ notification_ids: [notificationId] }),
       })
 
