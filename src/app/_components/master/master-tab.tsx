@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import type { AppActions } from "@/lib/app-data"
 import type { AppData } from "@/lib/types"
 
+import { Breadcrumb } from "../shared/breadcrumb"
 import { MasterListView } from "./list/master-list-view"
 import { MasterRegisterView } from "./register/master-register-view"
 
@@ -25,6 +26,18 @@ interface MasterTabProps {
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
 }
 
+const SECTION_LABELS: Record<string, string> = {
+  category: "カテゴリ",
+  material: "材料",
+  packaging: "梱包材",
+  shipping: "配送",
+  fee: "手数料",
+  "option-preset": "オプションプリセット",
+  labor: "労務・設備",
+  equipment: "設備シミュレーション",
+  "exchange-rate": "為替レート",
+}
+
 export function MasterTab({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterTabProps) {
   const searchParams = useSearchParams()
   const sectionParam = searchParams.get("section")
@@ -40,8 +53,17 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, mate
     window.localStorage.setItem("cost-app-master-view", view)
   }, [view])
 
+  const breadcrumbItems = [
+    { label: "マスタ登録" },
+    { label: view === "register" ? "マスタ登録" : "登録済みマスタ" },
+    ...(sectionParam && SECTION_LABELS[sectionParam] ? [{ label: SECTION_LABELS[sectionParam] }] : []),
+  ]
+
   return (
     <div className="space-y-6">
+      {/* パンくずリスト */}
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* ページヘッダー */}
       <div>
         <h1 className="text-2xl font-semibold">マスタ登録</h1>

@@ -62,6 +62,21 @@ type HistoryLog = {
   hasPreviousData: boolean
 }
 
+type DiffDetailItem = {
+  entity: string
+  operation: "create" | "update" | "delete"
+  key: string
+  changes?: { field: string; before: unknown; after: unknown }[]
+}
+
+type HistoryDetail = {
+  id: string
+  createdAt: string
+  action: string
+  summary: HistoryLog["summary"]
+  diffItems: DiffDetailItem[]
+}
+
 type BulkSyncSectionProps = {
   title: string
   description: string
@@ -99,6 +114,8 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
   const [openingSheet, setOpeningSheet] = useState(false)
   const [exportConfirmOpen, setExportConfirmOpen] = useState(false)
   const [importConfirmOpen, setImportConfirmOpen] = useState(false)
+  const [historyDetail, setHistoryDetail] = useState<HistoryDetail | null>(null)
+  const [loadingHistoryDetail, setLoadingHistoryDetail] = useState(false)
 
   const parsedPayload = useMemo(() => parsePayloadJson(payloadInput), [payloadInput])
 
@@ -289,6 +306,28 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
       setErrorMessage(error instanceof Error ? error.message : "履歴の取得に失敗しました")
     } finally {
       setBusy(null)
+    }
+  }
+
+  const handleLoadHistoryDetail = async (logId: string) => {
+    setLoadingHistoryDetail(true)
+    try {
+      const headers = await buildAuthHeaders(false)
+      const response = await fetch(`/api/bulk-sync/history?logId=${encodeURIComponent(logId)}`, {
+        method: "GET",
+        headers,
+        credentials: "include",
+      })
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}))
+        throw new Error(error.error ?? "詳細の取得に失敗しました")
+      }
+      const data = (await response.json()) as HistoryDetail
+      setHistoryDetail(data)
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "詳細の取得に失敗しました")
+    } finally {
+      setLoadingHistoryDetail(false)
     }
   }
 
@@ -553,17 +592,30 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
                           )}
                         </TableCell>
                         <TableCell className="text-xs">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            disabled={!log.hasPreviousData || busy !== null}
-                            onClick={(e) => {
-                              e.stopPropagation()
-                              handleRollback(log.id)
-                            }}
-                          >
-                            このスナップショットに戻す
-                          </Button>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              disabled={loadingHistoryDetail}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleLoadHistoryDetail(log.id)
+                              }}
+                            >
+                              詳細
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              disabled={!log.hasPreviousData || busy !== null}
+                              onClick={(e) => {
+                                e.stopPropagation()
+                                handleRollback(log.id)
+                              }}
+                            >
+                              復元
+                            </Button>
+                          </div>
                         </TableCell>
                       </TableRow>
                     ))}
@@ -571,6 +623,79 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
                 </Table>
                 <TablePagination currentPage={historyPagination.currentPage} totalPages={historyPagination.totalPages} onPageChange={historyPagination.onPageChange} />
               </>
+            )}
+
+            {/* 履歴詳細表示 */}
+            {historyDetail && (
+              <div className="mt-4 space-y-3 rounded-lg border p-3">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">
+                    差分詳細 ({new Date(historyDetail.createdAt).toLocaleString("ja-JP")})
+                  </p>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setHistoryDetail(null)}
+                  >
+                    閉じる
+                  </Button>
+                </div>
+                {historyDetail.summary && (
+                  <div className="flex flex-wrap gap-2">
+                    <Badge variant="outline" className="bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300">
+                      追加: {historyDetail.summary.create}
+                    </Badge>
+                    <Badge variant="outline" className="bg-yellow-50 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300">
+                      更新: {historyDetail.summary.update}
+                    </Badge>
+                    <Badge variant="outline" className="bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300">
+                      削除: {historyDetail.summary.delete}
+                    </Badge>
+                  </div>
+                )}
+                {historyDetail.diffItems.length === 0 ? (
+                  <p className="text-sm text-muted-foreground">差分の詳細情報がありません。</p>
+                ) : (
+                  <div className="max-h-[300px] overflow-y-auto">
+                    <Table>
+                      <TableHeader>
+                        <TableRow>
+                          <TableHead className="w-[80px]">操作</TableHead>
+                          <TableHead>対象</TableHead>
+                          <TableHead>キー</TableHead>
+                        </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                        {historyDetail.diffItems.slice(0, 100).map((item, index) => (
+                          <TableRow key={index}>
+                            <TableCell>
+                              <Badge
+                                variant="outline"
+                                className={
+                                  item.operation === "create"
+                                    ? "bg-green-50 text-green-700 dark:bg-green-900 dark:text-green-300"
+                                    : item.operation === "update"
+                                      ? "bg-yellow-50 text-yellow-700 dark:bg-yellow-900 dark:text-yellow-300"
+                                      : "bg-red-50 text-red-700 dark:bg-red-900 dark:text-red-300"
+                                }
+                              >
+                                {item.operation === "create" ? "追加" : item.operation === "update" ? "更新" : "削除"}
+                              </Badge>
+                            </TableCell>
+                            <TableCell className="text-xs">{item.entity}</TableCell>
+                            <TableCell className="text-xs font-mono">{item.key}</TableCell>
+                          </TableRow>
+                        ))}
+                      </TableBody>
+                    </Table>
+                    {historyDetail.diffItems.length > 100 && (
+                      <p className="mt-2 text-xs text-muted-foreground">
+                        他 {historyDetail.diffItems.length - 100} 件は省略されています
+                      </p>
+                    )}
+                  </div>
+                )}
+              </div>
             )}
           </div>
         )}

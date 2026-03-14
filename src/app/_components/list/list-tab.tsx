@@ -45,6 +45,7 @@ type ListTabProps = {
   onEditProduct: (productId: string) => void
   onCopyProduct: (productId: string) => void
   onDeleteProduct: (product: Product) => void
+  onBulkDeleteProducts?: (products: Product[]) => void
 }
 
 export function ListTab({
@@ -69,6 +70,7 @@ export function ListTab({
   onEditProduct,
   onCopyProduct,
   onDeleteProduct,
+  onBulkDeleteProducts,
 }: ListTabProps) {
   const [productSearchQuery, setProductSearchQuery] = useState("")
   const productSearchFields: SearchField[] = useMemo(
@@ -523,6 +525,7 @@ export function ListTab({
             onEdit={onEditProduct}
             onCopy={onCopyProduct}
             onDelete={onDeleteProduct}
+            onBulkDelete={onBulkDeleteProducts}
             stockAlertSettings={stockAlertSettings}
             stockAlertSettingsLoaded={stockAlertSettingsLoaded}
             onUpdateStockAlertSetting={updateStockAlertSetting}

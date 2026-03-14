@@ -70,6 +70,7 @@ export type ProductRow = {
   expected_production_quantity: number | null
   equipment_ids: string[] | null
   image_url: string | null
+  status: string | null
 }
 
 export type MaterialCostRow = {

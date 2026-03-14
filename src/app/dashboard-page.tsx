@@ -15,6 +15,7 @@ import { ListTab } from "./_components/list/list-tab"
 import { MasterTab } from "./_components/master/master-tab"
 import { ProductTab } from "./_components/product/product-tab"
 import { ConfirmationDialogs } from "./_components/shared/confirmation-dialogs"
+import { KeyboardShortcutsDialog } from "./_components/shared/keyboard-shortcuts-dialog"
 import { LoginPanel } from "./_components/shared/login-panel"
 import { OnboardingBanner } from "./_components/shared/onboarding-banner"
 import { Sidebar } from "./_components/shared/sidebar"
@@ -103,6 +104,8 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
   const authUserId = isAuthenticated ? authState.user.id : null
   const [loginPanelOpen, setLoginPanelOpen] = useState(false)
   const [pendingDeleteProduct, setPendingDeleteProduct] = useState<Product | null>(null)
+  const [shortcutsDialogOpen, setShortcutsDialogOpen] = useState(false)
+  const [pendingBulkDeleteProducts, setPendingBulkDeleteProducts] = useState<Product[] | null>(null)
 
   const importGuestData = actions.importGuestData
   const backup = useBackup({ data, isAuthenticated, importGuestData })
@@ -121,12 +124,23 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
   // グローバルキーボードショートカット
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // 入力中は無視
+      const target = e.target as HTMLElement
+      if (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable) {
+        return
+      }
+
       const mod = e.metaKey || e.ctrlKey
       // Ctrl/Cmd+K: 検索フォーカス
       if (mod && e.key === "k") {
         e.preventDefault()
         const searchInput = document.querySelector<HTMLInputElement>("[data-search-input]")
         searchInput?.focus()
+      }
+      // ?: ショートカットヘルプを表示（Shift+/で入力される）
+      if (e.key === "?" && !mod) {
+        e.preventDefault()
+        setShortcutsDialogOpen(true)
       }
     }
     window.addEventListener("keydown", handleKeyDown)
@@ -180,6 +194,27 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
     setPendingDeleteProduct(null)
   }, [])
 
+  const handleBulkDeleteProducts = useCallback(
+    (products: Product[]) => {
+      setPendingBulkDeleteProducts(products)
+    },
+    []
+  )
+
+  const confirmBulkDeleteProducts = useCallback(() => {
+    if (!pendingBulkDeleteProducts || pendingBulkDeleteProducts.length === 0) return
+    pendingBulkDeleteProducts.forEach((product) => {
+      actions.removeProduct(product.id)
+      actions.removeCostEntriesByProduct(product.id)
+    })
+    toast.success(`${pendingBulkDeleteProducts.length}件の商品を削除しました`)
+    setPendingBulkDeleteProducts(null)
+  }, [actions, pendingBulkDeleteProducts])
+
+  const closeBulkDeleteDialog = useCallback(() => {
+    setPendingBulkDeleteProducts(null)
+  }, [])
+
   const handleResetLocalStorage = useCallback(() => {
     if (typeof window !== "undefined") {
       const confirmed = window.confirm("ローカル保存を完全にクリアします。よろしいですか？")
@@ -216,7 +251,7 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
   const mainMaxWidth = tabContentWidthMap[activeTab]
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <div className="flex h-screen overflow-hidden">
         <Sidebar
           activeTab={activeTab}
@@ -274,12 +309,15 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
             </div>
           </header>
 
-          <main className={`flex-1 min-w-0 overflow-x-hidden p-4 md:p-6 ${mainMaxWidth}`}>
+          <main className={`flex-1 min-w-0 overflow-x-hidden p-4 pr-10 md:p-6 ${mainMaxWidth}`}>
             {/* オンボーディングバナー（初回訪問時のみ表示） */}
             <OnboardingBanner
               onNavigateToMaster={() => handleTabChange("master")}
+              onNavigateToProduct={handleCreateProduct}
               isAuthenticated={isAuthenticated}
               hasExistingData={data.products.length > 0 || data.materials.length > 0}
+              hasMasterData={data.materials.length > 0 || data.packagingItems.length > 0 || data.equipments.length > 0}
+              hasProductData={data.products.length > 0}
             />
 
             {/* ログインパネル */}
@@ -359,6 +397,7 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
                   onEditProduct={handleEditProduct}
                   onCopyProduct={handleCopyProduct}
                   onDeleteProduct={handleDeleteProduct}
+                  onBulkDeleteProducts={handleBulkDeleteProducts}
                 />
               </TabsContent>
 
@@ -390,6 +429,17 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
               remoteLoadCompleted={remoteLoadCompleted}
               onDiscardGuestData={discardGuestData}
               onMergeGuestData={mergeGuestData}
+              bulkDelete={pendingBulkDeleteProducts ? {
+                open: true,
+                itemCount: pendingBulkDeleteProducts.length,
+                itemType: "商品",
+                onClose: closeBulkDeleteDialog,
+                onConfirm: confirmBulkDeleteProducts,
+              } : null}
+            />
+            <KeyboardShortcutsDialog
+              open={shortcutsDialogOpen}
+              onOpenChange={setShortcutsDialogOpen}
             />
           </main>
         </div>

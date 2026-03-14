@@ -1,6 +1,42 @@
-import type { AppData } from "./types"
+import type { AppData, ExchangeRate } from "./types"
 
 export const MATERIAL_STOCK_LOW_THRESHOLD = 20 // 残量%の警告閾値
+
+/**
+ * 外貨金額を基準通貨に変換する
+ * @param amount 金額
+ * @param fromCurrency 変換元通貨
+ * @param exchangeRates 為替レートマップ（通貨コード -> レート）
+ * @param baseCurrency 基準通貨（デフォルト: JPY）
+ * @returns 基準通貨での金額
+ */
+export function convertToBaseCurrency(
+  amount: number,
+  fromCurrency: string,
+  exchangeRates: Map<string, number>,
+  baseCurrency = "JPY"
+): number {
+  if (fromCurrency === baseCurrency) return amount
+  const rate = exchangeRates.get(fromCurrency) ?? 1
+  return amount * rate
+}
+
+/**
+ * 為替レート配列からMapを作成する
+ * 同一通貨に複数のレートがある場合、最新の適用日のものを使用
+ */
+export function buildExchangeRateMap(exchangeRates: ExchangeRate[]): Map<string, number> {
+  const rateMap = new Map<string, number>()
+  const sortedRates = [...exchangeRates].sort(
+    (a, b) => new Date(b.effectiveDate).getTime() - new Date(a.effectiveDate).getTime()
+  )
+  for (const rate of sortedRates) {
+    if (!rateMap.has(rate.fromCurrency)) {
+      rateMap.set(rate.fromCurrency, rate.rate)
+    }
+  }
+  return rateMap
+}
 
 export type MaterialConsumptionRow = {
   materialId: string

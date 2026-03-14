@@ -25,6 +25,7 @@ interface UseProductFormStateArgs {
 
 export interface ProductFormStateResult extends ProductDraftStateResult {
   costSummary: ProductCostSummary
+  validateProductForm: () => string[]
   handleSubmit: (event: FormEvent<HTMLFormElement>) => void
 }
 
@@ -414,6 +415,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
   return {
     ...draftState,
     costSummary,
+    validateProductForm,
     handleSubmit,
   }
 }
