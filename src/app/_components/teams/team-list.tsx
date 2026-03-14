@@ -48,7 +48,9 @@ export function TeamList({ onSelectTeam, selectedTeamId }: TeamListProps) {
   const fetchTeams = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/teams")
+      const response = await fetch("/api/teams", {
+        credentials: "include",
+      })
       if (!response.ok) throw new Error("Failed to fetch teams")
       const data = await response.json()
       setTeams(data.teams || [])
@@ -75,6 +77,7 @@ export function TeamList({ onSelectTeam, selectedTeamId }: TeamListProps) {
       const response = await fetch("/api/teams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        credentials: "include",
         body: JSON.stringify({
           name: newTeamName.trim(),
           description: newTeamDescription.trim() || null,
