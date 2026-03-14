@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog"
+import { fetchWithAuth } from "@/lib/fetch-with-auth"
 import { toast } from "sonner"
 import { Copy, Mail, UserPlus } from "lucide-react"
 
@@ -30,7 +31,7 @@ export function InviteMemberDialog({ teamId, disabled }: InviteMemberDialogProps
 
     setInviting(true)
     try {
-      const response = await fetch(`/api/teams/${teamId}/invite`, {
+      const response = await fetchWithAuth(`/api/teams/${teamId}/invite`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: email.trim(), role }),

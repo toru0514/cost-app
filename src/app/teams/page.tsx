@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
+import { fetchWithAuth } from "@/lib/fetch-with-auth"
 import { TeamList } from "@/app/_components/teams/team-list"
 import { TeamMembersSection } from "@/app/_components/teams/team-members-section"
 import { InviteMemberDialog } from "@/app/_components/teams/invite-member-dialog"
@@ -34,7 +35,7 @@ export default function TeamsPage() {
   const fetchTeamDetails = useCallback(async (teamId: string) => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/teams/${teamId}`)
+      const response = await fetchWithAuth(`/api/teams/${teamId}`)
       if (!response.ok) throw new Error("Failed to fetch team")
       const data = await response.json()
       setSelectedTeam(data.team)
@@ -59,7 +60,7 @@ export default function TeamsPage() {
     if (!confirm(`チーム「${selectedTeam.name}」を削除しますか？この操作は取り消せません。`)) return
 
     try {
-      const response = await fetch(`/api/teams/${selectedTeam.id}`, {
+      const response = await fetchWithAuth(`/api/teams/${selectedTeam.id}`, {
         method: "DELETE",
       })
 

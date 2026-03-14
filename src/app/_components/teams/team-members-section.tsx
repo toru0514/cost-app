@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { fetchWithAuth } from "@/lib/fetch-with-auth"
 import { toast } from "sonner"
 import { Crown, RefreshCw, Shield, Trash2, User, Eye } from "lucide-react"
 
@@ -42,7 +43,7 @@ export function TeamMembersSection({ teamId, currentUserRole }: TeamMembersSecti
   const fetchMembers = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await fetch(`/api/teams/${teamId}/members`)
+      const response = await fetchWithAuth(`/api/teams/${teamId}/members`)
       if (!response.ok) throw new Error("Failed to fetch members")
       const data = await response.json()
       setMembers(data.members || [])
@@ -61,7 +62,7 @@ export function TeamMembersSection({ teamId, currentUserRole }: TeamMembersSecti
   const handleRoleChange = async (userId: string, newRole: string) => {
     setUpdating(userId)
     try {
-      const response = await fetch(`/api/teams/${teamId}/members`, {
+      const response = await fetchWithAuth(`/api/teams/${teamId}/members`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId, role: newRole }),
@@ -89,7 +90,7 @@ export function TeamMembersSection({ teamId, currentUserRole }: TeamMembersSecti
 
     setUpdating(userId)
     try {
-      const response = await fetch(`/api/teams/${teamId}/members`, {
+      const response = await fetchWithAuth(`/api/teams/${teamId}/members`, {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ user_id: userId }),
