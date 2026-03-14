@@ -24,13 +24,15 @@ export function convertToBaseCurrency(
 /**
  * 為替レート配列からMapを作成する
  * 同一通貨に複数のレートがある場合、最新の適用日のものを使用
+ * baseCurrencyへの変換レートのみを抽出する
  */
-export function buildExchangeRateMap(exchangeRates: ExchangeRate[]): Map<string, number> {
+export function buildExchangeRateMap(exchangeRates: ExchangeRate[], baseCurrency = "JPY"): Map<string, number> {
   const rateMap = new Map<string, number>()
   const sortedRates = [...exchangeRates].sort(
     (a, b) => new Date(b.effectiveDate).getTime() - new Date(a.effectiveDate).getTime()
   )
   for (const rate of sortedRates) {
+    if (rate.toCurrency !== baseCurrency) continue
     if (!rateMap.has(rate.fromCurrency)) {
       rateMap.set(rate.fromCurrency, rate.rate)
     }
