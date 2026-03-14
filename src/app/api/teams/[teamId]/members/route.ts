@@ -23,6 +23,18 @@ export async function GET(
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
+    // メンバーシップ確認
+    const { data: membership } = await supabase
+      .from("team_members")
+      .select("role")
+      .eq("team_id", teamId)
+      .eq("user_id", user.id)
+      .single()
+
+    if (!membership) {
+      return NextResponse.json({ error: "Not a team member" }, { status: 403 })
+    }
+
     // メンバー一覧を取得
     const { data, error } = await supabase
       .from("team_members")

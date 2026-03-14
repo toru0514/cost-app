@@ -40,27 +40,7 @@ export async function POST(
       return NextResponse.json({ error: "Invalid role" }, { status: 400 })
     }
 
-    // 既存のメンバーかチェック
-    const { data: existingUsers } = await supabase
-      .from("profiles")
-      .select("id")
-      .eq("email", email.toLowerCase())
-      .single()
-
-    if (existingUsers) {
-      const { data: existingMember } = await supabase
-        .from("team_members")
-        .select("user_id")
-        .eq("team_id", teamId)
-        .eq("user_id", existingUsers.id)
-        .single()
-
-      if (existingMember) {
-        return NextResponse.json({ error: "User is already a member" }, { status: 400 })
-      }
-    }
-
-    // 既存の招待を削除
+    // 既存の招待を削除（同じメールアドレスへの古い招待がある場合）
     await supabase
       .from("team_invitations")
       .delete()

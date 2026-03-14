@@ -1,9 +1,18 @@
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
 import { generatePdf } from "@/lib/export/pdf-generator"
 import type { AppData } from "@/lib/types"
 
 export async function POST(request: Request) {
   try {
+    const supabase = createRouteHandlerClient({ cookies })
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
     const data: AppData = await request.json()
 
     if (!data || !data.products) {

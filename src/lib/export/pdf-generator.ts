@@ -57,7 +57,6 @@ export async function generatePdf(data: AppData): Promise<Blob> {
   doc.setFont("helvetica")
 
   // タイトル
-  const title = "Cost Report - " + encodeURIComponent("原価レポート")
   doc.setFontSize(16)
   doc.text("Cost Report", 14, 15)
 

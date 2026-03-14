@@ -27,7 +27,7 @@ export async function GET(
       return NextResponse.json({ error: "Team not found" }, { status: 404 })
     }
 
-    // ユーザーのロールを取得
+    // メンバーシップ確認
     const { data: membership } = await supabase
       .from("team_members")
       .select("role")
@@ -35,10 +35,14 @@ export async function GET(
       .eq("user_id", user.id)
       .single()
 
+    if (!membership) {
+      return NextResponse.json({ error: "Not a team member" }, { status: 403 })
+    }
+
     return NextResponse.json({
       team: {
         ...team,
-        role: membership?.role || null,
+        role: membership.role,
       },
     })
   } catch (error) {
