@@ -18,6 +18,7 @@ import { ProductTab } from "./_components/product/product-tab"
 import { ConfirmationDialogs } from "./_components/shared/confirmation-dialogs"
 import { KeyboardShortcutsDialog } from "./_components/shared/keyboard-shortcuts-dialog"
 import { LoginPanel } from "./_components/shared/login-panel"
+import { NotificationBell } from "./_components/shared/notification-bell"
 import { OnboardingBanner } from "./_components/shared/onboarding-banner"
 import { Sidebar } from "./_components/shared/sidebar"
 import { useBackup } from "./_components/shared/use-backup"
@@ -302,6 +303,7 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
               </div>
               {/* ヘッダー右上: ゲスト時はログインボタン、ログイン時はメールアドレス */}
               <div className="flex items-center gap-2">
+                <NotificationBell isAuthenticated={isAuthenticated} />
                 {!isAuthenticated ? (
                   <Button type="button" size="sm" onClick={() => setLoginPanelOpen(true)}>
                     <LogIn className="mr-1.5 h-4 w-4" />

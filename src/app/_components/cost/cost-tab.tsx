@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import type { AppData } from "@/lib/types"
 
 import { CostSummarySection } from "./sections/cost-summary-section"
+import { CostVarianceSimulationSection } from "./sections/cost-variance-simulation-section"
 import { DevelopmentCostSection } from "./sections/development-cost-section"
 import { ElectricityCostSection } from "./sections/electricity-cost-section"
 import { EquipmentAllocationSection } from "./sections/equipment-allocation-section"
@@ -25,6 +26,7 @@ interface CostTabProps {
 
 type CostSectionKey =
   | "summary"
+  | "costVarianceSimulation"
   | "profitSimulation"
   | "packaging"
   | "labor"
@@ -37,6 +39,7 @@ type CostSectionKey =
 
 const defaultOpenState: Record<CostSectionKey, boolean> = {
   summary: true,
+  costVarianceSimulation: true,
   profitSimulation: true,
   packaging: true,
   labor: true,
@@ -130,6 +133,11 @@ export function CostTab({ data, exchangeRateMap }: CostTabProps) {
       <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("summary", "原価サマリ")}
         {openState.summary && <CostSummarySection data={data} exchangeRateMap={exchangeRateMap} />}
+      </div>
+
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
+        {renderSectionToggle("costVarianceSimulation", "原価変動シミュレーション")}
+        {openState.costVarianceSimulation && <CostVarianceSimulationSection data={data} exchangeRateMap={exchangeRateMap} />}
       </div>
 
       <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">

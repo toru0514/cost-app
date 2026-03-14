@@ -10,9 +10,12 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Plus,
+  Settings,
+  Users,
   X,
   Menu,
 } from "lucide-react"
+import Link from "next/link"
 import type { LucideIcon } from "lucide-react"
 
 export type TabOption = {
@@ -135,6 +138,26 @@ export function Sidebar({
               {!sidebarCollapsed && <span className="truncate">データクリア</span>}
             </button>
           )}
+          {isAuthenticated && (
+            <Link
+              href="/teams"
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title={sidebarCollapsed ? "チーム" : undefined}
+            >
+              <Users className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && <span>チーム</span>}
+            </Link>
+          )}
+          {isAuthenticated && (
+            <Link
+              href="/settings"
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title={sidebarCollapsed ? "設定" : undefined}
+            >
+              <Settings className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && <span>設定</span>}
+            </Link>
+          )}
           {!isAuthenticated ? (
             <button
               type="button"
@@ -233,6 +256,26 @@ export function Sidebar({
                   <X className="h-4 w-4 shrink-0" />
                   <span>データクリア</span>
                 </button>
+              )}
+              {isAuthenticated && (
+                <Link
+                  href="/teams"
+                  onClick={() => onMobileNavOpenChange(false)}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <Users className="h-4 w-4 shrink-0" />
+                  <span>チーム</span>
+                </Link>
+              )}
+              {isAuthenticated && (
+                <Link
+                  href="/settings"
+                  onClick={() => onMobileNavOpenChange(false)}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <Settings className="h-4 w-4 shrink-0" />
+                  <span>設定</span>
+                </Link>
               )}
               {!isAuthenticated ? (
                 <button
