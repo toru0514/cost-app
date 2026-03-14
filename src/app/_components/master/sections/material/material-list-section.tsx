@@ -348,8 +348,14 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
           <div className="space-y-2">
           <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
           {selectedIds.size > 0 && (
-            <div className="flex items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
+            <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
               <span className="text-sm font-medium">{selectedIds.size}件選択中</span>
+              {(() => {
+                const otherPageCount = selectedIds.size - currentPageIds.filter((id) => selectedIds.has(id)).length
+                return otherPageCount > 0 ? (
+                  <span className="text-xs text-amber-600 dark:text-amber-400">（他のページに{otherPageCount}件の選択あり）</span>
+                ) : null
+              })()}
               <Button type="button" size="sm" variant="outline" onClick={() => { resetBulkEditFields(); setShowBulkEditDialog(true) }}>
                 一括編集
               </Button>
@@ -708,6 +714,13 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
             {selectedMaterials.length}件の材料を削除しますか？関連するコスト明細も削除されます。この操作は取り消せません。
           </DialogDescription>
         </DialogHeader>
+        <div className="max-h-40 overflow-y-auto rounded border bg-muted/30 px-3 py-2">
+          <ul className="space-y-1 text-sm">
+            {selectedMaterials.map((m) => (
+              <li key={m.id} className="truncate">・{m.name}</li>
+            ))}
+          </ul>
+        </div>
         <DialogFooter>
           <Button type="button" variant="ghost" onClick={() => setShowBulkDeleteDialog(false)}>
             キャンセル
@@ -726,6 +739,13 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
             チェックしたフィールドのみ、選択中の材料に一括適用されます。
           </DialogDescription>
         </DialogHeader>
+        <div className="max-h-28 overflow-y-auto rounded border bg-muted/30 px-3 py-2">
+          <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {selectedMaterials.map((m) => (
+              <li key={m.id} className="truncate">{m.name}</li>
+            ))}
+          </ul>
+        </div>
         <div className="space-y-4 py-2">
           <label className="flex items-center gap-3">
             <Checkbox
