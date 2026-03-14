@@ -24,10 +24,11 @@ interface MasterRegisterViewProps {
   isAuthenticated: boolean
   onSetMaterialStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   onSetPackagingStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
+  onRefreshExchangeRates?: () => Promise<void>
   onSectionFocus?: (sectionKey: string | null) => void
 }
 
-export function MasterRegisterView({ data, actions, isAuthenticated, onSetMaterialStock, onSetPackagingStock, onSectionFocus }: MasterRegisterViewProps) {
+export function MasterRegisterView({ data, actions, isAuthenticated, onSetMaterialStock, onSetPackagingStock, onRefreshExchangeRates, onSectionFocus }: MasterRegisterViewProps) {
   const [sectionOpenSignal, setSectionOpenSignal] = useState<FormSectionOpenSignal | null>(null)
 
   const triggerSectionOpenState = (value: boolean) => {
@@ -81,7 +82,7 @@ export function MasterRegisterView({ data, actions, isAuthenticated, onSetMateri
 
       <EquipmentSimulationSection data={data} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("equipment")} onClose={() => onSectionFocus?.(null)} />
 
-      <ExchangeRateSection isAuthenticated={isAuthenticated} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("exchange-rate")} onClose={() => onSectionFocus?.(null)} />
+      <ExchangeRateSection isAuthenticated={isAuthenticated} openSignal={sectionOpenSignal} onRefreshExchangeRates={onRefreshExchangeRates} onOpen={() => onSectionFocus?.("exchange-rate")} onClose={() => onSectionFocus?.(null)} />
 
       <MasterOverviewSection data={data} />
     </div>

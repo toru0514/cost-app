@@ -1,11 +1,12 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { useAppData } from "@/lib/app-data"
+import { buildExchangeRateMap } from "@/lib/calculations"
 import type { AppData, AuditFilters, Product } from "@/lib/types"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
 import { AuditTab } from "./_components/audit/audit-tab"
@@ -82,7 +83,11 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
     stockAlertSettingsLoaded,
     updateStockAlertSetting,
     checkAndNotifyLowStock,
+    exchangeRates,
+    refreshExchangeRates,
   } = useAppData(initialData)
+
+  const exchangeRateMap = useMemo(() => buildExchangeRateMap(exchangeRates), [exchangeRates])
 
   const handleAuditFiltersChange = useCallback(
     (next: AuditFilters) => {
@@ -329,11 +334,11 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
 
             <Tabs value={activeTab} onValueChange={handleTabChange} className="dashboard-table-style">
               <TabsContent value="cost" className="space-y-6">
-                <CostTab data={data} />
+                <CostTab data={data} exchangeRateMap={exchangeRateMap} />
               </TabsContent>
 
               <TabsContent value="analytics" className="space-y-6">
-                <AnalyticsTab data={data} />
+                <AnalyticsTab data={data} exchangeRateMap={exchangeRateMap} />
               </TabsContent>
 
               <TabsContent value="product" className="space-y-6">
@@ -364,6 +369,7 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
                   data={data}
                   actions={actions}
                   isAuthenticated={isAuthenticated}
+                  onRefreshExchangeRates={refreshExchangeRates}
                   materialStocks={materialStocks}
                   materialStockUnits={materialStockUnits}
                   packagingStocks={packagingStocks}
@@ -379,6 +385,7 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
               <TabsContent value="list" className="space-y-6">
                 <ListTab
                   data={data}
+                  exchangeRateMap={exchangeRateMap}
                   isAuthenticated={isAuthenticated}
                   authUserId={authUserId}
                   stocks={stocks}

@@ -9,6 +9,7 @@ import type { AppData } from "@/lib/types"
 
 interface ProfitSimulationSectionProps {
   data: AppData
+  exchangeRateMap?: Map<string, number>
 }
 
 type ProfitSimulationInput = {
@@ -23,15 +24,15 @@ const formatMaybeCurrency = (value?: number | null, currency?: string) => {
   return formatCurrency(value, currency)
 }
 
-export function ProfitSimulationSection({ data }: ProfitSimulationSectionProps) {
+export function ProfitSimulationSection({ data, exchangeRateMap }: ProfitSimulationSectionProps) {
   const [profitSimulations, setProfitSimulations] = useState<Record<string, ProfitSimulationInput>>({})
 
   const productSummaries = useMemo(() => {
     return data.products.map((product) => ({
       product,
-      costs: calculateProductUnitCosts(product.id, data),
+      costs: calculateProductUnitCosts(product.id, data, exchangeRateMap),
     }))
-  }, [data])
+  }, [data, exchangeRateMap])
 
   const applyProfitSimulationPatch = (
     productId: string,

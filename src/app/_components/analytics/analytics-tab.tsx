@@ -12,7 +12,7 @@ import { CategoryRankingsSection } from "./sections/category-rankings-section"
 import { CostCompositionSection } from "./sections/cost-composition-section"
 import { MonthlyTrendSection } from "./sections/monthly-trend-section"
 
-export function AnalyticsTab({ data }: { data: AppData }) {
+export function AnalyticsTab({ data, exchangeRateMap }: { data: AppData; exchangeRateMap?: Map<string, number> }) {
   const [monthsRange, setMonthsRange] = useState("6")
   const [categoryFilter, setCategoryFilter] = useState<string | null>(null)
 
@@ -21,11 +21,11 @@ export function AnalyticsTab({ data }: { data: AppData }) {
       const timestamp = product.registeredAt ? Date.parse(product.registeredAt) : NaN
       return {
         product,
-        costs: calculateProductUnitCosts(product.id, data),
+        costs: calculateProductUnitCosts(product.id, data, exchangeRateMap),
         registeredAt: Number.isNaN(timestamp) ? NaN : timestamp,
       }
     })
-  }, [data])
+  }, [data, exchangeRateMap])
 
   const rangeBoundaries = useMemo(() => {
     const months = Math.max(Number(monthsRange) || 6, 1)

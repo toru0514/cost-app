@@ -24,13 +24,15 @@ export function convertToBaseCurrency(
 /**
  * 為替レート配列からMapを作成する
  * 同一通貨に複数のレートがある場合、最新の適用日のものを使用
+ * baseCurrencyへの変換レートのみを抽出する
  */
-export function buildExchangeRateMap(exchangeRates: ExchangeRate[]): Map<string, number> {
+export function buildExchangeRateMap(exchangeRates: ExchangeRate[], baseCurrency = "JPY"): Map<string, number> {
   const rateMap = new Map<string, number>()
   const sortedRates = [...exchangeRates].sort(
     (a, b) => new Date(b.effectiveDate).getTime() - new Date(a.effectiveDate).getTime()
   )
   for (const rate of sortedRates) {
+    if (rate.toCurrency !== baseCurrency) continue
     if (!rateMap.has(rate.fromCurrency)) {
       rateMap.set(rate.fromCurrency, rate.rate)
     }
@@ -137,9 +139,10 @@ export type SimulatedProductCosts = {
 export function simulateProductCosts(
   productId: string,
   data: AppData,
-  rates: CostVarianceRates
+  rates: CostVarianceRates,
+  exchangeRateMap?: Map<string, number>
 ): SimulatedProductCosts {
-  const original = calculateProductUnitCosts(productId, data)
+  const original = calculateProductUnitCosts(productId, data, exchangeRateMap)
 
   const materialRate = rates.material ?? 1
   const packagingRate = rates.packaging ?? 1
@@ -191,30 +194,34 @@ export function simulateProductCosts(
   return { original, simulated, diff }
 }
 
-export function calculateProductUnitCosts(productId: string, data: AppData) {
+export function calculateProductUnitCosts(productId: string, data: AppData, exchangeRateMap?: Map<string, number>) {
+  const convert = (amount: number, currency: string) =>
+    exchangeRateMap ? convertToBaseCurrency(amount, currency, exchangeRateMap) : amount
+
   const product = data.products.find((p) => p.id === productId)
   const quantity = product?.expectedProduction.quantity || 1
   const salePrice = product?.salePrice || 0
 
   const material = data.costEntries.materials
     .filter((entry) => entry.productId === productId)
-    .reduce((sum, entry) => sum + entry.costPerUnit, 0)
+    .reduce((sum, entry) => sum + convert(entry.costPerUnit, entry.currency), 0)
 
   const packaging = data.costEntries.packaging
     .filter((entry) => entry.productId === productId)
-    .reduce((sum, entry) => sum + entry.quantity * entry.costPerUnit, 0)
+    .reduce((sum, entry) => sum + convert(entry.quantity * entry.costPerUnit, entry.currency), 0)
 
   const labor = data.costEntries.labor
     .filter((entry) => entry.productId === productId)
     .reduce((sum, entry) => {
       const role = data.laborRoles.find((r) => r.id === entry.laborRoleId)
       const hourlyRate = entry.hourlyRateOverride ?? role?.hourlyRate ?? 0
-      return sum + hourlyRate * entry.hours * entry.peopleCount
+      const currency = role?.currency ?? "JPY"
+      return sum + convert(hourlyRate * entry.hours * entry.peopleCount, currency)
     }, 0)
 
   const outsourcing = data.costEntries.outsourcing
     .filter((entry) => entry.productId === productId)
-    .reduce((sum, entry) => sum + entry.costPerUnit, 0)
+    .reduce((sum, entry) => sum + convert(entry.costPerUnit, entry.currency), 0)
 
   const development = data.costEntries.development
     .filter((entry) => entry.productId === productId)
@@ -237,10 +244,10 @@ export function calculateProductUnitCosts(productId: string, data: AppData) {
   }, new Map<string, number>())
 
   const equipment = equipmentEntries.reduce((sum, entry) => {
-    const equipment = data.equipments.find((eq) => eq.id === entry.equipmentId)
-    if (!equipment) return sum
-    const utilizationRate = Math.min(Math.max(equipment.utilizationRate ?? 100, 0), 100) / 100
-    const annualCost = (equipment.acquisitionCost / Math.max(equipment.amortizationYears || 1, 1)) * utilizationRate
+    const eq = data.equipments.find((e) => e.id === entry.equipmentId)
+    if (!eq) return sum
+    const utilizationRate = Math.min(Math.max(eq.utilizationRate ?? 100, 0), 100) / 100
+    const annualCost = (eq.acquisitionCost / Math.max(eq.amortizationYears || 1, 1)) * utilizationRate
     const ratio =
       totalEquipmentHours > 0 && entry.usageHours !== undefined
         ? entry.usageHours / totalEquipmentHours
@@ -249,23 +256,24 @@ export function calculateProductUnitCosts(productId: string, data: AppData) {
       equipmentAnnualQuantityMap.get(entry.equipmentId) ?? entry.annualQuantity ?? quantity,
       1
     )
-    return sum + (annualCost * ratio) / totalAnnualQuantity
+    const costPerUnit = (annualCost * ratio) / totalAnnualQuantity
+    return sum + convert(costPerUnit, eq.currency)
   }, 0)
 
   const logistics = data.costEntries.logistics
     .filter((entry) => entry.productId === productId)
-    .reduce((sum, entry) => sum + entry.costPerUnit, 0)
+    .reduce((sum, entry) => sum + convert(entry.costPerUnit, entry.currency), 0)
 
   const electricity = data.costEntries.electricity
     .filter((entry) => entry.productId === productId)
-    .reduce((sum, entry) => sum + entry.costPerUnit, 0)
+    .reduce((sum, entry) => sum + convert(entry.costPerUnit, entry.currency), 0)
 
   const fees = data.costEntries.fees
     .filter((entry) => entry.productId === productId)
     .reduce((sum, entry) => {
       const rate = Number(entry.ratePercent) || 0
       const fixed = Number(entry.fixedAmount) || 0
-      return sum + (salePrice * rate) / 100 + fixed
+      return sum + (salePrice * rate) / 100 + convert(fixed, entry.currency)
     }, 0)
 
   const total =

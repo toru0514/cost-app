@@ -18,6 +18,7 @@ import { FormSection, type FormSectionOpenSignal } from "../../../shared/ui"
 interface ExchangeRateSectionProps {
   isAuthenticated: boolean
   openSignal?: FormSectionOpenSignal | null
+  onRefreshExchangeRates?: () => Promise<void>
   onOpen?: () => void
   onClose?: () => void
 }
@@ -30,7 +31,7 @@ const INITIAL_FORM: Omit<ExchangeRate, "id"> = {
   note: "",
 }
 
-export function ExchangeRateSection({ isAuthenticated, openSignal, onOpen, onClose }: ExchangeRateSectionProps) {
+export function ExchangeRateSection({ isAuthenticated, openSignal, onRefreshExchangeRates, onOpen, onClose }: ExchangeRateSectionProps) {
   const [form, setForm] = useState<Omit<ExchangeRate, "id">>(INITIAL_FORM)
   const [rates, setRates] = useState<ExchangeRate[]>([])
   const [loading, setLoading] = useState(false)
@@ -91,6 +92,7 @@ export function ExchangeRateSection({ isAuthenticated, openSignal, onOpen, onClo
       toast.success("為替レートを登録しました")
       setForm(INITIAL_FORM)
       await loadRates()
+      void onRefreshExchangeRates?.()
     } catch (error) {
       console.error("Failed to save exchange rate", error)
       toast.error("為替レートの保存に失敗しました")
@@ -106,6 +108,7 @@ export function ExchangeRateSection({ isAuthenticated, openSignal, onOpen, onClo
       if (error) throw error
       toast.success("為替レートを削除しました")
       setRates((prev) => prev.filter((r) => r.id !== id))
+      void onRefreshExchangeRates?.()
     } catch (error) {
       console.error("Failed to delete exchange rate", error)
       toast.error("為替レートの削除に失敗しました")

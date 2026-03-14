@@ -12,6 +12,7 @@ import { RotateCcw } from "lucide-react"
 
 interface CostVarianceSimulationSectionProps {
   data: AppData
+  exchangeRateMap?: Map<string, number>
 }
 
 const defaultRates: CostVarianceRates = {
@@ -38,7 +39,7 @@ const rateLabels: { key: keyof CostVarianceRates; label: string }[] = [
   { key: "fees", label: "手数料" },
 ]
 
-export function CostVarianceSimulationSection({ data }: CostVarianceSimulationSectionProps) {
+export function CostVarianceSimulationSection({ data, exchangeRateMap }: CostVarianceSimulationSectionProps) {
   const [rates, setRates] = useState<CostVarianceRates>(defaultRates)
 
   const updateRate = (key: keyof CostVarianceRates, percentChange: number) => {
@@ -55,9 +56,9 @@ export function CostVarianceSimulationSection({ data }: CostVarianceSimulationSe
   const simulationResults = useMemo(() => {
     return data.products.map((product) => ({
       product,
-      simulation: simulateProductCosts(product.id, data, rates),
+      simulation: simulateProductCosts(product.id, data, rates, exchangeRateMap),
     }))
-  }, [data, rates])
+  }, [data, rates, exchangeRateMap])
 
   const formatDiff = (value: number) => {
     if (value === 0) return "-"
