@@ -11,9 +11,11 @@ import { FormSection, type FormSectionOpenSignal } from "../../../shared/ui"
 interface EquipmentSimulationSectionProps {
   data: AppData
   openSignal?: FormSectionOpenSignal | null
+  onOpen?: () => void
+  onClose?: () => void
 }
 
-export function EquipmentSimulationSection({ data, openSignal }: EquipmentSimulationSectionProps) {
+export function EquipmentSimulationSection({ data, openSignal, onOpen, onClose }: EquipmentSimulationSectionProps) {
   const [simulationInputs, setSimulationInputs] = useState<
     Record<string, { quantity: number; salePrice: number; utilizationRatio: number }>
   >({})
@@ -68,6 +70,8 @@ export function EquipmentSimulationSection({ data, openSignal }: EquipmentSimula
       description="年間数量と販売価格を仮入力し、配賦単価と投資回収を比較します。"
       storageKey="master-section-equipment-sim"
       openSignal={openSignal}
+      onOpen={onOpen}
+      onClose={onClose}
     >
       <div className="space-y-4">
         {equipmentSimulationData.length === 0 ? (

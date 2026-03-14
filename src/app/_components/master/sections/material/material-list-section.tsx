@@ -1,8 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 import { ViewToggle } from "@/app/_components/shared/view-toggle"
 import { MaterialCardGrid } from "@/app/_components/master/sections/material/material-card-grid"
 
@@ -88,11 +89,95 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
   const [savingStockId, setSavingStockId] = useState<string | null>(null)
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false)
+  const [bulkEditFields, setBulkEditFields] = useState<{
+    supplier: { enabled: boolean; value: string }
+    currency: { enabled: boolean; value: string }
+    unit: { enabled: boolean; value: string }
+    usePercentageMode: { enabled: boolean; value: boolean }
+  }>({
+    supplier: { enabled: false, value: "" },
+    currency: { enabled: false, value: "JPY" },
+    unit: { enabled: false, value: "" },
+    usePercentageMode: { enabled: false, value: false },
+  })
 
   const searchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }, { key: "supplier", label: "仕入先" }, { key: "note", label: "備考" }], [])
   const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
   const filteredRows = useMemo(() => filterRowsBySearch(data.materials, query, checkedFields, allFieldKeys), [data.materials, query, checkedFields, allFieldKeys])
   const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(filteredRows)
+
+  const currentPageIds = useMemo(() => pagedRows.map((m) => m.id), [pagedRows])
+  const allCurrentPageSelected = useMemo(
+    () => currentPageIds.length > 0 && currentPageIds.every((id) => selectedIds.has(id)),
+    [currentPageIds, selectedIds]
+  )
+  const someCurrentPageSelected = useMemo(
+    () => currentPageIds.some((id) => selectedIds.has(id)),
+    [currentPageIds, selectedIds]
+  )
+
+  const handleSelectAll = useCallback(() => {
+    if (allCurrentPageSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        currentPageIds.forEach((id) => next.delete(id))
+        return next
+      })
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev)
+        currentPageIds.forEach((id) => next.add(id))
+        return next
+      })
+    }
+  }, [allCurrentPageSelected, currentPageIds])
+
+  const handleSelectOne = useCallback((id: string, checked: boolean) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev)
+      if (checked) next.add(id)
+      else next.delete(id)
+      return next
+    })
+  }, [])
+
+  const selectedMaterials = useMemo(
+    () => data.materials.filter((m) => selectedIds.has(m.id)),
+    [data.materials, selectedIds]
+  )
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedMaterials.length === 0) return
+    actions.bulkRemoveMaterials(selectedMaterials.map((m) => m.id))
+    toast.success(`${selectedMaterials.length}件の材料を削除しました`)
+    setSelectedIds(new Set())
+    setShowBulkDeleteDialog(false)
+  }, [selectedMaterials, actions])
+
+  const handleBulkEdit = useCallback(() => {
+    const updates: Partial<Pick<Material, "supplier" | "currency" | "unit" | "usePercentageMode">> = {}
+    if (bulkEditFields.supplier.enabled) updates.supplier = bulkEditFields.supplier.value
+    if (bulkEditFields.currency.enabled) updates.currency = bulkEditFields.currency.value
+    if (bulkEditFields.unit.enabled) updates.unit = bulkEditFields.unit.value
+    if (bulkEditFields.usePercentageMode.enabled) updates.usePercentageMode = bulkEditFields.usePercentageMode.value
+    if (Object.keys(updates).length === 0) return
+    actions.bulkUpdateMaterials(selectedMaterials.map((m) => m.id), updates)
+    toast.success(`${selectedMaterials.length}件の材料を更新しました`)
+    setSelectedIds(new Set())
+    setShowBulkEditDialog(false)
+  }, [selectedMaterials, actions, bulkEditFields])
+
+  const resetBulkEditFields = useCallback(() => {
+    setBulkEditFields({
+      supplier: { enabled: false, value: "" },
+      currency: { enabled: false, value: "JPY" },
+      unit: { enabled: false, value: "" },
+      usePercentageMode: { enabled: false, value: false },
+    })
+  }, [])
 
   const { updateMaterial, removeMaterial, addMaterial } = actions
 
@@ -262,10 +347,37 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
         ) : (
           <div className="space-y-2">
           <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
+          {selectedIds.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
+              <span className="text-sm font-medium">{selectedIds.size}件選択中</span>
+              {(() => {
+                const otherPageCount = selectedIds.size - currentPageIds.filter((id) => selectedIds.has(id)).length
+                return otherPageCount > 0 ? (
+                  <span className="text-xs text-amber-600 dark:text-amber-400">（他のページに{otherPageCount}件の選択あり）</span>
+                ) : null
+              })()}
+              <Button type="button" size="sm" variant="outline" onClick={() => { resetBulkEditFields(); setShowBulkEditDialog(true) }}>
+                一括編集
+              </Button>
+              <Button type="button" size="sm" variant="destructive" onClick={() => setShowBulkDeleteDialog(true)}>
+                一括削除
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+                選択解除
+              </Button>
+            </div>
+          )}
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="min-w-[1080px]">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allCurrentPageSelected ? true : someCurrentPageSelected ? "indeterminate" : false}
+                      onCheckedChange={handleSelectAll}
+                      aria-label="全選択"
+                    />
+                  </TableHead>
                   <TableHead>名称</TableHead>
                   <TableHead>単位</TableHead>
                   <TableHead>単価</TableHead>
@@ -288,6 +400,13 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                   const displayStockUnit = materialStockUnits.get(material.id)?.trim() || material.unit
                   return (
                     <TableRow key={material.id} className="group">
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(material.id)}
+                          onCheckedChange={(checked) => handleSelectOne(material.id, !!checked)}
+                          aria-label={`${material.name}を選択`}
+                        />
+                      </TableCell>
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -587,6 +706,133 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
         )}
       </CardContent>
     </Card>
+    <Dialog open={showBulkDeleteDialog} onOpenChange={(open) => !open && setShowBulkDeleteDialog(false)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>一括削除の確認</DialogTitle>
+          <DialogDescription>
+            {selectedMaterials.length}件の材料を削除しますか？関連するコスト明細も削除されます。この操作は取り消せません。
+          </DialogDescription>
+        </DialogHeader>
+        <div className="max-h-40 overflow-y-auto rounded border bg-muted/30 px-3 py-2">
+          <ul className="space-y-1 text-sm">
+            {selectedMaterials.map((m) => (
+              <li key={m.id} className="truncate">・{m.name}</li>
+            ))}
+          </ul>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setShowBulkDeleteDialog(false)}>
+            キャンセル
+          </Button>
+          <Button type="button" variant="destructive" onClick={handleBulkDelete}>
+            {selectedMaterials.length}件を削除
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={showBulkEditDialog} onOpenChange={(open) => !open && setShowBulkEditDialog(false)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>一括編集（{selectedMaterials.length}件の材料）</DialogTitle>
+          <DialogDescription>
+            チェックしたフィールドのみ、選択中の材料に一括適用されます。
+          </DialogDescription>
+        </DialogHeader>
+        <div className="max-h-28 overflow-y-auto rounded border bg-muted/30 px-3 py-2">
+          <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {selectedMaterials.map((m) => (
+              <li key={m.id} className="truncate">{m.name}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="space-y-4 py-2">
+          <label className="flex items-center gap-3">
+            <Checkbox
+              checked={bulkEditFields.supplier.enabled}
+              onCheckedChange={(checked) => setBulkEditFields((prev) => ({ ...prev, supplier: { ...prev.supplier, enabled: !!checked } }))}
+            />
+            <span className="w-20 text-sm font-medium">仕入先</span>
+            <Input
+              value={bulkEditFields.supplier.value}
+              onChange={(e) => setBulkEditFields((prev) => ({ ...prev, supplier: { ...prev.supplier, value: e.target.value } }))}
+              disabled={!bulkEditFields.supplier.enabled}
+              placeholder="仕入先名"
+              className="flex-1"
+            />
+          </label>
+          <label className="flex items-center gap-3">
+            <Checkbox
+              checked={bulkEditFields.currency.enabled}
+              onCheckedChange={(checked) => setBulkEditFields((prev) => ({ ...prev, currency: { ...prev.currency, enabled: !!checked } }))}
+            />
+            <span className="w-20 text-sm font-medium">通貨</span>
+            <Select
+              value={bulkEditFields.currency.value}
+              onValueChange={(value) => setBulkEditFields((prev) => ({ ...prev, currency: { ...prev.currency, value } }))}
+              disabled={!bulkEditFields.currency.enabled}
+            >
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="通貨" />
+              </SelectTrigger>
+              <SelectContent>
+                {currencyOptions.map((currency) => (
+                  <SelectItem key={currency} value={currency}>
+                    {currency}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+          <label className="flex items-center gap-3">
+            <Checkbox
+              checked={bulkEditFields.unit.enabled}
+              onCheckedChange={(checked) => setBulkEditFields((prev) => ({ ...prev, unit: { ...prev.unit, enabled: !!checked } }))}
+            />
+            <span className="w-20 text-sm font-medium">単位</span>
+            <Input
+              value={bulkEditFields.unit.value}
+              onChange={(e) => setBulkEditFields((prev) => ({ ...prev, unit: { ...prev.unit, value: e.target.value } }))}
+              disabled={!bulkEditFields.unit.enabled}
+              placeholder="kg, g, mL, 個 など"
+              className="flex-1"
+            />
+          </label>
+          <label className="flex items-center gap-3">
+            <Checkbox
+              checked={bulkEditFields.usePercentageMode.enabled}
+              onCheckedChange={(checked) => setBulkEditFields((prev) => ({ ...prev, usePercentageMode: { ...prev.usePercentageMode, enabled: !!checked } }))}
+            />
+            <span className="w-20 text-sm font-medium">入力モード</span>
+            <Select
+              value={bulkEditFields.usePercentageMode.value ? "percent" : "unit"}
+              onValueChange={(value) => setBulkEditFields((prev) => ({ ...prev, usePercentageMode: { ...prev.usePercentageMode, value: value === "percent" } }))}
+              disabled={!bulkEditFields.usePercentageMode.enabled}
+            >
+              <SelectTrigger className="flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="unit">単位数</SelectItem>
+                <SelectItem value="percent">%入力</SelectItem>
+              </SelectContent>
+            </Select>
+          </label>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setShowBulkEditDialog(false)}>
+            キャンセル
+          </Button>
+          <Button
+            type="button"
+            onClick={handleBulkEdit}
+            disabled={!bulkEditFields.supplier.enabled && !bulkEditFields.currency.enabled && !bulkEditFields.unit.enabled && !bulkEditFields.usePercentageMode.enabled}
+          >
+            適用する
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
       <DialogContent>
         <DialogHeader>

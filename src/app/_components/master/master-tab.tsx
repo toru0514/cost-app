@@ -1,7 +1,7 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useSearchParams } from "next/navigation"
+import { useCallback, useEffect, useState } from "react"
+import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import type { AppActions } from "@/lib/app-data"
@@ -40,6 +40,8 @@ const SECTION_LABELS: Record<string, string> = {
 }
 
 export function MasterTab({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock, onRefreshExchangeRates }: MasterTabProps) {
+  const router = useRouter()
+  const pathname = usePathname()
   const searchParams = useSearchParams()
   const sectionParam = searchParams.get("section")
 
@@ -54,9 +56,23 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, mate
     window.localStorage.setItem("cost-app-master-view", view)
   }, [view])
 
+  const handleSectionFocus = useCallback((sectionKey: string | null) => {
+    if (sectionKey) {
+      router.replace(`${pathname}?section=${sectionKey}`, { scroll: false })
+    } else {
+      router.replace(pathname, { scroll: false })
+    }
+  }, [router, pathname])
+
+  const clearSection = useCallback(() => {
+    router.replace(pathname, { scroll: false })
+  }, [router, pathname])
+
   const breadcrumbItems = [
-    { label: "マスタ登録" },
-    { label: view === "register" ? "マスタ登録" : "登録済みマスタ" },
+    {
+      label: view === "register" ? "マスタ登録" : "登録済みマスタ",
+      ...(sectionParam ? { onClick: clearSection } : {}),
+    },
     ...(sectionParam && SECTION_LABELS[sectionParam] ? [{ label: SECTION_LABELS[sectionParam] }] : []),
   ]
 
@@ -105,6 +121,7 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, mate
           onSetMaterialStock={onSetMaterialStock}
           onSetPackagingStock={onSetPackagingStock}
           onRefreshExchangeRates={onRefreshExchangeRates}
+          onSectionFocus={handleSectionFocus}
         />
       ) : (
         <MasterListView
@@ -121,6 +138,7 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, mate
           onAdjustMaterialStock={onAdjustMaterialStock}
           onAdjustPackagingStock={onAdjustPackagingStock}
           focusSection={sectionParam}
+          onSectionFocus={handleSectionFocus}
         />
       )}
     </div>

@@ -18,6 +18,8 @@ interface FeeSectionProps {
   data: AppData
   actions: AppActions
   openSignal?: FormSectionOpenSignal | null
+  onOpen?: () => void
+  onClose?: () => void
 }
 
 const INITIAL_FORM: Omit<Fee, "id"> = {
@@ -28,7 +30,7 @@ const INITIAL_FORM: Omit<Fee, "id"> = {
   note: "",
 }
 
-export function FeeSection({ data, actions, openSignal }: FeeSectionProps) {
+export function FeeSection({ data, actions, openSignal, onOpen, onClose }: FeeSectionProps) {
   const [feeForm, setFeeForm] = useState<Omit<Fee, "id">>(INITIAL_FORM)
   const { addFee } = actions
 
@@ -45,6 +47,8 @@ export function FeeSection({ data, actions, openSignal }: FeeSectionProps) {
       description="販売手数料・決済手数料などを登録して商品登録で選択"
       storageKey="master-section-fees"
       openSignal={openSignal}
+      onOpen={onOpen}
+      onClose={onClose}
     >
       <form className="grid gap-2" onSubmit={handleSubmit}>
         <div className="space-y-1">

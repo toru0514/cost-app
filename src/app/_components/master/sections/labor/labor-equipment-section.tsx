@@ -18,6 +18,8 @@ interface LaborEquipmentSectionProps {
   data: AppData
   actions: AppActions
   openSignal?: FormSectionOpenSignal | null
+  onOpen?: () => void
+  onClose?: () => void
 }
 
 const INITIAL_LABOR_FORM: Omit<LaborRole, "id"> = {
@@ -36,7 +38,7 @@ const INITIAL_EQUIPMENT_FORM: Omit<Equipment, "id"> = {
   note: "",
 }
 
-export function LaborEquipmentSection({ data, actions, openSignal }: LaborEquipmentSectionProps) {
+export function LaborEquipmentSection({ data, actions, openSignal, onOpen, onClose }: LaborEquipmentSectionProps) {
   const [laborForm, setLaborForm] = useState<Omit<LaborRole, "id">>(INITIAL_LABOR_FORM)
   const [equipmentForm, setEquipmentForm] = useState<Omit<Equipment, "id">>(INITIAL_EQUIPMENT_FORM)
   const { addLaborRole, addEquipment } = actions
@@ -47,6 +49,8 @@ export function LaborEquipmentSection({ data, actions, openSignal }: LaborEquipm
       description="工数と時給、設備投資のベースをまとめて管理します。"
       storageKey="master-section-labor-equipment"
       openSignal={openSignal}
+      onOpen={onOpen}
+      onClose={onClose}
     >
       <div className="grid gap-6 md:grid-cols-2">
         <form

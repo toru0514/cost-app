@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
@@ -32,6 +32,7 @@ interface MasterListViewProps {
   onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
   focusSection?: string | null
+  onSectionFocus?: (sectionKey: string | null) => void
 }
 
 type MasterListSectionKey =
@@ -53,6 +54,18 @@ const defaultOpenState: Record<MasterListSectionKey, boolean> = {
   fee: true,
   labor: true,
   equipment: true,
+}
+
+/** MasterListSectionKey (camelCase) → SECTION_LABELS のキー (kebab-case) への変換マップ */
+const SECTION_KEY_TO_PARAM: Record<MasterListSectionKey, string> = {
+  category: "category",
+  material: "material",
+  packaging: "packaging",
+  optionPreset: "option-preset",
+  shipping: "shipping",
+  fee: "fee",
+  labor: "labor",
+  equipment: "equipment",
 }
 
 const MASTER_LIST_OPEN_STATE_STORAGE_KEY = "cost-app-master-list-open-state"
@@ -78,8 +91,12 @@ const loadMasterListOpenState = (): Record<MasterListSectionKey, boolean> => {
   }
 }
 
-export function MasterListView({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock, focusSection }: MasterListViewProps) {
+export function MasterListView({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock, focusSection, onSectionFocus }: MasterListViewProps) {
   const [openState, setOpenState] = useState<Record<MasterListSectionKey, boolean>>(() => loadMasterListOpenState())
+
+  // focusSectionやsetAllOpenStateによる更新後も常に最新値を参照できるようにする
+  const openStateRef = useRef(openState)
+  useEffect(() => { openStateRef.current = openState }, [openState])
 
   useEffect(() => {
     if (typeof window === "undefined") return
@@ -114,7 +131,13 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
   }
 
   const toggleSection = (key: MasterListSectionKey) => {
+    const willOpen = !openStateRef.current[key]
     setOpenState((prev) => ({ ...prev, [key]: !prev[key] }))
+    if (willOpen) {
+      onSectionFocus?.(SECTION_KEY_TO_PARAM[key])
+    } else {
+      onSectionFocus?.(null)
+    }
   }
 
   const renderSectionToggle = (key: MasterListSectionKey, label: string) => (
