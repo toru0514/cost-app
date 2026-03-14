@@ -248,13 +248,13 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
           <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
             <div className="flex h-14 items-center justify-between gap-2 px-3 md:px-6">
               <div className="flex items-center gap-2">
-                <Button type="button" variant="ghost" size="sm" className="md:hidden" onClick={() => setMobileNavOpen(true)}>
-                  <Menu className="h-4 w-4" />
+                <Button type="button" variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileNavOpen(true)}>
+                  <Menu className="h-5 w-5" />
                 </Button>
                 <div className="flex items-center gap-1.5">
                   <span className="hidden text-xs text-muted-foreground sm:inline">Cost App</span>
                   <span className="hidden text-xs text-muted-foreground sm:inline">/</span>
-                  <span className="text-sm font-semibold">
+                  <span className="text-xs font-semibold md:text-sm">
                     {tabOptions.find((t) => t.value === activeTab)?.label ?? activeTab}
                   </span>
                   {isSaving && <Badge variant="outline" className="text-xs text-muted-foreground">保存中...</Badge>}
@@ -268,13 +268,13 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
                     ログイン
                   </Button>
                 ) : (
-                  <span className="text-sm text-muted-foreground">ログイン中: {authState.user.email}</span>
+                  <span className="text-sm text-muted-foreground">ログイン中<span className="hidden sm:inline">: {authState.user.email}</span></span>
                 )}
               </div>
             </div>
           </header>
 
-          <main className={`flex-1 min-w-0 overflow-x-hidden p-4 md:p-6 ${mainMaxWidth}`}>
+          <main className={`flex-1 min-w-0 overflow-x-hidden p-4 pr-10 md:p-6 ${mainMaxWidth}`}>
             {/* オンボーディングバナー（初回訪問時のみ表示） */}
             <OnboardingBanner
               onNavigateToMaster={() => handleTabChange("master")}
