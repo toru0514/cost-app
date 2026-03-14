@@ -119,6 +119,12 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
     scrollToFormTop()
   }
 
+  const handleSkipToEnd = (event?: MouseEvent<HTMLButtonElement>) => {
+    event?.preventDefault()
+    setCurrentStep(totalSteps)
+    scrollToFormTop()
+  }
+
   const handleFormSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
     const submitter = (event.nativeEvent as SubmitEvent).submitter as HTMLElement | null
@@ -285,9 +291,14 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
                   </Button>
                 )}
                 {currentStep < totalSteps ? (
-                  <Button type="button" onClick={handleStepNext}>
-                    次へ
-                  </Button>
+                  <>
+                    <Button type="button" onClick={handleStepNext}>
+                      次へ
+                    </Button>
+                    <Button type="button" variant="outline" onClick={handleSkipToEnd}>
+                      最終ステップへ
+                    </Button>
+                  </>
                 ) : (
                   <Button type="submit" data-submit-intent="final">
                     {editingProductId ? "商品を更新" : "商品を登録"}

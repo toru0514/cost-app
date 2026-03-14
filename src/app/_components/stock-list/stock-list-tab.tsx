@@ -107,15 +107,21 @@ export function StockListTab({
 
   const [materialViewMode, setMaterialViewMode] = useState<"table" | "grid">(() => {
     if (typeof window === "undefined") return "table"
-    return localStorage.getItem("view-mode-stock-materials") === "grid" ? "grid" : "table"
+    const stored = localStorage.getItem("view-mode-stock-materials")
+    if (stored === "grid" || stored === "table") return stored
+    return window.innerWidth < 768 ? "grid" : "table"
   })
   const [packagingViewMode, setPackagingViewMode] = useState<"table" | "grid">(() => {
     if (typeof window === "undefined") return "table"
-    return localStorage.getItem("view-mode-stock-packaging") === "grid" ? "grid" : "table"
+    const stored = localStorage.getItem("view-mode-stock-packaging")
+    if (stored === "grid" || stored === "table") return stored
+    return window.innerWidth < 768 ? "grid" : "table"
   })
   const [equipmentViewMode, setEquipmentViewMode] = useState<"table" | "grid">(() => {
     if (typeof window === "undefined") return "table"
-    return localStorage.getItem("view-mode-stock-equipment") === "grid" ? "grid" : "table"
+    const stored = localStorage.getItem("view-mode-stock-equipment")
+    if (stored === "grid" || stored === "table") return stored
+    return window.innerWidth < 768 ? "grid" : "table"
   })
 
   const handleMaterialViewModeChange = (mode: "table" | "grid") => {

@@ -319,6 +319,8 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
 
   const handleOpenSpreadsheet = async () => {
     setOpeningSheet(true)
+    // ユーザージェスチャー内で同期的にウィンドウを開き、モバイルのポップアップブロックを回避
+    const newWindow = window.open("about:blank", "_blank")
     try {
       const headers = await buildAuthHeaders(false)
       const response = await fetch("/api/bulk-sync/spreadsheet", {
@@ -338,8 +340,13 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
       }
 
       const url = `https://docs.google.com/spreadsheets/d/${data.spreadsheetId}/edit`
-      window.open(url, "_blank", "noopener,noreferrer")
+      if (newWindow) {
+        newWindow.location.href = url
+      } else {
+        window.location.href = url
+      }
     } catch (error) {
+      newWindow?.close()
       toast.error(error instanceof Error ? error.message : "スプレッドシートを開けませんでした")
     } finally {
       setOpeningSheet(false)
