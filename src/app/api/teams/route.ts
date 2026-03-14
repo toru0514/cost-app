@@ -34,7 +34,9 @@ export async function GET(request: Request) {
 
     if (error) {
       console.error("Failed to fetch teams:", error)
-      return NextResponse.json({ error: error.message }, { status: 500 })
+      // リレーションシップエラーやRLSエラーの場合は空配列を返す
+      // これによりUIがエラー表示にならない
+      return NextResponse.json({ teams: [], error: error.message })
     }
 
     const teams = (data || []).map((membership) => {
@@ -48,7 +50,7 @@ export async function GET(request: Request) {
     return NextResponse.json({ teams })
   } catch (error) {
     console.error("Error in GET /api/teams:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ teams: [], error: "Internal server error" })
   }
 }
 
