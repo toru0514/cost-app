@@ -1,6 +1,7 @@
 "use client"
 
 import { useRef, useState, type FormEvent, type MouseEvent } from "react"
+import { toast } from "sonner"
 
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -90,6 +91,7 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
     handleAddFeeDraft,
     handleUpdateFeeDraft,
     handleRemoveFeeDraft,
+    validateProductForm,
     handleSubmit,
     handleCancelEdit,
   } = useProductFormState(props)
@@ -115,12 +117,30 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
 
   const handleStepNext = (event?: MouseEvent<HTMLButtonElement>) => {
     event?.preventDefault()
+    if (currentStep === 1) {
+      const missingFields = validateProductForm()
+      if (missingFields.length > 0) {
+        toast.error("必須項目が未入力です", {
+          description: `${missingFields.join("、")}を入力してください。`,
+        })
+        return
+      }
+    }
     setCurrentStep((prev) => Math.min(totalSteps, prev + 1))
     scrollToFormTop()
   }
 
   const handleSkipToEnd = (event?: MouseEvent<HTMLButtonElement>) => {
     event?.preventDefault()
+    if (currentStep === 1) {
+      const missingFields = validateProductForm()
+      if (missingFields.length > 0) {
+        toast.error("必須項目が未入力です", {
+          description: `${missingFields.join("、")}を入力してください。`,
+        })
+        return
+      }
+    }
     setCurrentStep(totalSteps)
     scrollToFormTop()
   }
