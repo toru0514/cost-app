@@ -283,8 +283,8 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
           <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
             <div className="flex h-14 items-center justify-between gap-2 px-3 md:px-6">
               <div className="flex items-center gap-2">
-                <Button type="button" variant="ghost" size="icon" className="md:hidden" onClick={() => setMobileNavOpen(true)}>
-                  <Menu className="h-5 w-5" />
+                <Button type="button" variant="ghost" size="icon" className="md:hidden h-10 w-10" onClick={() => setMobileNavOpen(true)}>
+                  <Menu className="h-7 w-7" />
                 </Button>
                 <div className="flex items-center gap-1.5">
                   <span className="hidden text-xs text-muted-foreground sm:inline">Cost App</span>
