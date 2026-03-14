@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { authenticateApiRequest } from "@/lib/server/api-auth"
 
 export type InAppNotification = {
   id: string
@@ -14,12 +13,11 @@ export type InAppNotification = {
 // GET: 通知一覧を取得
 export async function GET(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) {
+      return auth.error
     }
+    const { user, supabase } = auth
 
     const { searchParams } = new URL(request.url)
     const unreadOnly = searchParams.get("unread_only") === "true"
@@ -63,12 +61,11 @@ export async function GET(request: Request) {
 // PUT: 通知を既読にする
 export async function PUT(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) {
+      return auth.error
     }
+    const { user, supabase } = auth
 
     const body = await request.json()
     const { notification_ids, mark_all_read } = body as {
@@ -112,12 +109,11 @@ export async function PUT(request: Request) {
 // DELETE: 通知を削除
 export async function DELETE(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) {
+      return auth.error
     }
+    const { user, supabase } = auth
 
     const body = await request.json()
     const { notification_ids } = body as { notification_ids: string[] }

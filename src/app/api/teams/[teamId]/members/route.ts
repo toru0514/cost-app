@@ -1,6 +1,5 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { authenticateApiRequest } from "@/lib/server/api-auth"
 
 export type TeamMember = {
   user_id: string
@@ -11,17 +10,16 @@ export type TeamMember = {
 
 // GET: チームメンバー一覧を取得
 export async function GET(
-  _request: Request,
+  request: Request,
   context: { params: Promise<{ teamId: string }> }
 ) {
   try {
     const { teamId } = await context.params
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) {
+      return auth.error
     }
+    const { user, supabase } = auth
 
     // メンバーシップ確認
     const { data: membership } = await supabase
@@ -65,12 +63,11 @@ export async function PUT(
 ) {
   try {
     const { teamId } = await context.params
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) {
+      return auth.error
     }
+    const { user, supabase } = auth
 
     // 権限確認
     const { data: membership } = await supabase
@@ -132,12 +129,11 @@ export async function DELETE(
 ) {
   try {
     const { teamId } = await context.params
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) {
+      return auth.error
     }
+    const { user, supabase } = auth
 
     const body = await request.json()
     const { user_id } = body
