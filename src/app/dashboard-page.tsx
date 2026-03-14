@@ -216,7 +216,7 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
   const mainMaxWidth = tabContentWidthMap[activeTab]
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="bg-background">
       <div className="flex h-screen overflow-hidden">
         <Sidebar
           activeTab={activeTab}
