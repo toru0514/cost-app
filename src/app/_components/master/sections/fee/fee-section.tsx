@@ -19,6 +19,7 @@ interface FeeSectionProps {
   actions: AppActions
   openSignal?: FormSectionOpenSignal | null
   onOpen?: () => void
+  onClose?: () => void
 }
 
 const INITIAL_FORM: Omit<Fee, "id"> = {
@@ -29,7 +30,7 @@ const INITIAL_FORM: Omit<Fee, "id"> = {
   note: "",
 }
 
-export function FeeSection({ data, actions, openSignal, onOpen }: FeeSectionProps) {
+export function FeeSection({ data, actions, openSignal, onOpen, onClose }: FeeSectionProps) {
   const [feeForm, setFeeForm] = useState<Omit<Fee, "id">>(INITIAL_FORM)
   const { addFee } = actions
 
@@ -47,6 +48,7 @@ export function FeeSection({ data, actions, openSignal, onOpen }: FeeSectionProp
       storageKey="master-section-fees"
       openSignal={openSignal}
       onOpen={onOpen}
+      onClose={onClose}
     >
       <form className="grid gap-2" onSubmit={handleSubmit}>
         <div className="space-y-1">

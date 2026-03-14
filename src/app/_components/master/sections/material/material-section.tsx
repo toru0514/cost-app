@@ -23,6 +23,7 @@ interface MaterialSectionProps {
   onSetMaterialStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   openSignal?: FormSectionOpenSignal | null
   onOpen?: () => void
+  onClose?: () => void
 }
 
 const INITIAL_FORM: Omit<Material, "id"> = {
@@ -38,7 +39,7 @@ const INITIAL_FORM: Omit<Material, "id"> = {
   imageUrl: "",
 }
 
-export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialStock, openSignal, onOpen }: MaterialSectionProps) {
+export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialStock, openSignal, onOpen, onClose }: MaterialSectionProps) {
   const [materialForm, setMaterialForm] = useState<Omit<Material, "id">>(INITIAL_FORM)
   const [initialStock, setInitialStock] = useState<number>(INITIAL_FORM.unitsPerBatch ?? 1)
   const [initialStockOverridden, setInitialStockOverridden] = useState(false)
@@ -52,6 +53,7 @@ export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialS
       storageKey="master-section-materials"
       openSignal={openSignal}
       onOpen={onOpen}
+      onClose={onClose}
     >
       <div className="space-y-2">
         <form

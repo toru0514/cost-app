@@ -46,7 +46,7 @@ export function MasterRegisterView({ data, actions, isAuthenticated, onSetMateri
       </div>
 
       <div className="space-y-6">
-        <CategorySection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("category")} />
+        <CategorySection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("category")} onClose={() => onSectionFocus?.(null)} />
 
         <MaterialSection
           data={data}
@@ -55,6 +55,7 @@ export function MasterRegisterView({ data, actions, isAuthenticated, onSetMateri
           onSetMaterialStock={onSetMaterialStock}
           openSignal={sectionOpenSignal}
           onOpen={() => onSectionFocus?.("material")}
+          onClose={() => onSectionFocus?.(null)}
         />
       </div>
 
@@ -66,20 +67,21 @@ export function MasterRegisterView({ data, actions, isAuthenticated, onSetMateri
           onSetPackagingStock={onSetPackagingStock}
           openSignal={sectionOpenSignal}
           onOpen={() => onSectionFocus?.("packaging")}
+          onClose={() => onSectionFocus?.(null)}
         />
 
-        <ShippingSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("shipping")} />
+        <ShippingSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("shipping")} onClose={() => onSectionFocus?.(null)} />
 
-        <FeeSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("fee")} />
+        <FeeSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("fee")} onClose={() => onSectionFocus?.(null)} />
 
-        <OptionPresetSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("option-preset")} />
+        <OptionPresetSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("option-preset")} onClose={() => onSectionFocus?.(null)} />
       </div>
 
-      <LaborEquipmentSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("labor")} />
+      <LaborEquipmentSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("labor")} onClose={() => onSectionFocus?.(null)} />
 
-      <EquipmentSimulationSection data={data} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("equipment")} />
+      <EquipmentSimulationSection data={data} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("equipment")} onClose={() => onSectionFocus?.(null)} />
 
-      <ExchangeRateSection isAuthenticated={isAuthenticated} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("exchange-rate")} />
+      <ExchangeRateSection isAuthenticated={isAuthenticated} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("exchange-rate")} onClose={() => onSectionFocus?.(null)} />
 
       <MasterOverviewSection data={data} />
     </div>

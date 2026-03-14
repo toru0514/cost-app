@@ -16,6 +16,7 @@ interface OptionPresetSectionProps {
   actions: AppActions
   openSignal?: FormSectionOpenSignal | null
   onOpen?: () => void
+  onClose?: () => void
 }
 
 interface OptionPresetFormState {
@@ -28,7 +29,7 @@ const INITIAL_FORM: OptionPresetFormState = {
   variants: [{ label: "", quantity: 0 }],
 }
 
-export function OptionPresetSection({ data, actions, openSignal, onOpen }: OptionPresetSectionProps) {
+export function OptionPresetSection({ data, actions, openSignal, onOpen, onClose }: OptionPresetSectionProps) {
   const [optionPresetForm, setOptionPresetForm] = useState<OptionPresetFormState>(INITIAL_FORM)
   const { addOptionPreset } = actions
 
@@ -62,6 +63,7 @@ export function OptionPresetSection({ data, actions, openSignal, onOpen }: Optio
       storageKey="master-section-option-presets"
       openSignal={openSignal}
       onOpen={onOpen}
+      onClose={onClose}
     >
       <div className="space-y-3">
         <form

@@ -19,6 +19,7 @@ interface ShippingSectionProps {
   actions: AppActions
   openSignal?: FormSectionOpenSignal | null
   onOpen?: () => void
+  onClose?: () => void
 }
 
 const INITIAL_FORM: Omit<ShippingMethod, "id"> = {
@@ -29,7 +30,7 @@ const INITIAL_FORM: Omit<ShippingMethod, "id"> = {
   note: "",
 }
 
-export function ShippingSection({ data, actions, openSignal, onOpen }: ShippingSectionProps) {
+export function ShippingSection({ data, actions, openSignal, onOpen, onClose }: ShippingSectionProps) {
   const [shippingMethodForm, setShippingMethodForm] = useState<Omit<ShippingMethod, "id">>(INITIAL_FORM)
   const { addShippingMethod } = actions
 
@@ -40,6 +41,7 @@ export function ShippingSection({ data, actions, openSignal, onOpen }: ShippingS
       storageKey="master-section-shipping"
       openSignal={openSignal}
       onOpen={onOpen}
+      onClose={onClose}
     >
       <div className="space-y-2">
         <form

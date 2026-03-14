@@ -23,6 +23,7 @@ interface PackagingSectionProps {
   onSetPackagingStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   openSignal?: FormSectionOpenSignal | null
   onOpen?: () => void
+  onClose?: () => void
 }
 
 const INITIAL_FORM: Omit<PackagingItem, "id"> = {
@@ -36,7 +37,7 @@ const INITIAL_FORM: Omit<PackagingItem, "id"> = {
   imageUrl: "",
 }
 
-export function PackagingSection({ data, actions, isAuthenticated, onSetPackagingStock, openSignal, onOpen }: PackagingSectionProps) {
+export function PackagingSection({ data, actions, isAuthenticated, onSetPackagingStock, openSignal, onOpen, onClose }: PackagingSectionProps) {
   const [packagingForm, setPackagingForm] = useState<Omit<PackagingItem, "id">>(INITIAL_FORM)
   const [initialStock, setInitialStock] = useState<number>(INITIAL_FORM.unitsPerBatch ?? 1)
   const [initialStockOverridden, setInitialStockOverridden] = useState(false)
@@ -50,6 +51,7 @@ export function PackagingSection({ data, actions, isAuthenticated, onSetPackagin
       storageKey="master-section-packaging"
       openSignal={openSignal}
       onOpen={onOpen}
+      onClose={onClose}
     >
       <div className="space-y-2">
         <form

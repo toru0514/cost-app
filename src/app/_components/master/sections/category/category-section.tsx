@@ -16,9 +16,10 @@ interface CategorySectionProps {
   actions: AppActions
   openSignal?: FormSectionOpenSignal | null
   onOpen?: () => void
+  onClose?: () => void
 }
 
-export function CategorySection({ data, actions, openSignal, onOpen }: CategorySectionProps) {
+export function CategorySection({ data, actions, openSignal, onOpen, onClose }: CategorySectionProps) {
   const [largeCategory, setLargeCategory] = useState<Omit<CategoryLarge, "id">>({ name: "", description: "" })
   const [mediumCategory, setMediumCategory] = useState<Omit<CategoryMedium, "id">>({
     name: "",
@@ -41,6 +42,7 @@ export function CategorySection({ data, actions, openSignal, onOpen }: CategoryS
       storageKey="master-section-categories"
       openSignal={openSignal}
       onOpen={onOpen}
+      onClose={onClose}
     >
       <div className="space-y-4">
         <form

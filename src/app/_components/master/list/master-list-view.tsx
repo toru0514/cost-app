@@ -56,6 +56,18 @@ const defaultOpenState: Record<MasterListSectionKey, boolean> = {
   equipment: true,
 }
 
+/** MasterListSectionKey (camelCase) → SECTION_LABELS のキー (kebab-case) への変換マップ */
+const SECTION_KEY_TO_PARAM: Record<MasterListSectionKey, string> = {
+  category: "category",
+  material: "material",
+  packaging: "packaging",
+  optionPreset: "option-preset",
+  shipping: "shipping",
+  fee: "fee",
+  labor: "labor",
+  equipment: "equipment",
+}
+
 const MASTER_LIST_OPEN_STATE_STORAGE_KEY = "cost-app-master-list-open-state"
 
 const loadMasterListOpenState = (): Record<MasterListSectionKey, boolean> => {
@@ -115,11 +127,15 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
   }
 
   const toggleSection = (key: MasterListSectionKey) => {
-    const willOpen = !openState[key]
-    setOpenState((prev) => ({ ...prev, [key]: !prev[key] }))
-    if (willOpen) {
-      onSectionFocus?.(key === "optionPreset" ? "option-preset" : key)
-    }
+    setOpenState((prev) => {
+      const willOpen = !prev[key]
+      if (willOpen) {
+        onSectionFocus?.(SECTION_KEY_TO_PARAM[key])
+      } else {
+        onSectionFocus?.(null)
+      }
+      return { ...prev, [key]: willOpen }
+    })
   }
 
   const renderSectionToggle = (key: MasterListSectionKey, label: string) => (

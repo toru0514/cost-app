@@ -12,9 +12,10 @@ interface EquipmentSimulationSectionProps {
   data: AppData
   openSignal?: FormSectionOpenSignal | null
   onOpen?: () => void
+  onClose?: () => void
 }
 
-export function EquipmentSimulationSection({ data, openSignal, onOpen }: EquipmentSimulationSectionProps) {
+export function EquipmentSimulationSection({ data, openSignal, onOpen, onClose }: EquipmentSimulationSectionProps) {
   const [simulationInputs, setSimulationInputs] = useState<
     Record<string, { quantity: number; salePrice: number; utilizationRatio: number }>
   >({})
@@ -70,6 +71,7 @@ export function EquipmentSimulationSection({ data, openSignal, onOpen }: Equipme
       storageKey="master-section-equipment-sim"
       openSignal={openSignal}
       onOpen={onOpen}
+      onClose={onClose}
     >
       <div className="space-y-4">
         {equipmentSimulationData.length === 0 ? (
