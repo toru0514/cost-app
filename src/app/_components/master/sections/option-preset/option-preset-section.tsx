@@ -15,6 +15,8 @@ interface OptionPresetSectionProps {
   data: AppData
   actions: AppActions
   openSignal?: FormSectionOpenSignal | null
+  onOpen?: () => void
+  onClose?: () => void
 }
 
 interface OptionPresetFormState {
@@ -27,7 +29,7 @@ const INITIAL_FORM: OptionPresetFormState = {
   variants: [{ label: "", quantity: 0 }],
 }
 
-export function OptionPresetSection({ data, actions, openSignal }: OptionPresetSectionProps) {
+export function OptionPresetSection({ data, actions, openSignal, onOpen, onClose }: OptionPresetSectionProps) {
   const [optionPresetForm, setOptionPresetForm] = useState<OptionPresetFormState>(INITIAL_FORM)
   const { addOptionPreset } = actions
 
@@ -60,6 +62,8 @@ export function OptionPresetSection({ data, actions, openSignal }: OptionPresetS
       description="S/M/L など定型セットを登録し、商品登録で一括インポートできます。"
       storageKey="master-section-option-presets"
       openSignal={openSignal}
+      onOpen={onOpen}
+      onClose={onClose}
     >
       <div className="space-y-3">
         <form

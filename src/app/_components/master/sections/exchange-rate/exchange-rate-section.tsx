@@ -18,6 +18,8 @@ import { FormSection, type FormSectionOpenSignal } from "../../../shared/ui"
 interface ExchangeRateSectionProps {
   isAuthenticated: boolean
   openSignal?: FormSectionOpenSignal | null
+  onOpen?: () => void
+  onClose?: () => void
 }
 
 const INITIAL_FORM: Omit<ExchangeRate, "id"> = {
@@ -28,7 +30,7 @@ const INITIAL_FORM: Omit<ExchangeRate, "id"> = {
   note: "",
 }
 
-export function ExchangeRateSection({ isAuthenticated, openSignal }: ExchangeRateSectionProps) {
+export function ExchangeRateSection({ isAuthenticated, openSignal, onOpen, onClose }: ExchangeRateSectionProps) {
   const [form, setForm] = useState<Omit<ExchangeRate, "id">>(INITIAL_FORM)
   const [rates, setRates] = useState<ExchangeRate[]>([])
   const [loading, setLoading] = useState(false)
@@ -117,6 +119,8 @@ export function ExchangeRateSection({ isAuthenticated, openSignal }: ExchangeRat
         description="外貨金額を日本円に換算するためのレートを設定します。"
         storageKey="master-section-exchange-rate"
         openSignal={openSignal}
+        onOpen={onOpen}
+        onClose={onClose}
       >
         <p className="text-sm text-muted-foreground">
           為替レート管理はログイン中のみ利用できます。
@@ -131,6 +135,8 @@ export function ExchangeRateSection({ isAuthenticated, openSignal }: ExchangeRat
       description="外貨金額を日本円に換算するためのレートを設定します。"
       storageKey="master-section-exchange-rate"
       openSignal={openSignal}
+      onOpen={onOpen}
+      onClose={onClose}
     >
       <div className="space-y-4">
         <form className="grid gap-3" onSubmit={handleSubmit}>
