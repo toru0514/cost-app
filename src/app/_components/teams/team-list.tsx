@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { fetchWithAuth } from "@/lib/fetch-with-auth"
 import { toast } from "sonner"
 import { Plus, Users, RefreshCw, Crown, Shield, User, Eye } from "lucide-react"
 
@@ -48,9 +49,7 @@ export function TeamList({ onSelectTeam, selectedTeamId }: TeamListProps) {
   const fetchTeams = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/teams", {
-        credentials: "include",
-      })
+      const response = await fetchWithAuth("/api/teams")
       if (!response.ok) throw new Error("Failed to fetch teams")
       const data = await response.json()
       setTeams(data.teams || [])
@@ -74,10 +73,9 @@ export function TeamList({ onSelectTeam, selectedTeamId }: TeamListProps) {
 
     setCreating(true)
     try {
-      const response = await fetch("/api/teams", {
+      const response = await fetchWithAuth("/api/teams", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
           name: newTeamName.trim(),
           description: newTeamDescription.trim() || null,

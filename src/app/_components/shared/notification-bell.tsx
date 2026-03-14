@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react"
 
 import { Button } from "@/components/ui/button"
+import { fetchWithAuth } from "@/lib/fetch-with-auth"
 import { Bell, Check, Trash2 } from "lucide-react"
 
 type InAppNotification = {
@@ -29,9 +30,7 @@ export function NotificationBell({ isAuthenticated }: NotificationBellProps) {
 
     try {
       setLoading(true)
-      const response = await fetch("/api/notifications/list?limit=20", {
-        credentials: "include",
-      })
+      const response = await fetchWithAuth("/api/notifications/list?limit=20")
       if (!response.ok) return
 
       const data = await response.json()
@@ -53,10 +52,9 @@ export function NotificationBell({ isAuthenticated }: NotificationBellProps) {
 
   const handleMarkAsRead = async (notificationId: string) => {
     try {
-      const response = await fetch("/api/notifications/list", {
+      const response = await fetchWithAuth("/api/notifications/list", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ notification_ids: [notificationId] }),
       })
 
@@ -73,10 +71,9 @@ export function NotificationBell({ isAuthenticated }: NotificationBellProps) {
 
   const handleMarkAllAsRead = async () => {
     try {
-      const response = await fetch("/api/notifications/list", {
+      const response = await fetchWithAuth("/api/notifications/list", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ mark_all_read: true }),
       })
 
@@ -91,10 +88,9 @@ export function NotificationBell({ isAuthenticated }: NotificationBellProps) {
 
   const handleDelete = async (notificationId: string) => {
     try {
-      const response = await fetch("/api/notifications/list", {
+      const response = await fetchWithAuth("/api/notifications/list", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({ notification_ids: [notificationId] }),
       })
 

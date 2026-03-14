@@ -5,6 +5,7 @@ import { useCallback, useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
+import { fetchWithAuth } from "@/lib/fetch-with-auth"
 import { toast } from "sonner"
 import { Bell, Mail, MessageSquare, RefreshCw } from "lucide-react"
 
@@ -45,9 +46,7 @@ export function NotificationSettingsSection() {
   const fetchSettings = useCallback(async () => {
     try {
       setLoading(true)
-      const response = await fetch("/api/notifications/settings", {
-        credentials: "include",
-      })
+      const response = await fetchWithAuth("/api/notifications/settings")
       if (!response.ok) {
         throw new Error("Failed to fetch settings")
       }
@@ -68,10 +67,9 @@ export function NotificationSettingsSection() {
   const handleToggle = async (type: NotificationType, enabled: boolean) => {
     setUpdating(type)
     try {
-      const response = await fetch("/api/notifications/settings", {
+      const response = await fetchWithAuth("/api/notifications/settings", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        credentials: "include",
         body: JSON.stringify({
           notification_type: type,
           enabled,
