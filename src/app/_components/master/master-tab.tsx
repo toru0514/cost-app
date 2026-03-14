@@ -24,6 +24,7 @@ interface MasterTabProps {
   onSetPackagingStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
+  onRefreshExchangeRates?: () => Promise<void>
 }
 
 const SECTION_LABELS: Record<string, string> = {
@@ -38,7 +39,7 @@ const SECTION_LABELS: Record<string, string> = {
   "exchange-rate": "為替レート",
 }
 
-export function MasterTab({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterTabProps) {
+export function MasterTab({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock, onRefreshExchangeRates }: MasterTabProps) {
   const searchParams = useSearchParams()
   const sectionParam = searchParams.get("section")
 
@@ -103,6 +104,7 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, mate
           isAuthenticated={isAuthenticated}
           onSetMaterialStock={onSetMaterialStock}
           onSetPackagingStock={onSetPackagingStock}
+          onRefreshExchangeRates={onRefreshExchangeRates}
         />
       ) : (
         <MasterListView

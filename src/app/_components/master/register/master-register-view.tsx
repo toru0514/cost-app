@@ -24,9 +24,10 @@ interface MasterRegisterViewProps {
   isAuthenticated: boolean
   onSetMaterialStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   onSetPackagingStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
+  onRefreshExchangeRates?: () => Promise<void>
 }
 
-export function MasterRegisterView({ data, actions, isAuthenticated, onSetMaterialStock, onSetPackagingStock }: MasterRegisterViewProps) {
+export function MasterRegisterView({ data, actions, isAuthenticated, onSetMaterialStock, onSetPackagingStock, onRefreshExchangeRates }: MasterRegisterViewProps) {
   const [sectionOpenSignal, setSectionOpenSignal] = useState<FormSectionOpenSignal | null>(null)
 
   const triggerSectionOpenState = (value: boolean) => {
@@ -76,7 +77,7 @@ export function MasterRegisterView({ data, actions, isAuthenticated, onSetMateri
 
       <EquipmentSimulationSection data={data} openSignal={sectionOpenSignal} />
 
-      <ExchangeRateSection isAuthenticated={isAuthenticated} openSignal={sectionOpenSignal} />
+      <ExchangeRateSection isAuthenticated={isAuthenticated} openSignal={sectionOpenSignal} onRefreshExchangeRates={onRefreshExchangeRates} />
 
       <MasterOverviewSection data={data} />
     </div>

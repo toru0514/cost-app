@@ -7,6 +7,7 @@ import { useAuth } from "../auth"
 import { useAuditLogs } from "./use-audit-logs"
 import { useStocks } from "./use-stocks"
 import { usePersistence } from "./use-persistence"
+import { useExchangeRates } from "./use-exchange-rates"
 import { useCrudActions } from "./crud-actions"
 
 export function useAppData(initialData?: AppData | null) {
@@ -17,21 +18,24 @@ export function useAppData(initialData?: AppData | null) {
   const auditLog = useAuditLogs(authUserId)
   const persistence = usePersistence(authState, data, setData, auditLog.refreshAuditLogs, initialData)
   const stockManager = useStocks(authState, persistence.dataRef)
+  const exchangeRateManager = useExchangeRates(authState)
 
-  // Reset stock/audit state on logout
+  // Reset stock/audit/exchange-rate state on logout
   useEffect(() => {
     if (authState.status !== "authenticated") {
       auditLog.resetAuditState()
       stockManager.resetStockState()
+      exchangeRateManager.resetExchangeRateState()
     }
   }, [authState.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
-  // Load stocks after remote load completes
+  // Load stocks and exchange rates after remote load completes
   useEffect(() => {
     if (persistence.remoteLoadCompleted && authState.status === "authenticated") {
       void stockManager.refreshStocks()
       void stockManager.refreshMasterStocks()
       void stockManager.refreshStockAlertSettings()
+      void exchangeRateManager.refreshExchangeRates()
     }
   }, [persistence.remoteLoadCompleted, authState.status]) // eslint-disable-line react-hooks/exhaustive-deps
 
@@ -81,6 +85,9 @@ export function useAppData(initialData?: AppData | null) {
     stockAlertSettingsLoaded: stockManager.stockAlertSettingsLoaded,
     updateStockAlertSetting: stockManager.updateStockAlertSetting,
     checkAndNotifyLowStock: stockManager.checkAndNotifyLowStock,
+    exchangeRates: exchangeRateManager.exchangeRates,
+    exchangeRatesLoaded: exchangeRateManager.exchangeRatesLoaded,
+    refreshExchangeRates: exchangeRateManager.refreshExchangeRates,
     actions,
   }
 }

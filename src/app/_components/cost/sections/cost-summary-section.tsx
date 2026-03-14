@@ -16,12 +16,13 @@ import {
 
 interface CostSummarySectionProps {
   data: AppData
+  exchangeRateMap?: Map<string, number>
 }
 
 type SortKey = "product" | "detail" | "amount"
 type SortDirection = "asc" | "desc"
 
-export function CostSummarySection({ data }: CostSummarySectionProps) {
+export function CostSummarySection({ data, exchangeRateMap }: CostSummarySectionProps) {
   const [sortKey, setSortKey] = useState<SortKey>("product")
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
 
@@ -42,7 +43,7 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
 
   const allRows = useMemo(() => {
     return data.products.map((product) => {
-      const costs = calculateProductUnitCosts(product.id, data)
+      const costs = calculateProductUnitCosts(product.id, data, exchangeRateMap)
       const detailText = [
         `材料 ${formatCurrency(costs.material)}`,
         `梱包 ${formatCurrency(costs.packaging)}`,
@@ -56,7 +57,7 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
       ].join(" / ")
       return { product, costs, detailText, productName: product.name }
     })
-  }, [data])
+  }, [data, exchangeRateMap])
 
   const filteredRows = useMemo(
     () => filterRowsBySearch(allRows, query, checkedFields, allFieldKeys),

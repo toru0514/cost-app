@@ -25,6 +25,7 @@ import { ProductCardGrid } from "@/app/_components/list/product-card-grid"
 
 type ListTabProps = {
   data: AppData
+  exchangeRateMap?: Map<string, number>
   isAuthenticated: boolean
   authUserId: string | null
   stocks: Map<string, number>
@@ -50,6 +51,7 @@ type ListTabProps = {
 
 export function ListTab({
   data,
+  exchangeRateMap,
   isAuthenticated,
   authUserId,
   stocks,
@@ -110,10 +112,10 @@ export function ListTab({
   const productCostMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateProductUnitCosts>>()
     data.products.forEach((product) => {
-      map.set(product.id, calculateProductUnitCosts(product.id, data))
+      map.set(product.id, calculateProductUnitCosts(product.id, data, exchangeRateMap))
     })
     return map
-  }, [data])
+  }, [data, exchangeRateMap])
 
   const shippingMethodNameMap = useMemo(() => {
     const map = new Map<string, string>()

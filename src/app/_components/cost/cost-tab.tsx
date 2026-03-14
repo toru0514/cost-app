@@ -20,6 +20,7 @@ import { ProfitSimulationSection } from "./sections/profit-simulation-section"
 
 interface CostTabProps {
   data: AppData
+  exchangeRateMap?: Map<string, number>
 }
 
 type CostSectionKey =
@@ -67,7 +68,7 @@ const loadCostTabOpenState = (): Record<CostSectionKey, boolean> => {
   }
 }
 
-export function CostTab({ data }: CostTabProps) {
+export function CostTab({ data, exchangeRateMap }: CostTabProps) {
   const [openState, setOpenState] = useState<Record<CostSectionKey, boolean>>(() => loadCostTabOpenState())
 
   useEffect(() => {
@@ -128,12 +129,12 @@ export function CostTab({ data }: CostTabProps) {
 
       <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("summary", "原価サマリ")}
-        {openState.summary && <CostSummarySection data={data} />}
+        {openState.summary && <CostSummarySection data={data} exchangeRateMap={exchangeRateMap} />}
       </div>
 
       <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("profitSimulation", "利益シミュレーション")}
-        {openState.profitSimulation && <ProfitSimulationSection data={data} />}
+        {openState.profitSimulation && <ProfitSimulationSection data={data} exchangeRateMap={exchangeRateMap} />}
       </div>
 
       <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
