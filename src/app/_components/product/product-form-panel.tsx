@@ -115,32 +115,28 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
     scrollToFormTop()
   }
 
+  const hasStep1ValidationError = (): boolean => {
+    if (currentStep !== 1) return false
+    const missingFields = validateProductForm()
+    if (missingFields.length > 0) {
+      toast.error("必須項目が未入力です", {
+        description: `${missingFields.join("、")}を入力してください。`,
+      })
+      return true
+    }
+    return false
+  }
+
   const handleStepNext = (event?: MouseEvent<HTMLButtonElement>) => {
     event?.preventDefault()
-    if (currentStep === 1) {
-      const missingFields = validateProductForm()
-      if (missingFields.length > 0) {
-        toast.error("必須項目が未入力です", {
-          description: `${missingFields.join("、")}を入力してください。`,
-        })
-        return
-      }
-    }
+    if (hasStep1ValidationError()) return
     setCurrentStep((prev) => Math.min(totalSteps, prev + 1))
     scrollToFormTop()
   }
 
   const handleSkipToEnd = (event?: MouseEvent<HTMLButtonElement>) => {
     event?.preventDefault()
-    if (currentStep === 1) {
-      const missingFields = validateProductForm()
-      if (missingFields.length > 0) {
-        toast.error("必須項目が未入力です", {
-          description: `${missingFields.join("、")}を入力してください。`,
-        })
-        return
-      }
-    }
+    if (hasStep1ValidationError()) return
     setCurrentStep(totalSteps)
     scrollToFormTop()
   }
