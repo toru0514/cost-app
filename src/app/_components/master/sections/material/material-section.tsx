@@ -166,6 +166,7 @@ export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialS
             <NumberInput
               placeholder="例: 320"
               value={materialForm.unitCost}
+              enableCommaSeparator
               onValueChange={(next) => setMaterialForm((prev) => ({ ...prev, unitCost: next === "" ? 0 : next }))}
             />
             <FieldHint>セット価格を入力。セット数量で割った値が商品登録時に使われます。</FieldHint>

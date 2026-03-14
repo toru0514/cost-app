@@ -11,6 +11,14 @@ import {
 } from "@/components/ui/dialog"
 import type { AppData, Product } from "@/lib/types"
 
+export type BulkDeleteDialogProps = {
+  open: boolean
+  itemCount: number
+  itemType: string
+  onClose: () => void
+  onConfirm: () => void
+}
+
 type ConfirmationDialogsProps = {
   pendingDeleteProduct: Product | null
   onCloseDeleteProduct: () => void
@@ -22,6 +30,8 @@ type ConfirmationDialogsProps = {
   remoteLoadCompleted: boolean
   onDiscardGuestData: () => void
   onMergeGuestData: () => void
+  // 一括削除ダイアログ
+  bulkDelete?: BulkDeleteDialogProps | null
 }
 
 export function ConfirmationDialogs({
@@ -35,6 +45,7 @@ export function ConfirmationDialogs({
   remoteLoadCompleted,
   onDiscardGuestData,
   onMergeGuestData,
+  bulkDelete,
 }: ConfirmationDialogsProps) {
   return (
     <>
@@ -90,6 +101,25 @@ export function ConfirmationDialogs({
             </Button>
             <Button type="button" onClick={onMergeGuestData}>
               マージする
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      {/* 一括削除確認ダイアログ */}
+      <Dialog open={bulkDelete?.open ?? false} onOpenChange={(open) => !open && bulkDelete?.onClose()}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>一括削除の確認</DialogTitle>
+            <DialogDescription>
+              {bulkDelete ? `${bulkDelete.itemCount}件の${bulkDelete.itemType}を削除しますか？この操作は取り消せません。` : ""}
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={bulkDelete?.onClose}>
+              キャンセル
+            </Button>
+            <Button type="button" variant="destructive" onClick={bulkDelete?.onConfirm}>
+              {bulkDelete?.itemCount}件を削除
             </Button>
           </DialogFooter>
         </DialogContent>

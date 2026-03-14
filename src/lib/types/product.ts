@@ -3,6 +3,8 @@ export type ProductSizeVariant = {
   quantity: number
 }
 
+export type ProductStatus = "draft" | "active" | "discontinued"
+
 export type Product = {
   id: string
   name: string
@@ -22,6 +24,7 @@ export type Product = {
   }
   equipmentIds: string[]
   imageUrl?: string
+  status?: ProductStatus
 }
 
 export type OptionPreset = {

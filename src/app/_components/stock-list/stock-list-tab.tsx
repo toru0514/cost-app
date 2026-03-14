@@ -358,7 +358,7 @@ export function StockListTab({
       <div className="flex items-center gap-1.5">
         <Switch
           checked={enabled}
-          onCheckedChange={(checked) => handleToggleAlert(itemType, itemId, checked)}
+          onCheckedChange={(checked: boolean) => handleToggleAlert(itemType, itemId, checked)}
           aria-label="在庫通知"
         />
         {enabled ? <Bell className="h-3.5 w-3.5 text-amber-500" /> : <BellOff className="h-3.5 w-3.5 text-muted-foreground" />}

@@ -1,9 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { Bell, BellOff, Copy, Edit3, GripVertical, Trash2 } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Spinner } from "@/components/ui/spinner"
 import { Switch } from "@/components/ui/switch"
@@ -22,6 +23,7 @@ import {
 } from "@/app/_components/shared/search-with-scope"
 
 export const CUSTOMIZABLE_PRODUCT_COLUMNS = [
+  "status",
   "stock",
   "stockAlert",
   "category",
@@ -62,6 +64,7 @@ type Props = {
   onEdit: (productId: string) => void
   onCopy: (productId: string) => void
   onDelete: (product: Product) => void
+  onBulkDelete?: (products: Product[]) => void
   stockAlertSettings: Map<string, StockAlertSetting>
   stockAlertSettingsLoaded: boolean
   onUpdateStockAlertSetting: (
@@ -79,6 +82,7 @@ type Props = {
 }
 
 const COLUMN_LABELS: Record<CustomizableProductColumnKey, string> = {
+  status: "ステータス",
   stock: "在庫",
   stockAlert: "通知",
   category: "カテゴリ",
@@ -90,6 +94,12 @@ const COLUMN_LABELS: Record<CustomizableProductColumnKey, string> = {
   salePrice: "販売価格",
   profit: "利益",
   notes: "備考",
+}
+
+const STATUS_DISPLAY: Record<string, { label: string; className: string }> = {
+  draft: { label: "下書き", className: "bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-300" },
+  active: { label: "販売中", className: "bg-green-100 text-green-700 dark:bg-green-900 dark:text-green-300" },
+  discontinued: { label: "廃番", className: "bg-red-100 text-red-700 dark:bg-red-900 dark:text-red-300" },
 }
 
 const moveBefore = (
@@ -147,6 +157,7 @@ export function CustomizableProductTable({
   onEdit,
   onCopy,
   onDelete,
+  onBulkDelete,
   stockAlertSettings,
   stockAlertSettingsLoaded,
   onUpdateStockAlertSetting,
@@ -157,6 +168,7 @@ export function CustomizableProductTable({
   const [busyKey, setBusyKey] = useState<string | null>(null)
   const [thresholdInputs, setThresholdInputs] = useState<Map<string, string>>(new Map())
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
+  const [selectedProductIds, setSelectedProductIds] = useState<Set<string>>(new Set())
 
   const searchFields: SearchField[] = useMemo(
     () => [
@@ -184,6 +196,69 @@ export function CustomizableProductTable({
   }, [entries, entryRows, query, checkedFields, allFieldKeys])
 
   const pagination = useTablePagination(filteredEntries)
+
+  // 現在のページの商品ID
+  const currentPageProductIds = useMemo(
+    () => pagination.pagedRows.map((e) => e.product.id),
+    [pagination.pagedRows]
+  )
+
+  // 全選択状態の計算
+  const allCurrentPageSelected = useMemo(
+    () => currentPageProductIds.length > 0 && currentPageProductIds.every((id) => selectedProductIds.has(id)),
+    [currentPageProductIds, selectedProductIds]
+  )
+
+  const someCurrentPageSelected = useMemo(
+    () => currentPageProductIds.some((id) => selectedProductIds.has(id)),
+    [currentPageProductIds, selectedProductIds]
+  )
+
+  // 選択されている商品のリスト
+  const selectedProducts = useMemo(
+    () => entries.filter((e) => selectedProductIds.has(e.product.id)).map((e) => e.product),
+    [entries, selectedProductIds]
+  )
+
+  // チェックボックスのハンドラー
+  const handleSelectAll = useCallback(() => {
+    if (allCurrentPageSelected) {
+      // 全解除
+      setSelectedProductIds((prev) => {
+        const next = new Set(prev)
+        currentPageProductIds.forEach((id) => next.delete(id))
+        return next
+      })
+    } else {
+      // 全選択
+      setSelectedProductIds((prev) => {
+        const next = new Set(prev)
+        currentPageProductIds.forEach((id) => next.add(id))
+        return next
+      })
+    }
+  }, [allCurrentPageSelected, currentPageProductIds])
+
+  const handleSelectProduct = useCallback((productId: string, checked: boolean) => {
+    setSelectedProductIds((prev) => {
+      const next = new Set(prev)
+      if (checked) {
+        next.add(productId)
+      } else {
+        next.delete(productId)
+      }
+      return next
+    })
+  }, [])
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedProducts.length === 0) return
+    onBulkDelete?.(selectedProducts)
+  }, [selectedProducts, onBulkDelete])
+
+  const clearSelection = useCallback(() => {
+    setSelectedProductIds(new Set())
+  }, [])
 
   const hiddenSet = useMemo(() => new Set(columnSettings.hiddenColumns), [columnSettings.hiddenColumns])
   const visibleColumns = useMemo(
@@ -270,6 +345,15 @@ export function CustomizableProductTable({
     const stockQuantity = stocks.get(product.id) ?? 0
     const isBusy = busyKey?.startsWith(`${product.id}:`) ?? false
     switch (key) {
+      case "status": {
+        const status = product.status ?? "active"
+        const display = STATUS_DISPLAY[status] ?? STATUS_DISPLAY.active
+        return (
+          <span className={`inline-flex rounded px-2 py-0.5 text-xs font-medium ${display.className}`}>
+            {display.label}
+          </span>
+        )
+      }
       case "stock": {
         // 在庫数に応じた色分け
         const stockColorClass =
@@ -340,7 +424,7 @@ export function CustomizableProductTable({
           <div className="flex items-center gap-1">
             <Switch
               checked={alertEnabled}
-              onCheckedChange={(checked) => handleToggleAlert(product.id, checked)}
+              onCheckedChange={(checked: boolean) => handleToggleAlert(product.id, checked)}
               aria-label="在庫通知"
               className="scale-75"
             />
@@ -467,10 +551,48 @@ export function CustomizableProductTable({
         </div>
       )}
 
+      {/* 一括操作ツールバー（選択時のみ表示） */}
+      {selectedProductIds.size > 0 && (
+        <div className="flex items-center justify-between gap-2 rounded-md border border-blue-200 bg-blue-50 px-3 py-2 dark:border-blue-900 dark:bg-blue-950/40">
+          <span className="text-sm font-medium text-blue-700 dark:text-blue-300">
+            {selectedProductIds.size}件を選択中
+          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              onClick={clearSelection}
+              className="text-blue-700 hover:bg-blue-100 dark:text-blue-300 dark:hover:bg-blue-900"
+            >
+              選択解除
+            </Button>
+            {onBulkDelete && (
+              <Button
+                type="button"
+                size="sm"
+                variant="destructive"
+                onClick={handleBulkDelete}
+              >
+                <Trash2 className="mr-1 h-4 w-4" />
+                一括削除
+              </Button>
+            )}
+          </div>
+        </div>
+      )}
+
       <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x rounded-lg border">
         <Table>
           <TableHeader>
             <TableRow className="bg-muted/50 hover:bg-muted/50">
+              <TableHead className="w-[40px]">
+                <Checkbox
+                  checked={someCurrentPageSelected ? (allCurrentPageSelected ? true : "indeterminate") : false}
+                  onCheckedChange={handleSelectAll}
+                  aria-label="全て選択"
+                />
+              </TableHead>
               <TableHead className="font-semibold">商品</TableHead>
               {visibleColumns.map((key) => (
                 <TableHead
@@ -507,6 +629,13 @@ export function CustomizableProductTable({
           <TableBody>
             {pagination.pagedRows.map((entry) => (
               <TableRow key={entry.product.id} className="group">
+                <TableCell>
+                  <Checkbox
+                    checked={selectedProductIds.has(entry.product.id)}
+                    onCheckedChange={(checked: boolean | "indeterminate") => handleSelectProduct(entry.product.id, checked === true)}
+                    aria-label={`${entry.product.name}を選択`}
+                  />
+                </TableCell>
                 <TableCell className="font-medium">
                   <HighlightText text={entry.product.name} query={query} />
                 </TableCell>

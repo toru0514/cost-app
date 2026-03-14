@@ -19,11 +19,52 @@ type HistoryLog = {
   hasPreviousData: boolean
 }
 
+type DiffDetailItem = {
+  entity: string
+  operation: "create" | "update" | "delete"
+  key: string
+  changes?: { field: string; before: unknown; after: unknown }[]
+}
+
 export async function GET(request: Request) {
   const auth = await authenticateApiRequest(request)
   if ("error" in auth) return auth.error
-  const { user, supabase } = auth
+  const { supabase } = auth
 
+  const url = new URL(request.url)
+  const logId = url.searchParams.get("logId")
+
+  // 特定のログの詳細を取得する場合
+  if (logId) {
+    try {
+      const { data: log, error: logError } = await supabase
+        .from("sync_audit_logs")
+        .select("id, metadata, created_at")
+        .eq("id", logId)
+        .single()
+
+      if (logError || !log) {
+        return NextResponse.json({ error: "Log not found" }, { status: 404 })
+      }
+
+      const metadata = (log.metadata ?? {}) as Record<string, unknown>
+      const diffItems = (metadata.diffItems as DiffDetailItem[]) ?? []
+      const summary = (metadata.summary as HistoryLog["summary"]) ?? null
+
+      return NextResponse.json({
+        id: log.id,
+        createdAt: log.created_at,
+        action: (metadata.action as string) ?? "unknown",
+        summary,
+        diffItems,
+      })
+    } catch (error) {
+      console.error("Failed to load bulk sync history detail", error)
+      return NextResponse.json({ error: "Failed to load history detail" }, { status: 500 })
+    }
+  }
+
+  // 履歴一覧の取得
   try {
     const { data: logs, error: logsError } = await supabase
       .from("sync_audit_logs")

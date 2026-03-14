@@ -125,6 +125,7 @@ export function PackagingSection({ data, actions, isAuthenticated, onSetPackagin
             <NumberInput
               placeholder="例: 80"
               value={packagingForm.unitCost}
+              enableCommaSeparator
               onValueChange={(next) => setPackagingForm((prev) => ({ ...prev, unitCost: next === "" ? 0 : next }))}
             />
             <FieldHint>梱包材を仕入れる際の単価。セット売りの場合は下の数量と合わせて設定。</FieldHint>
