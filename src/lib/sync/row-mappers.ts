@@ -155,6 +155,7 @@ export const mapProduct = (row: ProductRow): Product => ({
   },
   equipmentIds: Array.isArray(row.equipment_ids) ? row.equipment_ids : [],
   imageUrl: row.image_url ?? undefined,
+  status: (row.status as Product["status"]) ?? "active",
 })
 
 export const mapMaterialEntry = (row: MaterialCostRow): MaterialCostEntry => ({

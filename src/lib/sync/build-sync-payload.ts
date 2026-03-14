@@ -139,6 +139,7 @@ export function buildSyncPayload(data: AppData, previous?: AppData) {
       expected_production_quantity: item.expectedProduction.quantity,
       equipment_ids: item.equipmentIds ?? [],
       image_url: item.imageUrl ?? null,
+      status: item.status ?? "active",
     })),
     products_deleted: toDeletePayload(prev.products, data.products),
     cost_entries_materials: data.costEntries.materials.map((item) => ({

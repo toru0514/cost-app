@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import type { AppActions } from "@/lib/app-data"
 import type { AppData } from "@/lib/types"
 
+import { Breadcrumb } from "../shared/breadcrumb"
 import { MasterListView } from "./list/master-list-view"
 import { MasterRegisterView } from "./register/master-register-view"
 
@@ -40,8 +41,16 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, mate
     window.localStorage.setItem("cost-app-master-view", view)
   }, [view])
 
+  const breadcrumbItems = [
+    { label: "マスタ登録" },
+    { label: view === "register" ? "マスタ登録" : "登録済みマスタ" },
+  ]
+
   return (
     <div className="space-y-6">
+      {/* パンくずリスト */}
+      <Breadcrumb items={breadcrumbItems} />
+
       {/* ページヘッダー */}
       <div>
         <h1 className="text-2xl font-semibold">マスタ登録</h1>

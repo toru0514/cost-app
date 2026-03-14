@@ -9,7 +9,13 @@ import { NumberInput } from "@/components/ui/number-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { FieldHint } from "../shared/ui"
-import type { AppData, Product } from "@/lib/types"
+import type { AppData, Product, ProductStatus } from "@/lib/types"
+
+const PRODUCT_STATUS_OPTIONS: { value: ProductStatus; label: string }[] = [
+  { value: "draft", label: "下書き" },
+  { value: "active", label: "販売中" },
+  { value: "discontinued", label: "廃番" },
+]
 
 interface ProductBasicsSectionProps {
   data: AppData
@@ -138,6 +144,26 @@ export function ProductBasicsSection({
         value={productForm.name}
         onChange={(event) => setProductForm((prev) => ({ ...prev, name: event.target.value }))}
       />
+      <div className="space-y-1">
+        <Label className="text-xs text-muted-foreground">ステータス</Label>
+        <Select
+          value={productForm.status ?? "active"}
+          onValueChange={(value) =>
+            setProductForm((prev) => ({ ...prev, status: value as ProductStatus }))
+          }
+        >
+          <SelectTrigger className="w-full md:w-[200px]">
+            <SelectValue placeholder="ステータスを選択" />
+          </SelectTrigger>
+          <SelectContent>
+            {PRODUCT_STATUS_OPTIONS.map((option) => (
+              <SelectItem key={option.value} value={option.value}>
+                {option.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">カテゴリ（大 / 中 / 小）</Label>
         <Select
@@ -371,6 +397,7 @@ export function ProductBasicsSection({
         <NumberInput
           placeholder="例: 9500"
           value={productForm.salePrice}
+          enableCommaSeparator
           onValueChange={(next) =>
             setProductForm((prev) => ({
               ...prev,

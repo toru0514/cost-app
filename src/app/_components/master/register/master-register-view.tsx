@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 
 import { CategorySection } from "../sections/category"
 import { EquipmentSimulationSection } from "../sections/equipment"
+import { ExchangeRateSection } from "../sections/exchange-rate"
 import { LaborEquipmentSection } from "../sections/labor"
 import { MasterOverviewSection } from "./master-overview-section"
 import { MaterialSection } from "../sections/material"
@@ -74,6 +75,8 @@ export function MasterRegisterView({ data, actions, isAuthenticated, onSetMateri
       <LaborEquipmentSection data={data} actions={actions} openSignal={sectionOpenSignal} />
 
       <EquipmentSimulationSection data={data} openSignal={sectionOpenSignal} />
+
+      <ExchangeRateSection isAuthenticated={isAuthenticated} openSignal={sectionOpenSignal} />
 
       <MasterOverviewSection data={data} />
     </div>
