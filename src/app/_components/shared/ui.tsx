@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState, type ReactNode } from "react"
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
@@ -41,6 +41,10 @@ export function FormSection({
     return defaultOpen
   })
 
+  // openSignalやsetOpenによる更新後も常に最新値を参照できるようにする
+  const openRef = useRef(open)
+  useEffect(() => { openRef.current = open }, [open])
+
   useEffect(() => {
     if (!storageKey || typeof window === "undefined") return
     window.localStorage.setItem(storageKey, open ? "open" : "closed")
@@ -60,12 +64,10 @@ export function FormSection({
           type="button"
           className="flex flex-1 items-center justify-between gap-3 text-left"
           onClick={() => {
-            setOpen((prev) => {
-              const next = !prev
-              if (next) onOpen?.()
-              else onClose?.()
-              return next
-            })
+            const next = !openRef.current
+            setOpen(next)
+            if (next) onOpen?.()
+            else onClose?.()
           }}
         >
           <div>

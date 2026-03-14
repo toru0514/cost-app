@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 
 import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
 
@@ -94,6 +94,10 @@ const loadMasterListOpenState = (): Record<MasterListSectionKey, boolean> => {
 export function MasterListView({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock, focusSection, onSectionFocus }: MasterListViewProps) {
   const [openState, setOpenState] = useState<Record<MasterListSectionKey, boolean>>(() => loadMasterListOpenState())
 
+  // focusSectionやsetAllOpenStateによる更新後も常に最新値を参照できるようにする
+  const openStateRef = useRef(openState)
+  useEffect(() => { openStateRef.current = openState }, [openState])
+
   useEffect(() => {
     if (typeof window === "undefined") return
     window.localStorage.setItem(MASTER_LIST_OPEN_STATE_STORAGE_KEY, JSON.stringify(openState))
@@ -127,15 +131,13 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
   }
 
   const toggleSection = (key: MasterListSectionKey) => {
-    setOpenState((prev) => {
-      const willOpen = !prev[key]
-      if (willOpen) {
-        onSectionFocus?.(SECTION_KEY_TO_PARAM[key])
-      } else {
-        onSectionFocus?.(null)
-      }
-      return { ...prev, [key]: willOpen }
-    })
+    const willOpen = !openStateRef.current[key]
+    setOpenState((prev) => ({ ...prev, [key]: !prev[key] }))
+    if (willOpen) {
+      onSectionFocus?.(SECTION_KEY_TO_PARAM[key])
+    } else {
+      onSectionFocus?.(null)
+    }
   }
 
   const renderSectionToggle = (key: MasterListSectionKey, label: string) => (
