@@ -1,17 +1,12 @@
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
 import { NextResponse } from "next/server"
+import { authenticateApiRequest } from "@/lib/server/api-auth"
 import { generateExcel } from "@/lib/export/excel-generator"
 import type { AppData } from "@/lib/types"
 
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) return auth.error
 
     const data: AppData = await request.json()
 

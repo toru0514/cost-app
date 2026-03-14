@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { authenticateApiRequest } from "@/lib/server/api-auth"
 
 export type Team = {
   id: string
@@ -12,14 +11,11 @@ export type Team = {
 }
 
 // GET: ユーザーが所属するチーム一覧を取得
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) return auth.error
+    const { user, supabase } = auth
 
     // チームメンバーシップ経由でチーム情報を取得
     const { data, error } = await supabase
@@ -59,12 +55,9 @@ export async function GET() {
 // POST: 新しいチームを作成
 export async function POST(request: Request) {
   try {
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) return auth.error
+    const { user, supabase } = auth
 
     const body = await request.json()
     const { name, description } = body
