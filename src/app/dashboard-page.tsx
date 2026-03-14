@@ -137,8 +137,8 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
         const searchInput = document.querySelector<HTMLInputElement>("[data-search-input]")
         searchInput?.focus()
       }
-      // ?: ショートカットヘルプを表示
-      if (e.key === "?" && !mod && !e.shiftKey) {
+      // ?: ショートカットヘルプを表示（Shift+/で入力される）
+      if (e.key === "?" && !mod) {
         e.preventDefault()
         setShortcutsDialogOpen(true)
       }

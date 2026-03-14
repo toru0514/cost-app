@@ -26,6 +26,18 @@ interface MasterTabProps {
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
 }
 
+const SECTION_LABELS: Record<string, string> = {
+  category: "カテゴリ",
+  material: "材料",
+  packaging: "梱包材",
+  shipping: "配送",
+  fee: "手数料",
+  "option-preset": "オプションプリセット",
+  labor: "労務・設備",
+  equipment: "設備シミュレーション",
+  "exchange-rate": "為替レート",
+}
+
 export function MasterTab({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock }: MasterTabProps) {
   const searchParams = useSearchParams()
   const sectionParam = searchParams.get("section")
@@ -44,6 +56,7 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, mate
   const breadcrumbItems = [
     { label: "マスタ登録" },
     { label: view === "register" ? "マスタ登録" : "登録済みマスタ" },
+    ...(sectionParam && SECTION_LABELS[sectionParam] ? [{ label: SECTION_LABELS[sectionParam] }] : []),
   ]
 
   return (

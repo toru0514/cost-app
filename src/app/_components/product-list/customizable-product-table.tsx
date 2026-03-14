@@ -588,10 +588,9 @@ export function CustomizableProductTable({
             <TableRow className="bg-muted/50 hover:bg-muted/50">
               <TableHead className="w-[40px]">
                 <Checkbox
-                  checked={allCurrentPageSelected}
+                  checked={someCurrentPageSelected ? (allCurrentPageSelected ? true : "indeterminate") : false}
                   onCheckedChange={handleSelectAll}
                   aria-label="全て選択"
-                  className={someCurrentPageSelected && !allCurrentPageSelected ? "data-[state=checked]:bg-primary/50" : ""}
                 />
               </TableHead>
               <TableHead className="font-semibold">商品</TableHead>

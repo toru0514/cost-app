@@ -13,7 +13,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { currencyOptions } from "@/lib/constants"
 import { supabaseClient } from "@/lib/supabase-client"
 import type { ExchangeRate } from "@/lib/types"
-import { createTempId } from "@/lib/utils"
 import { FormSection, type FormSectionOpenSignal } from "../../../shared/ui"
 
 interface ExchangeRateSectionProps {
@@ -78,7 +77,6 @@ export function ExchangeRateSection({ isAuthenticated, openSignal }: ExchangeRat
     try {
       const { error } = await supabaseClient.from("exchange_rates").upsert(
         {
-          id: createTempId(),
           from_currency: form.fromCurrency,
           to_currency: form.toCurrency,
           rate: form.rate,
