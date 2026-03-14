@@ -18,6 +18,7 @@ export function FormSection({
   className = "",
   storageKey,
   openSignal,
+  onOpen,
 }: {
   title: string
   description?: string
@@ -27,6 +28,7 @@ export function FormSection({
   className?: string
   storageKey?: string
   openSignal?: FormSectionOpenSignal | null
+  onOpen?: () => void
 }) {
   const [open, setOpen] = useState(() => {
     if (storageKey && typeof window !== "undefined") {
@@ -55,7 +57,11 @@ export function FormSection({
         <button
           type="button"
           className="flex flex-1 items-center justify-between gap-3 text-left"
-          onClick={() => setOpen((prev) => !prev)}
+          onClick={() => {
+            const nextOpen = !open
+            setOpen(nextOpen)
+            if (nextOpen && onOpen) onOpen()
+          }}
         >
           <div>
             <p className="font-semibold">{title}</p>

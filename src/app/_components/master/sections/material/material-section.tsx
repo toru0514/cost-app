@@ -22,6 +22,7 @@ interface MaterialSectionProps {
   isAuthenticated: boolean
   onSetMaterialStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   openSignal?: FormSectionOpenSignal | null
+  onOpen?: () => void
 }
 
 const INITIAL_FORM: Omit<Material, "id"> = {
@@ -37,7 +38,7 @@ const INITIAL_FORM: Omit<Material, "id"> = {
   imageUrl: "",
 }
 
-export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialStock, openSignal }: MaterialSectionProps) {
+export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialStock, openSignal, onOpen }: MaterialSectionProps) {
   const [materialForm, setMaterialForm] = useState<Omit<Material, "id">>(INITIAL_FORM)
   const [initialStock, setInitialStock] = useState<number>(INITIAL_FORM.unitsPerBatch ?? 1)
   const [initialStockOverridden, setInitialStockOverridden] = useState(false)
@@ -50,6 +51,7 @@ export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialS
       description="名称・単位・サイズ・仕入先まで登録し、材料コスト入力時に再利用します。"
       storageKey="master-section-materials"
       openSignal={openSignal}
+      onOpen={onOpen}
     >
       <div className="space-y-2">
         <form

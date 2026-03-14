@@ -32,6 +32,7 @@ interface MasterListViewProps {
   onAdjustMaterialStock: (id: string, delta: number) => Promise<void>
   onAdjustPackagingStock: (id: string, delta: number) => Promise<void>
   focusSection?: string | null
+  onSectionFocus?: (sectionKey: string | null) => void
 }
 
 type MasterListSectionKey =
@@ -78,7 +79,7 @@ const loadMasterListOpenState = (): Record<MasterListSectionKey, boolean> => {
   }
 }
 
-export function MasterListView({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock, focusSection }: MasterListViewProps) {
+export function MasterListView({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock, focusSection, onSectionFocus }: MasterListViewProps) {
   const [openState, setOpenState] = useState<Record<MasterListSectionKey, boolean>>(() => loadMasterListOpenState())
 
   useEffect(() => {
@@ -114,7 +115,11 @@ export function MasterListView({ data, actions, isAuthenticated, materialStocks,
   }
 
   const toggleSection = (key: MasterListSectionKey) => {
+    const willOpen = !openState[key]
     setOpenState((prev) => ({ ...prev, [key]: !prev[key] }))
+    if (willOpen) {
+      onSectionFocus?.(key === "optionPreset" ? "option-preset" : key)
+    }
   }
 
   const renderSectionToggle = (key: MasterListSectionKey, label: string) => (

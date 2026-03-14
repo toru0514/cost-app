@@ -18,6 +18,7 @@ interface ShippingSectionProps {
   data: AppData
   actions: AppActions
   openSignal?: FormSectionOpenSignal | null
+  onOpen?: () => void
 }
 
 const INITIAL_FORM: Omit<ShippingMethod, "id"> = {
@@ -28,7 +29,7 @@ const INITIAL_FORM: Omit<ShippingMethod, "id"> = {
   note: "",
 }
 
-export function ShippingSection({ data, actions, openSignal }: ShippingSectionProps) {
+export function ShippingSection({ data, actions, openSignal, onOpen }: ShippingSectionProps) {
   const [shippingMethodForm, setShippingMethodForm] = useState<Omit<ShippingMethod, "id">>(INITIAL_FORM)
   const { addShippingMethod } = actions
 
@@ -38,6 +39,7 @@ export function ShippingSection({ data, actions, openSignal }: ShippingSectionPr
       description="宅配便・メール便などの配送手段と送料を登録します。"
       storageKey="master-section-shipping"
       openSignal={openSignal}
+      onOpen={onOpen}
     >
       <div className="space-y-2">
         <form

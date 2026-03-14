@@ -24,9 +24,10 @@ interface MasterRegisterViewProps {
   isAuthenticated: boolean
   onSetMaterialStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
   onSetPackagingStock: (id: string, quantity: number, stockUnit?: string) => Promise<void>
+  onSectionFocus?: (sectionKey: string | null) => void
 }
 
-export function MasterRegisterView({ data, actions, isAuthenticated, onSetMaterialStock, onSetPackagingStock }: MasterRegisterViewProps) {
+export function MasterRegisterView({ data, actions, isAuthenticated, onSetMaterialStock, onSetPackagingStock, onSectionFocus }: MasterRegisterViewProps) {
   const [sectionOpenSignal, setSectionOpenSignal] = useState<FormSectionOpenSignal | null>(null)
 
   const triggerSectionOpenState = (value: boolean) => {
@@ -45,7 +46,7 @@ export function MasterRegisterView({ data, actions, isAuthenticated, onSetMateri
       </div>
 
       <div className="space-y-6">
-        <CategorySection data={data} actions={actions} openSignal={sectionOpenSignal} />
+        <CategorySection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("category")} />
 
         <MaterialSection
           data={data}
@@ -53,6 +54,7 @@ export function MasterRegisterView({ data, actions, isAuthenticated, onSetMateri
           isAuthenticated={isAuthenticated}
           onSetMaterialStock={onSetMaterialStock}
           openSignal={sectionOpenSignal}
+          onOpen={() => onSectionFocus?.("material")}
         />
       </div>
 
@@ -63,20 +65,21 @@ export function MasterRegisterView({ data, actions, isAuthenticated, onSetMateri
           isAuthenticated={isAuthenticated}
           onSetPackagingStock={onSetPackagingStock}
           openSignal={sectionOpenSignal}
+          onOpen={() => onSectionFocus?.("packaging")}
         />
 
-        <ShippingSection data={data} actions={actions} openSignal={sectionOpenSignal} />
+        <ShippingSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("shipping")} />
 
-        <FeeSection data={data} actions={actions} openSignal={sectionOpenSignal} />
+        <FeeSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("fee")} />
 
-        <OptionPresetSection data={data} actions={actions} openSignal={sectionOpenSignal} />
+        <OptionPresetSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("option-preset")} />
       </div>
 
-      <LaborEquipmentSection data={data} actions={actions} openSignal={sectionOpenSignal} />
+      <LaborEquipmentSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("labor")} />
 
-      <EquipmentSimulationSection data={data} openSignal={sectionOpenSignal} />
+      <EquipmentSimulationSection data={data} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("equipment")} />
 
-      <ExchangeRateSection isAuthenticated={isAuthenticated} openSignal={sectionOpenSignal} />
+      <ExchangeRateSection isAuthenticated={isAuthenticated} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("exchange-rate")} />
 
       <MasterOverviewSection data={data} />
     </div>
