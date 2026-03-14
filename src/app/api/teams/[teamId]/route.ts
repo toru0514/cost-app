@@ -1,6 +1,5 @@
 import { NextResponse } from "next/server"
-import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
-import { cookies } from "next/headers"
+import { authenticateApiRequest } from "@/lib/server/api-auth"
 
 // GET: チーム詳細を取得
 export async function GET(
@@ -9,12 +8,9 @@ export async function GET(
 ) {
   try {
     const { teamId } = await context.params
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) return auth.error
+    const { user, supabase } = auth
 
     // チームを取得
     const { data: team, error } = await supabase
@@ -58,12 +54,9 @@ export async function PUT(
 ) {
   try {
     const { teamId } = await context.params
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) return auth.error
+    const { user, supabase } = auth
 
     // 権限確認
     const { data: membership } = await supabase
@@ -110,12 +103,9 @@ export async function DELETE(
 ) {
   try {
     const { teamId } = await context.params
-    const supabase = createRouteHandlerClient({ cookies })
-    const { data: { user } } = await supabase.auth.getUser()
-
-    if (!user) {
-      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
-    }
+    const auth = await authenticateApiRequest(request)
+    if ("error" in auth) return auth.error
+    const { user, supabase } = auth
 
     // オーナーのみ削除可能
     const { data: team } = await supabase
