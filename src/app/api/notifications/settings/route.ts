@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
-import { authenticateApiRequest } from "@/lib/server/api-auth"
+import { createRouteHandlerClient } from "@supabase/auth-helpers-nextjs"
+import { cookies } from "next/headers"
 
 export type NotificationType = "email" | "slack" | "in_app"
 
@@ -10,13 +11,14 @@ export type NotificationSetting = {
 }
 
 // GET: 通知設定を取得
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    const auth = await authenticateApiRequest(request)
-    if ("error" in auth) {
-      return auth.error
+    const supabase = createRouteHandlerClient({ cookies })
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const { user, supabase } = auth
 
     const { data, error } = await supabase
       .from("notification_settings")
@@ -50,11 +52,12 @@ export async function GET(request: Request) {
 // PUT: 通知設定を更新
 export async function PUT(request: Request) {
   try {
-    const auth = await authenticateApiRequest(request)
-    if ("error" in auth) {
-      return auth.error
+    const supabase = createRouteHandlerClient({ cookies })
+    const { data: { user } } = await supabase.auth.getUser()
+
+    if (!user) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
-    const { user, supabase } = auth
 
     const body = await request.json()
     const { notification_type, enabled, config } = body as NotificationSetting
