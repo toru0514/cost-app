@@ -2,6 +2,7 @@
 
 import { useMemo, useState } from "react"
 
+import { Button } from "@/components/ui/button"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { useTablePagination } from "@/hooks/use-table-pagination"
@@ -13,6 +14,8 @@ import {
   useSearchWithScope,
   type SearchField,
 } from "@/app/_components/shared/search-with-scope"
+import { FileDown, FileSpreadsheet } from "lucide-react"
+import { toast } from "sonner"
 
 interface CostSummarySectionProps {
   data: AppData
@@ -90,11 +93,95 @@ export function CostSummarySection({ data }: CostSummarySectionProps) {
     return sortDirection === "asc" ? " ↑" : " ↓"
   }
 
+  const [isExporting, setIsExporting] = useState(false)
+
+  const handleExportPdf = async () => {
+    if (data.products.length === 0) {
+      toast.error("エクスポートする商品がありません")
+      return
+    }
+    setIsExporting(true)
+    try {
+      const response = await fetch("/api/export/pdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) throw new Error("PDF generation failed")
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `cost-report-${new Date().toISOString().slice(0, 10)}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      toast.success("PDFをダウンロードしました")
+    } catch {
+      toast.error("PDFの生成に失敗しました")
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
+  const handleExportExcel = async () => {
+    if (data.products.length === 0) {
+      toast.error("エクスポートする商品がありません")
+      return
+    }
+    setIsExporting(true)
+    try {
+      const response = await fetch("/api/export/excel", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      })
+      if (!response.ok) throw new Error("Excel generation failed")
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `cost-report-${new Date().toISOString().slice(0, 10)}.xlsx`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      toast.success("Excelをダウンロードしました")
+    } catch {
+      toast.error("Excelの生成に失敗しました")
+    } finally {
+      setIsExporting(false)
+    }
+  }
+
   return (
     <section className="min-w-0 space-y-3">
-      <div>
-        <h2 className="text-xl font-semibold">原価サマリ</h2>
-        <p className="text-sm text-muted-foreground">カテゴリ別の積み上げと合計を確認できます。</p>
+      <div className="flex flex-wrap items-start justify-between gap-2">
+        <div>
+          <h2 className="text-xl font-semibold">原価サマリ</h2>
+          <p className="text-sm text-muted-foreground">カテゴリ別の積み上げと合計を確認できます。</p>
+        </div>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportPdf}
+            disabled={isExporting || data.products.length === 0}
+          >
+            <FileDown className="mr-1.5 h-4 w-4" />
+            PDF
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleExportExcel}
+            disabled={isExporting || data.products.length === 0}
+          >
+            <FileSpreadsheet className="mr-1.5 h-4 w-4" />
+            Excel
+          </Button>
+        </div>
       </div>
       <div className="space-y-3">
         <SearchWithScope

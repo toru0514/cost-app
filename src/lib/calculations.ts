@@ -109,6 +109,88 @@ export function formatCurrency(value: number, currency = "JPY") {
   }).format(isFinite(value) ? value : 0)
 }
 
+/**
+ * 原価シミュレーション用の変動率型
+ * 1.0 = 変動なし、1.1 = 10%増、0.9 = 10%減
+ */
+export type CostVarianceRates = {
+  material?: number
+  packaging?: number
+  labor?: number
+  outsourcing?: number
+  development?: number
+  equipment?: number
+  logistics?: number
+  electricity?: number
+  fees?: number
+}
+
+export type SimulatedProductCosts = {
+  original: ReturnType<typeof calculateProductUnitCosts>
+  simulated: ReturnType<typeof calculateProductUnitCosts>
+  diff: ReturnType<typeof calculateProductUnitCosts>
+}
+
+/**
+ * 変動率を適用した原価シミュレーションを計算
+ */
+export function simulateProductCosts(
+  productId: string,
+  data: AppData,
+  rates: CostVarianceRates
+): SimulatedProductCosts {
+  const original = calculateProductUnitCosts(productId, data)
+
+  const materialRate = rates.material ?? 1
+  const packagingRate = rates.packaging ?? 1
+  const laborRate = rates.labor ?? 1
+  const outsourcingRate = rates.outsourcing ?? 1
+  const developmentRate = rates.development ?? 1
+  const equipmentRate = rates.equipment ?? 1
+  const logisticsRate = rates.logistics ?? 1
+  const electricityRate = rates.electricity ?? 1
+  const feesRate = rates.fees ?? 1
+
+  const simulated = {
+    material: original.material * materialRate,
+    packaging: original.packaging * packagingRate,
+    labor: original.labor * laborRate,
+    outsourcing: original.outsourcing * outsourcingRate,
+    development: original.development * developmentRate,
+    equipment: original.equipment * equipmentRate,
+    logistics: original.logistics * logisticsRate,
+    electricity: original.electricity * electricityRate,
+    fees: original.fees * feesRate,
+    total: 0,
+  }
+
+  simulated.total =
+    simulated.material +
+    simulated.packaging +
+    simulated.labor +
+    simulated.outsourcing +
+    simulated.development +
+    simulated.equipment +
+    simulated.logistics +
+    simulated.electricity +
+    simulated.fees
+
+  const diff = {
+    material: simulated.material - original.material,
+    packaging: simulated.packaging - original.packaging,
+    labor: simulated.labor - original.labor,
+    outsourcing: simulated.outsourcing - original.outsourcing,
+    development: simulated.development - original.development,
+    equipment: simulated.equipment - original.equipment,
+    logistics: simulated.logistics - original.logistics,
+    electricity: simulated.electricity - original.electricity,
+    fees: simulated.fees - original.fees,
+    total: simulated.total - original.total,
+  }
+
+  return { original, simulated, diff }
+}
+
 export function calculateProductUnitCosts(productId: string, data: AppData) {
   const product = data.products.find((p) => p.id === productId)
   const quantity = product?.expectedProduction.quantity || 1
