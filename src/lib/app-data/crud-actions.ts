@@ -215,6 +215,29 @@ export function useCrudActions(
     stockCleanup.cleanupMaterialStock(id)
   }, [update, stockCleanup])
 
+  const bulkUpdateMaterials = useCallback((ids: string[], updates: Partial<Pick<Material, "supplier" | "currency" | "unit" | "usePercentageMode">>) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      materials: prev.materials.map((material) =>
+        idSet.has(material.id) ? { ...material, ...updates } : material
+      ),
+    }))
+  }, [update])
+
+  const bulkRemoveMaterials = useCallback((ids: string[]) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      materials: prev.materials.filter((material) => !idSet.has(material.id)),
+      costEntries: {
+        ...prev.costEntries,
+        materials: prev.costEntries.materials.filter((entry) => !idSet.has(entry.materialId)),
+      },
+    }))
+    ids.forEach((id) => stockCleanup.cleanupMaterialStock(id))
+  }, [update, stockCleanup])
+
   const addPackagingItem = useCallback(
     (input: Omit<PackagingItem, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -613,6 +636,8 @@ export function useCrudActions(
     addMaterial,
     updateMaterial,
     removeMaterial,
+    bulkUpdateMaterials,
+    bulkRemoveMaterials,
     addPackagingItem,
     updatePackagingItem,
     removePackagingItem,
