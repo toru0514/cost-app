@@ -274,7 +274,7 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
             </div>
           </header>
 
-          <main className={`flex-1 min-w-0 overflow-x-hidden p-4 pr-10 md:p-6 ${mainMaxWidth}`}>
+          <main className={`flex-1 min-w-0 overflow-x-hidden p-4 md:p-6 ${mainMaxWidth}`}>
             {/* オンボーディングバナー（初回訪問時のみ表示） */}
             <OnboardingBanner
               onNavigateToMaster={() => handleTabChange("master")}

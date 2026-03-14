@@ -341,9 +341,10 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
 
       const url = `https://docs.google.com/spreadsheets/d/${data.spreadsheetId}/edit`
       if (newWindow) {
+        newWindow.opener = null
         newWindow.location.href = url
       } else {
-        window.location.href = url
+        toast.info("ポップアップがブロックされました。ブラウザの設定を確認してください。")
       }
     } catch (error) {
       newWindow?.close()
