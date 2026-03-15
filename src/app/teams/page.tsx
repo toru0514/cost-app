@@ -5,10 +5,11 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { fetchWithAuth } from "@/lib/fetch-with-auth"
+import { AuthPageLayout } from "@/app/_components/shared/auth-page-layout"
 import { TeamList } from "@/app/_components/teams/team-list"
 import { TeamMembersSection } from "@/app/_components/teams/team-members-section"
 import { InviteMemberDialog } from "@/app/_components/teams/invite-member-dialog"
-import { ArrowLeft, Settings, Trash2 } from "lucide-react"
+import { Settings, Trash2 } from "lucide-react"
 import { toast } from "sonner"
 
 type Team = {
@@ -28,7 +29,7 @@ export default function TeamsPage() {
 
   useEffect(() => {
     if (authState.status === "guest") {
-      router.push("/cost")
+      router.push("/login")
     }
   }, [authState.status, router])
 
@@ -99,15 +100,8 @@ export default function TeamsPage() {
   const isOwner = selectedTeam?.role === "owner"
 
   return (
-    <main className="min-h-screen bg-background">
-      <div className="mx-auto max-w-4xl p-6">
-        <div className="mb-6">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="mr-1.5 h-4 w-4" />
-            戻る
-          </Button>
-        </div>
-
+    <AuthPageLayout title="チーム" activeMenu="teams">
+      <div className="p-6">
         <div className="flex gap-6">
           {/* 左サイドバー: チーム一覧 */}
           <div className="w-64 shrink-0 rounded-lg border p-4">
@@ -125,7 +119,7 @@ export default function TeamsPage() {
                 <div className="rounded-lg border p-6">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h1 className="text-2xl font-bold">{selectedTeam.name}</h1>
+                      <h2 className="text-2xl font-bold">{selectedTeam.name}</h2>
                       {selectedTeam.description && (
                         <p className="mt-1 text-muted-foreground">{selectedTeam.description}</p>
                       )}
@@ -172,6 +166,6 @@ export default function TeamsPage() {
           </div>
         </div>
       </div>
-    </main>
+    </AuthPageLayout>
   )
 }
