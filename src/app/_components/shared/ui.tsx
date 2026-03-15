@@ -55,6 +55,9 @@ export function FormSection({
     // フォームセクションを外部シグナルで展開/格納する意図的な更新
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(openSignal.value)
+    if (openSignal.value) onOpen?.()
+    else onClose?.()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openSignal])
 
   return (
@@ -78,7 +81,14 @@ export function FormSection({
         </button>
         {action ? <div className="shrink-0">{action}</div> : null}
       </div>
-      {open && <div className="border-t p-4 space-y-4">{children}</div>}
+      {open && (
+        <div
+          className="border-t p-4 space-y-4"
+          onFocusCapture={() => onOpen?.()}
+        >
+          {children}
+        </div>
+      )}
     </section>
   )
 }
