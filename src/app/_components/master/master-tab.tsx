@@ -46,6 +46,8 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, mate
   }, [view])
 
   const handleSectionFocus = useCallback((sectionKey: string | null) => {
+    const current = new URLSearchParams(window.location.search).get("section")
+    if (sectionKey === current) return
     if (sectionKey) {
       router.replace(`${pathname}?section=${sectionKey}`, { scroll: false })
     } else {

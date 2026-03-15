@@ -53,11 +53,9 @@ export function FormSection({
   useEffect(() => {
     if (!openSignal) return
     // フォームセクションを外部シグナルで展開/格納する意図的な更新
+    // 外部シグナル経由ではonOpen/onCloseを呼ばない（「全て開く/閉じる」との衝突を防止）
     // eslint-disable-next-line react-hooks/set-state-in-effect
     setOpen(openSignal.value)
-    if (openSignal.value) onOpen?.()
-    else onClose?.()
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [openSignal])
 
   return (
@@ -84,7 +82,7 @@ export function FormSection({
       {open && (
         <div
           className="border-t p-4 space-y-4"
-          onFocusCapture={() => onOpen?.()}
+          onFocusCapture={() => { if (open) onOpen?.() }}
         >
           {children}
         </div>

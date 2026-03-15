@@ -299,12 +299,16 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
                   <span className="text-xs font-semibold md:text-sm">
                     {tabOptions.find((t) => t.value === activeTab)?.label ?? activeTab}
                   </span>
-                  {activeTab === "master" && searchParams.get("section") && SECTION_LABELS[searchParams.get("section")!] && (
-                    <>
-                      <ChevronRight className="h-3 w-3 text-muted-foreground" />
-                      <span className="text-xs font-semibold md:text-sm">{SECTION_LABELS[searchParams.get("section")!]}</span>
-                    </>
-                  )}
+                  {(() => {
+                    const sectionKey = activeTab === "master" ? searchParams.get("section") : null
+                    const sectionLabel = sectionKey ? SECTION_LABELS[sectionKey] : null
+                    return sectionLabel ? (
+                      <>
+                        <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs font-semibold md:text-sm">{sectionLabel}</span>
+                      </>
+                    ) : null
+                  })()}
                   {isSaving && <Badge variant="outline" className="text-xs text-muted-foreground">保存中...</Badge>}
                 </div>
               </div>
