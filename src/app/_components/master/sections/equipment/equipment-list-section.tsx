@@ -5,11 +5,12 @@ import { useMemo, useState } from "react"
 import { Copy, Edit3, Trash2 } from "lucide-react"
 
 import {
-  SearchWithScope,
   filterRowsBySearch,
   useSearchWithScope,
   type SearchField,
 } from "@/app/_components/shared/search-with-scope"
+import { TableToolbar } from "@/app/_components/shared/table-toolbar"
+import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -56,7 +57,12 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
   const searchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }, { key: "note", label: "備考" }], [])
   const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
   const filteredRows = useMemo(() => filterRowsBySearch(data.equipments, query, checkedFields, allFieldKeys), [data.equipments, query, checkedFields, allFieldKeys])
-  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(filteredRows)
+  const sortOptions = useMemo<SortOption<(typeof filteredRows)[number]>[]>(() => [
+    { key: "name", label: "名称" },
+    { key: "acquisitionCost", label: "取得額", compareFn: (a, b) => a.acquisitionCost - b.acquisitionCost },
+  ], [])
+  const { sortedItems, sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts } = useTableSort(filteredRows, sortOptions, "name", "asc")
+  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(sortedItems)
 
   const { updateEquipment, removeEquipment, addEquipment } = actions
 
@@ -152,7 +158,10 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
           <div className="space-y-2">
-          <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
+          <TableToolbar
+            search={{ fields: searchFields, query, onQueryChange: setQuery, checkedFields, onCheckedFieldsChange: setCheckedFields }}
+            sort={{ sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts }}
+          />
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="min-w-[740px]">
               <TableHeader>

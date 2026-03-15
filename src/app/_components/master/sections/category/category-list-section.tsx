@@ -5,11 +5,12 @@ import { useMemo, useState } from "react"
 import { Copy, Edit3, Trash2 } from "lucide-react"
 
 import {
-  SearchWithScope,
   filterRowsBySearch,
   useSearchWithScope,
   type SearchField,
 } from "@/app/_components/shared/search-with-scope"
+import { TableToolbar } from "@/app/_components/shared/table-toolbar"
+import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -79,19 +80,31 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
   const largeSearchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }], [])
   const { query: largeQuery, setQuery: setLargeQuery, checkedFields: largeCheckedFields, setCheckedFields: setLargeCheckedFields, allFieldKeys: largeAllFieldKeys } = useSearchWithScope(largeSearchFields)
   const filteredLarge = useMemo(() => filterRowsBySearch(data.categories.large, largeQuery, largeCheckedFields, largeAllFieldKeys), [data.categories.large, largeQuery, largeCheckedFields, largeAllFieldKeys])
-  const { pagedRows: pagedLarge, currentPage: largeCurrentPage, totalPages: largeTotalPages, onPageChange: onLargePageChange } = useTablePagination(filteredLarge)
+  const largeSortOptions = useMemo<SortOption<(typeof filteredLarge)[number]>[]>(() => [
+    { key: "name", label: "名称" },
+  ], [])
+  const { sortedItems: sortedLarge, sortKey: largeSortKey, sortDirection: largeSortDir, setSortKey: setLargeSortKey, setSortDirection: setLargeSortDir, sortOptions: largeSortOpts } = useTableSort(filteredLarge, largeSortOptions, "name", "asc")
+  const { pagedRows: pagedLarge, currentPage: largeCurrentPage, totalPages: largeTotalPages, onPageChange: onLargePageChange } = useTablePagination(sortedLarge)
 
   // Search & pagination for medium categories
   const mediumSearchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }], [])
   const { query: mediumQuery, setQuery: setMediumQuery, checkedFields: mediumCheckedFields, setCheckedFields: setMediumCheckedFields, allFieldKeys: mediumAllFieldKeys } = useSearchWithScope(mediumSearchFields)
   const filteredMedium = useMemo(() => filterRowsBySearch(data.categories.medium, mediumQuery, mediumCheckedFields, mediumAllFieldKeys), [data.categories.medium, mediumQuery, mediumCheckedFields, mediumAllFieldKeys])
-  const { pagedRows: pagedMedium, currentPage: mediumCurrentPage, totalPages: mediumTotalPages, onPageChange: onMediumPageChange } = useTablePagination(filteredMedium)
+  const mediumSortOptions = useMemo<SortOption<(typeof filteredMedium)[number]>[]>(() => [
+    { key: "name", label: "名称" },
+  ], [])
+  const { sortedItems: sortedMedium, sortKey: mediumSortKey, sortDirection: mediumSortDir, setSortKey: setMediumSortKey, setSortDirection: setMediumSortDir, sortOptions: mediumSortOpts } = useTableSort(filteredMedium, mediumSortOptions, "name", "asc")
+  const { pagedRows: pagedMedium, currentPage: mediumCurrentPage, totalPages: mediumTotalPages, onPageChange: onMediumPageChange } = useTablePagination(sortedMedium)
 
   // Search & pagination for small categories
   const smallSearchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }], [])
   const { query: smallQuery, setQuery: setSmallQuery, checkedFields: smallCheckedFields, setCheckedFields: setSmallCheckedFields, allFieldKeys: smallAllFieldKeys } = useSearchWithScope(smallSearchFields)
   const filteredSmall = useMemo(() => filterRowsBySearch(data.categories.small, smallQuery, smallCheckedFields, smallAllFieldKeys), [data.categories.small, smallQuery, smallCheckedFields, smallAllFieldKeys])
-  const { pagedRows: pagedSmall, currentPage: smallCurrentPage, totalPages: smallTotalPages, onPageChange: onSmallPageChange } = useTablePagination(filteredSmall)
+  const smallSortOptions = useMemo<SortOption<(typeof filteredSmall)[number]>[]>(() => [
+    { key: "name", label: "名称" },
+  ], [])
+  const { sortedItems: sortedSmall, sortKey: smallSortKey, sortDirection: smallSortDir, setSortKey: setSmallSortKey, setSortDirection: setSmallSortDir, sortOptions: smallSortOpts } = useTableSort(filteredSmall, smallSortOptions, "name", "asc")
+  const { pagedRows: pagedSmall, currentPage: smallCurrentPage, totalPages: smallTotalPages, onPageChange: onSmallPageChange } = useTablePagination(sortedSmall)
 
   const {
     addLargeCategory,
@@ -312,7 +325,10 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
             <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
           ) : (
             <div className="space-y-2">
-            <SearchWithScope fields={largeSearchFields} query={largeQuery} onQueryChange={setLargeQuery} checkedFields={largeCheckedFields} onCheckedFieldsChange={setLargeCheckedFields} />
+            <TableToolbar
+              search={{ fields: largeSearchFields, query: largeQuery, onQueryChange: setLargeQuery, checkedFields: largeCheckedFields, onCheckedFieldsChange: setLargeCheckedFields }}
+              sort={{ sortKey: largeSortKey, sortDirection: largeSortDir, setSortKey: setLargeSortKey, setSortDirection: setLargeSortDir, sortOptions: largeSortOpts }}
+            />
             <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
               <Table className="min-w-[640px]">
                 <TableHeader>
@@ -414,7 +430,10 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
             <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
           ) : (
             <div className="space-y-2">
-            <SearchWithScope fields={mediumSearchFields} query={mediumQuery} onQueryChange={setMediumQuery} checkedFields={mediumCheckedFields} onCheckedFieldsChange={setMediumCheckedFields} />
+            <TableToolbar
+              search={{ fields: mediumSearchFields, query: mediumQuery, onQueryChange: setMediumQuery, checkedFields: mediumCheckedFields, onCheckedFieldsChange: setMediumCheckedFields }}
+              sort={{ sortKey: mediumSortKey, sortDirection: mediumSortDir, setSortKey: setMediumSortKey, setSortDirection: setMediumSortDir, sortOptions: mediumSortOpts }}
+            />
             <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
               <Table className="min-w-[700px]">
                 <TableHeader>
@@ -541,7 +560,10 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
             <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
           ) : (
             <div className="space-y-2">
-            <SearchWithScope fields={smallSearchFields} query={smallQuery} onQueryChange={setSmallQuery} checkedFields={smallCheckedFields} onCheckedFieldsChange={setSmallCheckedFields} />
+            <TableToolbar
+              search={{ fields: smallSearchFields, query: smallQuery, onQueryChange: setSmallQuery, checkedFields: smallCheckedFields, onCheckedFieldsChange: setSmallCheckedFields }}
+              sort={{ sortKey: smallSortKey, sortDirection: smallSortDir, setSortKey: setSmallSortKey, setSortDirection: setSmallSortDir, sortOptions: smallSortOpts }}
+            />
             <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
               <Table className="min-w-[720px]">
                 <TableHeader>

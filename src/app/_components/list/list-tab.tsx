@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react"
 
 import { Button } from "@/components/ui/button"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import {
   loadProductListColumnSettings,
   upsertProductListColumnSettings,
@@ -16,9 +15,12 @@ import {
   normalizeProductTableColumnSettings,
   type ProductTableColumnSettings,
 } from "@/app/_components/product-list/customizable-product-table"
-import { SearchWithScope, type SearchField } from "@/app/_components/shared/search-with-scope"
+import { type SearchField } from "@/app/_components/shared/search-with-scope"
+import { TableToolbar } from "@/app/_components/shared/table-toolbar"
+import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
+import { useTableFilter, type FilterDefinition } from "@/hooks/use-table-filter"
 import { StockListTab } from "@/app/_components/stock-list/stock-list-tab"
-import { ChevronDown, FileDown, Filter, Plus } from "lucide-react"
+import { FileDown, Plus } from "lucide-react"
 import { toast } from "sonner"
 import { ViewToggle } from "@/app/_components/shared/view-toggle"
 import { ProductCardGrid } from "@/app/_components/list/product-card-grid"
@@ -90,10 +92,6 @@ export function ListTab({
   const [productSearchCheckedFields, setProductSearchCheckedFields] = useState<Set<string>>(
     () => new Set(["name", "notes", "categoryLarge", "categoryMedium", "categorySmall", "shipping", "equipment"])
   )
-  const [productCategoryLargeFilter, setProductCategoryLargeFilter] = useState<string | null>(null)
-  const [productCategoryMediumFilter, setProductCategoryMediumFilter] = useState<string | null>(null)
-  const [productCategorySmallFilter, setProductCategorySmallFilter] = useState<string | null>(null)
-  const [productSortKey, setProductSortKey] = useState("registered-desc")
   const [productTableColumnSettings, setProductTableColumnSettings] = useState<ProductTableColumnSettings>(
     () => defaultProductTableColumnSettings()
   )
@@ -156,6 +154,24 @@ export function ListTab({
     })
     return map
   }, [data.categories.small])
+
+  const categoryFilterDefinitions = useMemo<FilterDefinition[]>(() => [
+    {
+      type: "select",
+      key: "categoryLargeId",
+      label: "カテゴリ",
+      options: data.categories.large.map((c) => ({ value: c.id, label: c.name })),
+    },
+  ], [data.categories.large])
+
+  const categoryFilterFn = useCallback(
+    (entry: { product: Product; matchesSearch: boolean; matchesCategory: boolean }, activeFilters: Record<string, unknown>) => {
+      const largeId = activeFilters.categoryLargeId as string | undefined
+      if (largeId && entry.product.categoryLargeId !== largeId) return false
+      return true
+    },
+    []
+  )
 
   const getShippingText = useCallback(
     (productId: string) => {
@@ -272,11 +288,10 @@ export function ListTab({
     URL.revokeObjectURL(url)
   }, [data, getEquipmentText, getShippingText, productCostMap])
 
-  const filteredProductEntries = useMemo(() => {
+  const enrichedProductEntries = useMemo(() => {
     const normalizedSearch = productSearchQuery.trim().toLowerCase()
-    const collator = new Intl.Collator("ja-JP")
 
-    const base = data.products
+    return data.products
       .map((product) => {
         const unitCost = productCostMap.get(product.id)?.total ?? 0
         const salePrice = Number(product.salePrice ?? 0)
@@ -303,10 +318,6 @@ export function ListTab({
         const matchesSearch =
           normalizedSearch.length === 0 ||
           activeEntries.some((e) => e.value.toLowerCase().includes(normalizedSearch))
-        const matchesCategory =
-          (!productCategoryLargeFilter || product.categoryLargeId === productCategoryLargeFilter) &&
-          (!productCategoryMediumFilter || product.categoryMediumId === productCategoryMediumFilter) &&
-          (!productCategorySmallFilter || product.categorySmallId === productCategorySmallFilter)
         const registeredTime = new Date(product.registeredAt ?? "").getTime() || 0
 
         return {
@@ -318,35 +329,11 @@ export function ListTab({
           shippingText,
           equipmentText,
           matchesSearch,
-          matchesCategory,
+          matchesCategory: true,
           registeredTime,
         }
       })
-      .filter((entry) => entry.matchesSearch && entry.matchesCategory)
-
-    const sorted = [...base].sort((a, b) => {
-      switch (productSortKey) {
-        case "name-asc":
-          return collator.compare(a.product.name, b.product.name)
-        case "name-desc":
-          return collator.compare(b.product.name, a.product.name)
-        case "sale-asc":
-          return a.salePrice - b.salePrice
-        case "sale-desc":
-          return b.salePrice - a.salePrice
-        case "profit-asc":
-          return a.profit - b.profit
-        case "profit-desc":
-          return b.profit - a.profit
-        case "registered-asc":
-          return a.registeredTime - b.registeredTime
-        case "registered-desc":
-        default:
-          return b.registeredTime - a.registeredTime
-      }
-    })
-
-    return sorted
+      .filter((entry) => entry.matchesSearch)
   }, [
     categoryLargeNameMap,
     categoryMediumNameMap,
@@ -354,32 +341,22 @@ export function ListTab({
     data.products,
     getEquipmentText,
     getShippingText,
-    productCategoryLargeFilter,
-    productCategoryMediumFilter,
-    productCategorySmallFilter,
     productCostMap,
     productSearchCheckedFields,
     productSearchFields.length,
     productSearchQuery,
-    productSortKey,
   ])
 
-  const handleCategoryLargeFilterChange = useCallback((value: string) => {
-    const next = value === "all" ? null : value
-    setProductCategoryLargeFilter(next)
-    setProductCategoryMediumFilter(null)
-    setProductCategorySmallFilter(null)
-  }, [])
+  const { filteredItems: categoryFilteredEntries, filterValues, setFilter, clearFilter, clearFilters, hasActiveFilters, filterDefinitions } = useTableFilter(enrichedProductEntries, categoryFilterDefinitions, categoryFilterFn)
 
-  const handleCategoryMediumFilterChange = useCallback((value: string) => {
-    const next = value === "all" ? null : value
-    setProductCategoryMediumFilter(next)
-    setProductCategorySmallFilter(null)
-  }, [])
+  const productSortOptions = useMemo<SortOption<(typeof enrichedProductEntries)[number]>[]>(() => [
+    { key: "registered", label: "登録日", compareFn: (a, b) => a.registeredTime - b.registeredTime },
+    { key: "name", label: "商品名", compareFn: (a, b) => new Intl.Collator("ja-JP").compare(a.product.name, b.product.name) },
+    { key: "sale", label: "販売価格", compareFn: (a, b) => a.salePrice - b.salePrice },
+    { key: "profit", label: "粗利", compareFn: (a, b) => a.profit - b.profit },
+  ], [])
 
-  const handleCategorySmallFilterChange = useCallback((value: string) => {
-    setProductCategorySmallFilter(value === "all" ? null : value)
-  }, [])
+  const { sortedItems: filteredProductEntries, sortKey: productSortKey, sortDirection: productSortDir, setSortKey: setProductSortKey, setSortDirection: setProductSortDir, sortOptions: productSortOpts } = useTableSort(categoryFilteredEntries, productSortOptions, "registered", "desc")
 
   const handleProductTableColumnSettingsChange = useCallback(
     (next: ProductTableColumnSettings) => {
@@ -434,71 +411,51 @@ export function ListTab({
         </div>
 
         {/* ツールバー */}
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <div className="flex flex-wrap items-center gap-2">
-            {/* 検索ボックス（検索範囲選択付き） */}
-            <SearchWithScope
-              fields={productSearchFields}
-              query={productSearchQuery}
-              onQueryChange={setProductSearchQuery}
-              checkedFields={productSearchCheckedFields}
-              onCheckedFieldsChange={setProductSearchCheckedFields}
-              placeholder="商品を検索..."
-            />
-            {/* フィルターボタン（カテゴリ・ソート用Popover的に） */}
-            <Select value={productCategoryLargeFilter ?? "all"} onValueChange={handleCategoryLargeFilterChange}>
-              <SelectTrigger className="h-9 w-auto gap-1.5 border px-3">
-                <Filter className="h-4 w-4" />
-                <SelectValue placeholder="カテゴリ" />
-                <ChevronDown className="h-3 w-3" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">すべてのカテゴリ</SelectItem>
-                {data.categories.large.map((category) => (
-                  <SelectItem key={category.id} value={category.id}>
-                    {category.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={productSortKey} onValueChange={setProductSortKey}>
-              <SelectTrigger className="h-9 w-auto gap-1.5 border px-3">
-                <SelectValue placeholder="並び替え" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="registered-desc">登録が新しい順</SelectItem>
-                <SelectItem value="registered-asc">登録が古い順</SelectItem>
-                <SelectItem value="name-asc">商品名 (昇順)</SelectItem>
-                <SelectItem value="name-desc">商品名 (降順)</SelectItem>
-                <SelectItem value="sale-desc">販売価格が高い順</SelectItem>
-                <SelectItem value="sale-asc">販売価格が低い順</SelectItem>
-                <SelectItem value="profit-desc">粗利が高い順</SelectItem>
-                <SelectItem value="profit-asc">粗利が低い順</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-          <div className="flex items-center gap-2">
-            <ViewToggle value={viewMode} onChange={handleViewModeChange} />
-            <Button
-              type="button"
-              size="sm"
-              variant="outline"
-              onClick={handleExportProductsCsv}
-              disabled={data.products.length === 0}
-            >
-              <FileDown className="mr-1.5 h-4 w-4" />
-              CSVエクスポート
-            </Button>
-            <button
-              type="button"
-              onClick={onCreateProduct}
-              className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm text-primary-foreground hover:bg-primary/90"
-            >
-              <Plus className="h-4 w-4" />
-              新規追加
-            </button>
-          </div>
-        </div>
+        <TableToolbar
+          search={{
+            fields: productSearchFields,
+            query: productSearchQuery,
+            onQueryChange: setProductSearchQuery,
+            checkedFields: productSearchCheckedFields,
+            onCheckedFieldsChange: setProductSearchCheckedFields,
+            placeholder: "商品を検索...",
+          }}
+          filter={{
+            filterDefinitions,
+            filterValues,
+            setFilter,
+            clearFilter,
+            clearFilters,
+            hasActiveFilters,
+          }}
+          sort={{
+            sortKey: productSortKey,
+            sortDirection: productSortDir,
+            setSortKey: setProductSortKey,
+            setSortDirection: setProductSortDir,
+            sortOptions: productSortOpts,
+          }}
+        >
+          <ViewToggle value={viewMode} onChange={handleViewModeChange} />
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            onClick={handleExportProductsCsv}
+            disabled={data.products.length === 0}
+          >
+            <FileDown className="mr-1.5 h-4 w-4" />
+            CSVエクスポート
+          </Button>
+          <button
+            type="button"
+            onClick={onCreateProduct}
+            className="flex h-9 items-center gap-1.5 rounded-md bg-primary px-4 text-sm text-primary-foreground hover:bg-primary/90"
+          >
+            <Plus className="h-4 w-4" />
+            新規追加
+          </button>
+        </TableToolbar>
 
         {/* 商品一覧セクション */}
         <section className="space-y-1">
