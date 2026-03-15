@@ -78,20 +78,35 @@ export async function POST(
       .single()
 
     // 招待メールを送信（失敗してもDBレコードは保存済み）
+    let emailResult: { success: boolean; messageId?: string; error?: string } = {
+      success: false,
+      error: "Not attempted",
+    }
     try {
-      await sendTeamInviteEmail({
+      console.log("[Invite API] Sending invitation email to:", email.toLowerCase())
+      emailResult = await sendTeamInviteEmail({
         to: email.toLowerCase(),
         teamName: team?.name || "チーム",
         inviteUrl,
       })
+      console.log("[Invite API] Email send result:", emailResult)
     } catch (emailError) {
-      console.error("Failed to send invitation email:", emailError)
-      // メール送信失敗はエラーとせず、招待は作成済みなので続行
+      console.error("[Invite API] Failed to send invitation email:", {
+        error: emailError instanceof Error ? emailError.message : String(emailError),
+        stack: emailError instanceof Error ? emailError.stack : undefined,
+      })
+      emailResult = {
+        success: false,
+        error: emailError instanceof Error ? emailError.message : "Unknown error",
+      }
     }
 
     return NextResponse.json({
       invitation: data,
       invite_url: inviteUrl,
+      email_sent: emailResult.success,
+      email_message_id: emailResult.messageId,
+      email_error: emailResult.error,
     })
   } catch (error) {
     console.error("Error in POST /api/teams/[teamId]/invite:", error)
