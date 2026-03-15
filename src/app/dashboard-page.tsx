@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { useAppData } from "@/lib/app-data"
+import { SECTION_LABELS } from "@/lib/constants"
 import { buildExchangeRateMap } from "@/lib/calculations"
 import type { AppData, AuditFilters, Product } from "@/lib/types"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
@@ -22,7 +23,7 @@ import { NotificationBell } from "./_components/shared/notification-bell"
 import { OnboardingBanner } from "./_components/shared/onboarding-banner"
 import { Sidebar } from "./_components/shared/sidebar"
 import { useBackup } from "./_components/shared/use-backup"
-import { BarChart3, Box, Boxes, ClipboardList, FileText, LayoutDashboard, LogIn, Menu, Package } from "lucide-react"
+import { BarChart3, Box, Boxes, ChevronRight, ClipboardList, FileText, LayoutDashboard, LogIn, Menu, Package } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -298,6 +299,16 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
                   <span className="text-xs font-semibold md:text-sm">
                     {tabOptions.find((t) => t.value === activeTab)?.label ?? activeTab}
                   </span>
+                  {(() => {
+                    const sectionKey = activeTab === "master" ? searchParams.get("section") : null
+                    const sectionLabel = sectionKey ? SECTION_LABELS[sectionKey] : null
+                    return sectionLabel ? (
+                      <>
+                        <ChevronRight className="h-3 w-3 text-muted-foreground" />
+                        <span className="text-xs font-semibold md:text-sm">{sectionLabel}</span>
+                      </>
+                    ) : null
+                  })()}
                   {isSaving && <Badge variant="outline" className="text-xs text-muted-foreground">保存中...</Badge>}
                 </div>
               </div>

@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation"
 
 import { Button } from "@/components/ui/button"
 import type { AppActions } from "@/lib/app-data"
+import { SECTION_LABELS } from "@/lib/constants"
 import type { AppData } from "@/lib/types"
 
 import { Breadcrumb } from "../shared/breadcrumb"
@@ -27,18 +28,6 @@ interface MasterTabProps {
   onRefreshExchangeRates?: () => Promise<void>
 }
 
-const SECTION_LABELS: Record<string, string> = {
-  category: "カテゴリ",
-  material: "材料",
-  packaging: "梱包材",
-  shipping: "配送",
-  fee: "手数料",
-  "option-preset": "オプションプリセット",
-  labor: "労務・設備",
-  equipment: "設備シミュレーション",
-  "exchange-rate": "為替レート",
-}
-
 export function MasterTab({ data, actions, isAuthenticated, materialStocks, materialStockUnits, packagingStocks, packagingStockUnits, masterStocksLoaded, onSetMaterialStock, onSetPackagingStock, onAdjustMaterialStock, onAdjustPackagingStock, onRefreshExchangeRates }: MasterTabProps) {
   const router = useRouter()
   const pathname = usePathname()
@@ -57,6 +46,8 @@ export function MasterTab({ data, actions, isAuthenticated, materialStocks, mate
   }, [view])
 
   const handleSectionFocus = useCallback((sectionKey: string | null) => {
+    const current = new URLSearchParams(window.location.search).get("section")
+    if (sectionKey === current) return
     if (sectionKey) {
       router.replace(`${pathname}?section=${sectionKey}`, { scroll: false })
     } else {
