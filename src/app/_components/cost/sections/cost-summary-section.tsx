@@ -60,7 +60,7 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
     { key: "amount", label: "金額", compareFn: (a, b) => a.costs.total - b.costs.total },
   ], [])
 
-  const { sortedItems: productSummaries, sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: costSortOpts } = useTableSort(filteredRows, costSortOptions, "product", "asc")
+  const { sortedItems: productSummaries, sortKey, sortDirection, setSortKey, setSortDirection, toggleSort, renderSortMark, sortOptions: costSortOpts } = useTableSort(filteredRows, costSortOptions, "product", "asc")
 
   const pagination = useTablePagination(productSummaries)
 
@@ -99,7 +99,11 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
             <Table className="cost-summary-table w-auto min-w-max">
               <TableHeader>
                 <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="font-semibold">商品</TableHead>
+                  <TableHead className="font-semibold">
+                    <button type="button" className="hover:underline" onClick={() => toggleSort("product")}>
+                      商品{renderSortMark("product")}
+                    </button>
+                  </TableHead>
                   <TableHead className="font-semibold">材料</TableHead>
                   <TableHead className="font-semibold">梱包</TableHead>
                   <TableHead className="font-semibold">人件費</TableHead>
@@ -109,7 +113,11 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
                   <TableHead className="font-semibold">物流</TableHead>
                   <TableHead className="font-semibold">電気</TableHead>
                   <TableHead className="font-semibold">手数料</TableHead>
-                  <TableHead className="text-right font-semibold">合計</TableHead>
+                  <TableHead className="text-right font-semibold">
+                    <button type="button" className="hover:underline" onClick={() => toggleSort("amount")}>
+                      合計{renderSortMark("amount")}
+                    </button>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>

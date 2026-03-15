@@ -155,12 +155,24 @@ export function ListTab({
     return map
   }, [data.categories.small])
 
-  const categoryFilterDefinitions = useMemo<FilterDefinition[]>(() => [
+  const baseCategoryFilterDefinitions = useMemo<FilterDefinition[]>(() => [
     {
       type: "select",
       key: "categoryLargeId",
-      label: "カテゴリ",
+      label: "大カテゴリ",
       options: data.categories.large.map((c) => ({ value: c.id, label: c.name })),
+    },
+    {
+      type: "select",
+      key: "categoryMediumId",
+      label: "中カテゴリ",
+      options: [],
+    },
+    {
+      type: "select",
+      key: "categorySmallId",
+      label: "小カテゴリ",
+      options: [],
     },
   ], [data.categories.large])
 
@@ -168,6 +180,10 @@ export function ListTab({
     (entry: { product: Product; matchesSearch: boolean; matchesCategory: boolean }, activeFilters: Record<string, unknown>) => {
       const largeId = activeFilters.categoryLargeId as string | undefined
       if (largeId && entry.product.categoryLargeId !== largeId) return false
+      const mediumId = activeFilters.categoryMediumId as string | undefined
+      if (mediumId && entry.product.categoryMediumId !== mediumId) return false
+      const smallId = activeFilters.categorySmallId as string | undefined
+      if (smallId && entry.product.categorySmallId !== smallId) return false
       return true
     },
     []
@@ -347,7 +363,63 @@ export function ListTab({
     productSearchQuery,
   ])
 
-  const { filteredItems: categoryFilteredEntries, filterValues, setFilter, clearFilter, clearFilters, hasActiveFilters, filterDefinitions } = useTableFilter(enrichedProductEntries, categoryFilterDefinitions, categoryFilterFn)
+  const { filteredItems: categoryFilteredEntries, filterValues, setFilter: setFilterRaw, clearFilter, clearFilters, hasActiveFilters } = useTableFilter(enrichedProductEntries, baseCategoryFilterDefinitions, categoryFilterFn)
+
+  // Cascading filter: when parent changes, clear child filters
+  const setCascadingFilter = useCallback(
+    (key: string, value: unknown) => {
+      setFilterRaw(key, value)
+      if (key === "categoryLargeId") {
+        clearFilter("categoryMediumId")
+        clearFilter("categorySmallId")
+      } else if (key === "categoryMediumId") {
+        clearFilter("categorySmallId")
+      }
+    },
+    [setFilterRaw, clearFilter]
+  )
+
+  // Dynamic filter definitions with options based on current selection
+  const dynamicFilterDefinitions = useMemo<FilterDefinition[]>(() => {
+    const largeId = filterValues.categoryLargeId as string | undefined
+    const mediumId = filterValues.categoryMediumId as string | undefined
+
+    const mediumOptions = largeId
+      ? data.categories.medium.filter((c) => c.largeId === largeId).map((c) => ({ value: c.id, label: c.name }))
+      : data.categories.medium.map((c) => ({ value: c.id, label: c.name }))
+
+    const smallOptions = mediumId
+      ? data.categories.small.filter((c) => c.mediumId === mediumId).map((c) => ({ value: c.id, label: c.name }))
+      : largeId
+        ? data.categories.small
+            .filter((c) => {
+              const medium = data.categories.medium.find((m) => m.id === c.mediumId)
+              return medium?.largeId === largeId
+            })
+            .map((c) => ({ value: c.id, label: c.name }))
+        : data.categories.small.map((c) => ({ value: c.id, label: c.name }))
+
+    return [
+      {
+        type: "select" as const,
+        key: "categoryLargeId",
+        label: "大カテゴリ",
+        options: data.categories.large.map((c) => ({ value: c.id, label: c.name })),
+      },
+      {
+        type: "select" as const,
+        key: "categoryMediumId",
+        label: "中カテゴリ",
+        options: mediumOptions,
+      },
+      {
+        type: "select" as const,
+        key: "categorySmallId",
+        label: "小カテゴリ",
+        options: smallOptions,
+      },
+    ]
+  }, [filterValues.categoryLargeId, filterValues.categoryMediumId, data.categories])
 
   const productSortOptions = useMemo<SortOption<(typeof enrichedProductEntries)[number]>[]>(() => [
     { key: "registered", label: "登録日", compareFn: (a, b) => a.registeredTime - b.registeredTime },
@@ -421,9 +493,9 @@ export function ListTab({
             placeholder: "商品を検索...",
           }}
           filter={{
-            filterDefinitions,
+            filterDefinitions: dynamicFilterDefinitions,
             filterValues,
-            setFilter,
+            setFilter: setCascadingFilter,
             clearFilter,
             clearFilters,
             hasActiveFilters,
