@@ -1,3 +1,5 @@
+export const runtime = "nodejs"
+
 import { NextResponse } from "next/server"
 import { authenticateApiRequest } from "@/lib/server/api-auth"
 import { generatePdf } from "@/lib/export/pdf-generator"
