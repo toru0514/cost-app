@@ -19,7 +19,7 @@ export type ProductSummary = {
   registeredAt: number
 }
 
-export type CostTotals = Record<(typeof costKeyConfig)[number]["key"] | "total" | "totalQuantity" | "productCount", number>
+export type CostTotals = Record<(typeof costKeyConfig)[number]["key"] | "total" | "totalQuantity" | "productCount" | "totalRevenue", number>
 
 export const monthsRangeOptions = [
   { value: "3", label: "直近3ヶ月" },
@@ -41,6 +41,7 @@ export const createEmptyTotals = (): CostTotals => ({
   total: 0,
   totalQuantity: 0,
   productCount: 0,
+  totalRevenue: 0,
 })
 
 export const aggregateCostTotals = (entries: ProductSummary[]): CostTotals => {
@@ -57,6 +58,7 @@ export const aggregateCostTotals = (entries: ProductSummary[]): CostTotals => {
     acc.electricity += costs.electricity * quantity
     acc.fees += (costs.fees ?? 0) * quantity
     acc.total += costs.total * quantity
+    acc.totalRevenue += (product.salePrice || 0) * quantity
     acc.totalQuantity += quantity
     acc.productCount += 1
     return acc

@@ -8,6 +8,8 @@ import { calculateProductUnitCosts } from "@/lib/calculations"
 import { aggregateCostTotals, categoryLevels, formatRangeLabel, type ProductSummary } from "./utils"
 import { FilterPanel } from "./sections/filter-panel"
 import { PeriodComparisonCard } from "./sections/period-comparison-card"
+import { ProfitSummaryCard } from "./sections/profit-summary-card"
+import { ProductRankingSection } from "./sections/product-ranking-section"
 import { CategoryRankingsSection } from "./sections/category-rankings-section"
 import { CostCompositionSection } from "./sections/cost-composition-section"
 import { MonthlyTrendSection } from "./sections/monthly-trend-section"
@@ -171,9 +173,16 @@ export function AnalyticsTab({ data, exchangeRateMap }: { data: AppData; exchang
         previousRangeLabel={previousRangeLabel}
       />
 
+      <ProfitSummaryCard
+        currentTotals={aggregatedCostTotals}
+        previousTotals={previousCostTotals}
+      />
+
+      <ProductRankingSection entries={filteredEntries} data={data} />
+
       <CategoryRankingsSection rankings={rankings} />
 
-      <CostCompositionSection totals={aggregatedCostTotals} />
+      <CostCompositionSection totals={aggregatedCostTotals} previousTotals={previousCostTotals} />
 
       <MonthlyTrendSection trend={monthlyTrend} maxValue={maxTrendValue} />
     </div>
