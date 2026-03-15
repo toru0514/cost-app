@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server"
 import { authenticateApiRequest } from "@/lib/server/api-auth"
+import { sendTeamInviteEmail } from "@/lib/email"
 import crypto from "crypto"
 
 // POST: 招待を作成
@@ -68,6 +69,25 @@ export async function POST(
 
     // 招待リンクを生成
     const inviteUrl = `${process.env.NEXT_PUBLIC_APP_URL || ""}/teams/invite/${token}`
+
+    // チーム名を取得
+    const { data: team } = await supabase
+      .from("teams")
+      .select("name")
+      .eq("id", teamId)
+      .single()
+
+    // 招待メールを送信（失敗してもDBレコードは保存済み）
+    try {
+      await sendTeamInviteEmail({
+        to: email.toLowerCase(),
+        teamName: team?.name || "チーム",
+        inviteUrl,
+      })
+    } catch (emailError) {
+      console.error("Failed to send invitation email:", emailError)
+      // メール送信失敗はエラーとせず、招待は作成済みなので続行
+    }
 
     return NextResponse.json({
       invitation: data,
