@@ -13,6 +13,8 @@ import { ProductRankingSection } from "./sections/product-ranking-section"
 import { CategoryRankingsSection } from "./sections/category-rankings-section"
 import { CostCompositionSection } from "./sections/cost-composition-section"
 import { MonthlyTrendSection } from "./sections/monthly-trend-section"
+import { StatusBreakdownCard } from "./sections/status-breakdown-card"
+import { CategoryTrendSection } from "./sections/category-trend-section"
 
 export function AnalyticsTab({ data, exchangeRateMap }: { data: AppData; exchangeRateMap?: Map<string, number> }) {
   const [monthsRange, setMonthsRange] = useState("6")
@@ -120,15 +122,15 @@ export function AnalyticsTab({ data, exchangeRateMap }: { data: AppData; exchang
   )
   const monthlyTrend = useMemo(() => {
     const months = rangeBoundaries.months
-    const series: { key: string; label: string; total: number }[] = []
-    const monthMap = new Map<string, { key: string; label: string; total: number }>()
+    const series: { key: string; label: string; total: number; quantity: number }[] = []
+    const monthMap = new Map<string, { key: string; label: string; total: number; quantity: number }>()
     for (let i = months - 1; i >= 0; i--) {
       const reference = new Date(rangeBoundaries.currentEnd)
       reference.setDate(1)
       reference.setMonth(reference.getMonth() - i)
       const key = `${reference.getFullYear()}-${reference.getMonth()}`
       const label = `${reference.getFullYear()}年${reference.getMonth() + 1}月`
-      const bucket = { key, label, total: 0 }
+      const bucket = { key, label, total: 0, quantity: 0 }
       monthMap.set(key, bucket)
       series.push(bucket)
     }
@@ -140,6 +142,7 @@ export function AnalyticsTab({ data, exchangeRateMap }: { data: AppData; exchang
       if (!bucket) return
       const quantity = product.expectedProduction.quantity || 1
       bucket.total += costs.total * quantity
+      bucket.quantity += quantity
     })
     return series
   }, [filteredEntries, rangeBoundaries])
@@ -184,7 +187,15 @@ export function AnalyticsTab({ data, exchangeRateMap }: { data: AppData; exchang
 
       <CostCompositionSection totals={aggregatedCostTotals} previousTotals={previousCostTotals} />
 
+      <StatusBreakdownCard entries={filteredEntries} />
+
       <MonthlyTrendSection trend={monthlyTrend} maxValue={maxTrendValue} />
+
+      <CategoryTrendSection
+        entries={filteredEntries}
+        months={rangeBoundaries.months}
+        currentEnd={rangeBoundaries.currentEnd}
+      />
     </div>
   )
 }
