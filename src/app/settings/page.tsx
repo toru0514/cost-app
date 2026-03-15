@@ -3,9 +3,9 @@
 import { useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/lib/auth"
+import { AuthPageLayout } from "@/app/_components/shared/auth-page-layout"
+import { AccountInfoSection } from "@/app/_components/settings/account-info-section"
 import { NotificationSettingsSection } from "@/app/_components/settings/notification-settings-section"
-import { Button } from "@/components/ui/button"
-import { ArrowLeft } from "lucide-react"
 
 export default function SettingsPage() {
   const { state: authState } = useAuth()
@@ -13,7 +13,7 @@ export default function SettingsPage() {
 
   useEffect(() => {
     if (authState.status === "guest") {
-      router.push("/cost")
+      router.push("/login")
     }
   }, [authState.status, router])
 
@@ -35,19 +35,15 @@ export default function SettingsPage() {
   }
 
   return (
-    <main className="min-h-screen bg-background">
+    <AuthPageLayout title="設定" activeMenu="settings">
       <div className="mx-auto max-w-2xl p-6">
-        <div className="mb-6">
-          <Button variant="ghost" size="sm" onClick={() => router.back()}>
-            <ArrowLeft className="mr-1.5 h-4 w-4" />
-            戻る
-          </Button>
-        </div>
-
         <div className="space-y-6">
           <div>
-            <h1 className="text-2xl font-bold">設定</h1>
             <p className="text-muted-foreground">アカウントと通知の設定を管理します。</p>
+          </div>
+
+          <div className="rounded-lg border p-6">
+            <AccountInfoSection />
           </div>
 
           <div className="rounded-lg border p-6">
@@ -55,6 +51,6 @@ export default function SettingsPage() {
           </div>
         </div>
       </div>
-    </main>
+    </AuthPageLayout>
   )
 }

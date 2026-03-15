@@ -10,9 +10,10 @@ import { toast } from "sonner"
 
 export type LoginPanelProps = {
   onClose: () => void
+  isStandalonePage?: boolean
 }
 
-export function LoginPanel({ onClose }: LoginPanelProps) {
+export function LoginPanel({ onClose, isStandalonePage = false }: LoginPanelProps) {
   const { login, signup, resetPassword } = useAuth()
   const [loginForm, setLoginForm] = useState({ name: "", email: "", password: "" })
   const [authMode, setAuthMode] = useState<"login" | "signup">("login")
@@ -162,7 +163,7 @@ export function LoginPanel({ onClose }: LoginPanelProps) {
               {authMode === "login" ? "ログイン" : "登録してログイン"}
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={onClose}>
-              キャンセル
+              {isStandalonePage ? "ゲストとして続ける" : "キャンセル"}
             </Button>
           </div>
         </form>
