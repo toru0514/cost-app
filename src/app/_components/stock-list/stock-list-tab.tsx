@@ -14,12 +14,13 @@ import { useTablePagination } from "@/hooks/use-table-pagination"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData, StockAlertSetting } from "@/lib/types"
 import {
-  SearchWithScope,
   filterRowsBySearch,
   useSearchWithScope,
   type SearchField,
 } from "@/app/_components/shared/search-with-scope"
+import { TableToolbar } from "@/app/_components/shared/table-toolbar"
 import { ViewToggle } from "@/app/_components/shared/view-toggle"
+import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
 import { MaterialStockCardGrid, PackagingStockCardGrid, EquipmentCardGrid } from "./stock-card-grids"
 
 function EditMasterTableButton({ onClick }: { onClick: () => void }) {
@@ -324,6 +325,12 @@ export function StockListTab({
     [materialRows, materialSearch.query, materialSearch.checkedFields, materialSearch.allFieldKeys]
   )
 
+  const materialSortOptions = useMemo<SortOption<(typeof filteredMaterialRows)[number]>[]>(() => [
+    { key: "name", label: "名称" },
+    { key: "unitCost", label: "単価", compareFn: (a, b) => a.unitCost - b.unitCost },
+  ], [])
+  const { sortedItems: sortedMaterialRows, sortKey: materialSortKey, sortDirection: materialSortDir, setSortKey: setMaterialSortKey, setSortDirection: setMaterialSortDir, sortOptions: materialSortOpts } = useTableSort(filteredMaterialRows, materialSortOptions, "name", "asc")
+
   const filteredPackagingRows = useMemo(
     () =>
       filterRowsBySearch(
@@ -334,6 +341,12 @@ export function StockListTab({
       ),
     [packagingRows, packagingSearch.query, packagingSearch.checkedFields, packagingSearch.allFieldKeys]
   )
+
+  const packagingSortOptions = useMemo<SortOption<(typeof filteredPackagingRows)[number]>[]>(() => [
+    { key: "name", label: "名称" },
+    { key: "unitCost", label: "単価", compareFn: (a, b) => a.unitCost - b.unitCost },
+  ], [])
+  const { sortedItems: sortedPackagingRows, sortKey: packagingSortKey, sortDirection: packagingSortDir, setSortKey: setPackagingSortKey, setSortDirection: setPackagingSortDir, sortOptions: packagingSortOpts } = useTableSort(filteredPackagingRows, packagingSortOptions, "name", "asc")
 
   const filteredEquipmentRows = useMemo(
     () =>
@@ -346,9 +359,15 @@ export function StockListTab({
     [equipmentRows, equipmentSearch.query, equipmentSearch.checkedFields, equipmentSearch.allFieldKeys]
   )
 
-  const materialPagination = useTablePagination(filteredMaterialRows)
-  const packagingPagination = useTablePagination(filteredPackagingRows)
-  const equipmentPagination = useTablePagination(filteredEquipmentRows)
+  const equipmentSortOptions = useMemo<SortOption<(typeof filteredEquipmentRows)[number]>[]>(() => [
+    { key: "name", label: "名称" },
+    { key: "acquisitionCost", label: "取得額", compareFn: (a, b) => a.acquisitionCost - b.acquisitionCost },
+  ], [])
+  const { sortedItems: sortedEquipmentRows, sortKey: equipmentSortKey, sortDirection: equipmentSortDir, setSortKey: setEquipmentSortKey, setSortDirection: setEquipmentSortDir, sortOptions: equipmentSortOpts } = useTableSort(filteredEquipmentRows, equipmentSortOptions, "name", "asc")
+
+  const materialPagination = useTablePagination(sortedMaterialRows)
+  const packagingPagination = useTablePagination(sortedPackagingRows)
+  const equipmentPagination = useTablePagination(sortedEquipmentRows)
 
   const renderAlertCell = (itemType: StockAlertSetting["itemType"], itemId: string) => {
     if (!stockAlertSettingsLoaded) return <span className="text-xs text-muted-foreground">-</span>
@@ -388,17 +407,25 @@ export function StockListTab({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-lg font-semibold">材料在庫</h3>
           {isAuthenticated && masterStocksLoaded && materialRows.length > 0 && (
-            <div className="flex items-center gap-2">
-              <SearchWithScope
-                fields={materialSearchFields}
-                query={materialSearch.query}
-                onQueryChange={materialSearch.setQuery}
-                checkedFields={materialSearch.checkedFields}
-                onCheckedFieldsChange={materialSearch.setCheckedFields}
-                placeholder="材料を検索..."
-              />
+            <TableToolbar
+              search={{
+                fields: materialSearchFields,
+                query: materialSearch.query,
+                onQueryChange: materialSearch.setQuery,
+                checkedFields: materialSearch.checkedFields,
+                onCheckedFieldsChange: materialSearch.setCheckedFields,
+                placeholder: "材料を検索...",
+              }}
+              sort={{
+                sortKey: materialSortKey,
+                sortDirection: materialSortDir,
+                setSortKey: setMaterialSortKey,
+                setSortDirection: setMaterialSortDir,
+                sortOptions: materialSortOpts,
+              }}
+            >
               <ViewToggle value={materialViewMode} onChange={handleMaterialViewModeChange} />
-            </div>
+            </TableToolbar>
           )}
         </div>
         {!isAuthenticated ? (
@@ -515,17 +542,25 @@ export function StockListTab({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-lg font-semibold">梱包材在庫</h3>
           {isAuthenticated && masterStocksLoaded && packagingRows.length > 0 && (
-            <div className="flex items-center gap-2">
-              <SearchWithScope
-                fields={packagingSearchFields}
-                query={packagingSearch.query}
-                onQueryChange={packagingSearch.setQuery}
-                checkedFields={packagingSearch.checkedFields}
-                onCheckedFieldsChange={packagingSearch.setCheckedFields}
-                placeholder="梱包材を検索..."
-              />
+            <TableToolbar
+              search={{
+                fields: packagingSearchFields,
+                query: packagingSearch.query,
+                onQueryChange: packagingSearch.setQuery,
+                checkedFields: packagingSearch.checkedFields,
+                onCheckedFieldsChange: packagingSearch.setCheckedFields,
+                placeholder: "梱包材を検索...",
+              }}
+              sort={{
+                sortKey: packagingSortKey,
+                sortDirection: packagingSortDir,
+                setSortKey: setPackagingSortKey,
+                setSortDirection: setPackagingSortDir,
+                sortOptions: packagingSortOpts,
+              }}
+            >
               <ViewToggle value={packagingViewMode} onChange={handlePackagingViewModeChange} />
-            </div>
+            </TableToolbar>
           )}
         </div>
         {!isAuthenticated ? (
@@ -640,17 +675,25 @@ export function StockListTab({
         <div className="flex flex-wrap items-center justify-between gap-3">
           <h3 className="text-lg font-semibold">設備一覧</h3>
           {equipmentRows.length > 0 && (
-            <div className="flex items-center gap-2">
-              <SearchWithScope
-                fields={equipmentSearchFields}
-                query={equipmentSearch.query}
-                onQueryChange={equipmentSearch.setQuery}
-                checkedFields={equipmentSearch.checkedFields}
-                onCheckedFieldsChange={equipmentSearch.setCheckedFields}
-                placeholder="設備を検索..."
-              />
+            <TableToolbar
+              search={{
+                fields: equipmentSearchFields,
+                query: equipmentSearch.query,
+                onQueryChange: equipmentSearch.setQuery,
+                checkedFields: equipmentSearch.checkedFields,
+                onCheckedFieldsChange: equipmentSearch.setCheckedFields,
+                placeholder: "設備を検索...",
+              }}
+              sort={{
+                sortKey: equipmentSortKey,
+                sortDirection: equipmentSortDir,
+                setSortKey: setEquipmentSortKey,
+                setSortDirection: setEquipmentSortDir,
+                sortOptions: equipmentSortOpts,
+              }}
+            >
               <ViewToggle value={equipmentViewMode} onChange={handleEquipmentViewModeChange} />
-            </div>
+            </TableToolbar>
           )}
         </div>
         {equipmentRows.length === 0 ? (

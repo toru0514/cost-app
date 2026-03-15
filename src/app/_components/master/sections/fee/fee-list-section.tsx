@@ -5,11 +5,12 @@ import { useMemo, useState } from "react"
 import { Copy, Edit3, Trash2 } from "lucide-react"
 
 import {
-  SearchWithScope,
   filterRowsBySearch,
   useSearchWithScope,
   type SearchField,
 } from "@/app/_components/shared/search-with-scope"
+import { TableToolbar } from "@/app/_components/shared/table-toolbar"
+import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -54,7 +55,13 @@ export function FeeListSection({ data, actions, createTempId }: FeeListSectionPr
   const searchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }, { key: "note", label: "備考" }], [])
   const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
   const filteredRows = useMemo(() => filterRowsBySearch(data.fees, query, checkedFields, allFieldKeys), [data.fees, query, checkedFields, allFieldKeys])
-  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(filteredRows)
+  const sortOptions = useMemo<SortOption<(typeof filteredRows)[number]>[]>(() => [
+    { key: "name", label: "名称" },
+    { key: "ratePercent", label: "料率", compareFn: (a, b) => a.ratePercent - b.ratePercent },
+    { key: "fixedAmount", label: "固定額", compareFn: (a, b) => a.fixedAmount - b.fixedAmount },
+  ], [])
+  const { sortedItems, sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts } = useTableSort(filteredRows, sortOptions, "name", "asc")
+  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(sortedItems)
 
   const { updateFee, removeFee, addFee } = actions
 
@@ -135,7 +142,22 @@ export function FeeListSection({ data, actions, createTempId }: FeeListSectionPr
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
         ) : (
           <div className="space-y-2">
-          <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
+          <TableToolbar
+            search={{
+              fields: searchFields,
+              query,
+              onQueryChange: setQuery,
+              checkedFields,
+              onCheckedFieldsChange: setCheckedFields,
+            }}
+            sort={{
+              sortKey,
+              sortDirection,
+              setSortKey,
+              setSortDirection,
+              sortOptions: sortOpts,
+            }}
+          />
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
             <Table className="min-w-[640px]">
               <TableHeader>

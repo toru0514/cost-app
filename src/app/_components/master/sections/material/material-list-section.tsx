@@ -8,11 +8,12 @@ import { ViewToggle } from "@/app/_components/shared/view-toggle"
 import { MaterialCardGrid } from "@/app/_components/master/sections/material/material-card-grid"
 
 import {
-  SearchWithScope,
   filterRowsBySearch,
   useSearchWithScope,
   type SearchField,
 } from "@/app/_components/shared/search-with-scope"
+import { TableToolbar } from "@/app/_components/shared/table-toolbar"
+import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -107,7 +108,12 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
   const searchFields = useMemo<SearchField[]>(() => [{ key: "name", label: "名称" }, { key: "supplier", label: "仕入先" }, { key: "note", label: "備考" }], [])
   const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
   const filteredRows = useMemo(() => filterRowsBySearch(data.materials, query, checkedFields, allFieldKeys), [data.materials, query, checkedFields, allFieldKeys])
-  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(filteredRows)
+  const sortOptions = useMemo<SortOption<(typeof filteredRows)[number]>[]>(() => [
+    { key: "name", label: "名称" },
+    { key: "unitCost", label: "単価", compareFn: (a, b) => a.unitCost - b.unitCost },
+  ], [])
+  const { sortedItems, sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts } = useTableSort(filteredRows, sortOptions, "name", "asc")
+  const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(sortedItems)
 
   const currentPageIds = useMemo(() => pagedRows.map((m) => m.id), [pagedRows])
   const allCurrentPageSelected = useMemo(
@@ -346,7 +352,22 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
           />
         ) : (
           <div className="space-y-2">
-          <SearchWithScope fields={searchFields} query={query} onQueryChange={setQuery} checkedFields={checkedFields} onCheckedFieldsChange={setCheckedFields} />
+          <TableToolbar
+            search={{
+              fields: searchFields,
+              query,
+              onQueryChange: setQuery,
+              checkedFields,
+              onCheckedFieldsChange: setCheckedFields,
+            }}
+            sort={{
+              sortKey,
+              sortDirection,
+              setSortKey,
+              setSortDirection,
+              sortOptions: sortOpts,
+            }}
+          />
           {selectedIds.size > 0 && (
             <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
               <span className="text-sm font-medium">{selectedIds.size}件選択中</span>

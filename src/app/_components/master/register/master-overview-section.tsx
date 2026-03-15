@@ -2,11 +2,17 @@
 
 import { useMemo, useState } from "react"
 
+import {
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
+import { TableToolbar } from "@/app/_components/shared/table-toolbar"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Input } from "@/components/ui/input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TablePagination } from "@/components/ui/table-pagination"
+import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
 import { useTablePagination } from "@/hooks/use-table-pagination"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
@@ -45,21 +51,12 @@ const MASTER_OVERVIEW_TYPE_OPTIONS: { value: MasterOverviewType; label: string }
   { value: "categorySmall", label: "カテゴリ (小)" },
 ]
 
-const MASTER_OVERVIEW_SORT_OPTIONS = [
-  { value: "name-asc", label: "名称 (昇順)" },
-  { value: "name-desc", label: "名称 (降順)" },
-  { value: "value-desc", label: "基準値が高い順" },
-  { value: "value-asc", label: "基準値が低い順" },
-]
-
 interface MasterOverviewSectionProps {
   data: AppData
 }
 
 export function MasterOverviewSection({ data }: MasterOverviewSectionProps) {
   const [masterOverviewType, setMasterOverviewType] = useState<MasterOverviewType>("materials")
-  const [masterOverviewSearch, setMasterOverviewSearch] = useState("")
-  const [masterOverviewSort, setMasterOverviewSort] = useState("name-asc")
 
   const overviewBuilders: Record<MasterOverviewType, (appData: AppData) => MasterOverviewRow[]> = useMemo(
     () => ({
@@ -184,33 +181,27 @@ export function MasterOverviewSection({ data }: MasterOverviewSectionProps) {
     [],
   )
 
-  const masterOverviewRows = useMemo<MasterOverviewRow[]>(() => {
-    const rows = (overviewBuilders[masterOverviewType] ?? overviewBuilders.materials)(data)
-    const normalizedSearch = masterOverviewSearch.trim().toLowerCase()
-    const filtered = normalizedSearch.length
-      ? rows.filter((row) => row.searchText.includes(normalizedSearch))
-      : rows
-    const collator = new Intl.Collator("ja-JP")
-    return filtered.sort((a, b) => {
-      switch (masterOverviewSort) {
-        case "name-desc":
-          return collator.compare(b.name, a.name)
-        case "value-asc":
-          return (a.value ?? 0) - (b.value ?? 0)
-        case "value-desc":
-          return (b.value ?? 0) - (a.value ?? 0)
-        case "name-asc":
-        default:
-          return collator.compare(a.name, b.name)
-      }
-    })
-  }, [
-    data,
-    masterOverviewSearch,
-    masterOverviewSort,
-    masterOverviewType,
-    overviewBuilders,
-  ])
+  const searchFields = useMemo<SearchField[]>(() => [
+    { key: "name", label: "名称" },
+    { key: "detail", label: "詳細" },
+  ], [])
+  const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
+
+  const overviewAllRows = useMemo(() => {
+    return (overviewBuilders[masterOverviewType] ?? overviewBuilders.materials)(data)
+  }, [data, masterOverviewType, overviewBuilders])
+
+  const filteredBySearch = useMemo(
+    () => filterRowsBySearch(overviewAllRows, query, checkedFields, allFieldKeys),
+    [overviewAllRows, query, checkedFields, allFieldKeys]
+  )
+
+  const overviewSortOptions = useMemo<SortOption<MasterOverviewRow>[]>(() => [
+    { key: "name", label: "名称" },
+    { key: "value", label: "基準値", compareFn: (a, b) => (a.value ?? 0) - (b.value ?? 0) },
+  ], [])
+
+  const { sortedItems: masterOverviewRows, sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts } = useTableSort(filteredBySearch, overviewSortOptions, "name", "asc")
 
   const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(masterOverviewRows)
 
@@ -221,13 +212,23 @@ export function MasterOverviewSection({ data }: MasterOverviewSectionProps) {
         <CardDescription>検索・フィルタ・ソートでマスタ登録を素早く参照</CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="flex flex-col gap-2 md:flex-row md:flex-wrap md:items-center">
-          <Input
-            value={masterOverviewSearch}
-            onChange={(event) => setMasterOverviewSearch(event.target.value)}
-            placeholder="キーワードで検索 (名称・備考など)"
-            className="w-full flex-1 min-w-[220px]"
-          />
+        <TableToolbar
+          search={{
+            fields: searchFields,
+            query,
+            onQueryChange: setQuery,
+            checkedFields,
+            onCheckedFieldsChange: setCheckedFields,
+            placeholder: "キーワードで検索 (名称・備考など)",
+          }}
+          sort={{
+            sortKey,
+            sortDirection,
+            setSortKey,
+            setSortDirection,
+            sortOptions: sortOpts,
+          }}
+        >
           <Select value={masterOverviewType} onValueChange={(value) => setMasterOverviewType(value as MasterOverviewType)}>
             <SelectTrigger className="w-full md:w-48">
               <SelectValue placeholder="種類を選択" />
@@ -240,19 +241,7 @@ export function MasterOverviewSection({ data }: MasterOverviewSectionProps) {
               ))}
             </SelectContent>
           </Select>
-          <Select value={masterOverviewSort} onValueChange={setMasterOverviewSort}>
-            <SelectTrigger className="w-full md:w-48">
-              <SelectValue placeholder="並び替え" />
-            </SelectTrigger>
-            <SelectContent>
-              {MASTER_OVERVIEW_SORT_OPTIONS.map((option) => (
-                <SelectItem key={option.value} value={option.value}>
-                  {option.label}
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
+        </TableToolbar>
         {masterOverviewRows.length === 0 ? (
           <p className="text-sm text-muted-foreground">条件に一致するマスタはありません。</p>
         ) : (

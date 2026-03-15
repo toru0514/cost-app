@@ -1,8 +1,16 @@
 "use client"
 
-import { FileDown, RefreshCw, Search } from "lucide-react"
+import { useMemo } from "react"
+import { FileDown, RefreshCw } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import {
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
+import { TableToolbar } from "@/app/_components/shared/table-toolbar"
+import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { AuditFilters, AuditLog, ChangeSummary } from "@/lib/types"
 import { toast } from "sonner"
@@ -102,6 +110,31 @@ const describePayload = (log: AuditLog) => {
 }
 
 export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filters, onFiltersChange }: AuditTabProps) {
+  const searchFields = useMemo<SearchField[]>(() => [
+    { key: "payload", label: "記録概要" },
+    { key: "client", label: "端末" },
+  ], [])
+  const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
+
+  const searchableRows = useMemo(() =>
+    logs.map((log) => ({
+      ...log,
+      payload: JSON.stringify(log.metadata?.changes ?? log.metadata?.payloadStats ?? ""),
+      client: describeClient(log),
+    })),
+    [logs]
+  )
+
+  const filteredLogs = useMemo(
+    () => filterRowsBySearch(searchableRows, query, checkedFields, allFieldKeys),
+    [searchableRows, query, checkedFields, allFieldKeys]
+  )
+
+  const sortOptions = useMemo<SortOption<(typeof filteredLogs)[number]>[]>(() => [
+    { key: "createdAt", label: "日時", compareFn: (a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime() },
+  ], [])
+  const { sortedItems: sortedLogs, sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts } = useTableSort(filteredLogs, sortOptions, "createdAt", "desc")
+
   const handleExportCsv = async () => {
     try {
       const params = new URLSearchParams()
@@ -135,23 +168,37 @@ export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filter
       </div>
 
       {/* ツールバー */}
-      <div className="flex flex-wrap items-center justify-between gap-3">
+      <TableToolbar
+        search={{
+          fields: searchFields,
+          query,
+          onQueryChange: setQuery,
+          checkedFields,
+          onCheckedFieldsChange: setCheckedFields,
+          placeholder: "ログを検索...",
+        }}
+        sort={{
+          sortKey,
+          sortDirection,
+          setSortKey,
+          setSortDirection,
+          sortOptions: sortOpts,
+        }}
+      >
         <div className="flex items-center gap-2">
-          <div className="flex items-center gap-2">
-            <input
-              type="date"
-              value={filters.from ?? ""}
-              onChange={(event) => onFiltersChange({ ...filters, from: event.target.value || undefined })}
-              className="h-9 rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-            />
-            <span className="text-sm text-muted-foreground">〜</span>
-            <input
-              type="date"
-              value={filters.to ?? ""}
-              onChange={(event) => onFiltersChange({ ...filters, to: event.target.value || undefined })}
-              className="h-9 rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
-            />
-          </div>
+          <input
+            type="date"
+            value={filters.from ?? ""}
+            onChange={(event) => onFiltersChange({ ...filters, from: event.target.value || undefined })}
+            className="h-9 rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+          />
+          <span className="text-sm text-muted-foreground">〜</span>
+          <input
+            type="date"
+            value={filters.to ?? ""}
+            onChange={(event) => onFiltersChange({ ...filters, to: event.target.value || undefined })}
+            className="h-9 rounded-md border bg-transparent px-3 text-sm outline-none focus:ring-2 focus:ring-primary/20"
+          />
           <button
             type="button"
             className="h-9 rounded-md border px-3 text-sm text-muted-foreground hover:bg-muted"
@@ -160,20 +207,18 @@ export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filter
             クリア
           </button>
         </div>
-        <div className="flex items-center gap-2">
-          <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={loading}>
-            <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
-            {loading ? "読込中" : "更新"}
-          </Button>
-          <Button type="button" size="sm" variant="outline" onClick={onLoadMore} disabled={loading || !hasMore}>
-            {hasMore ? "さらに読み込む" : "末尾まで表示"}
-          </Button>
-          <Button type="button" size="sm" variant="outline" onClick={handleExportCsv}>
-            <FileDown className="mr-1.5 h-4 w-4" />
-            CSV
-          </Button>
-        </div>
-      </div>
+        <Button type="button" size="sm" variant="outline" onClick={onRefresh} disabled={loading}>
+          <RefreshCw className={`mr-1.5 h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+          {loading ? "読込中" : "更新"}
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={onLoadMore} disabled={loading || !hasMore}>
+          {hasMore ? "さらに読み込む" : "末尾まで表示"}
+        </Button>
+        <Button type="button" size="sm" variant="outline" onClick={handleExportCsv}>
+          <FileDown className="mr-1.5 h-4 w-4" />
+          CSV
+        </Button>
+      </TableToolbar>
 
       {/* テーブル */}
       {logs.length === 0 ? (
@@ -189,7 +234,7 @@ export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filter
               </TableRow>
             </TableHeader>
                 <TableBody>
-                  {logs.map((log) => (
+                  {sortedLogs.map((log) => (
                     <TableRow key={log.id}>
                       <TableCell>{describePayload(log)}</TableCell>
                       <TableCell className="whitespace-nowrap text-sm">{formatDate(log.createdAt)}</TableCell>
@@ -210,7 +255,7 @@ export function AuditTab({ logs, loading, onRefresh, onLoadMore, hasMore, filter
 
           {/* フッター */}
           <div className="flex items-center justify-between text-sm text-muted-foreground">
-            <span>{logs.length} 件表示中</span>
+            <span>{sortedLogs.length}/{logs.length} 件表示中</span>
           </div>
     </div>
   )
