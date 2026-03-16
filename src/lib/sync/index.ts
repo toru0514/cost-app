@@ -193,19 +193,6 @@ export async function saveUserAppData(userId: string, data: AppData, previousDat
       throw error
     }
 
-    const materialModeRows = data.materials.map((item) => ({
-      id: item.id,
-      use_percentage_mode: Boolean(item.usePercentageMode ?? false),
-    }))
-    for (const item of materialModeRows) {
-      const { error: modeError } = await supabaseClient
-        .from("materials")
-        .update({ use_percentage_mode: item.use_percentage_mode })
-        .eq("user_id", userId)
-        .eq("id", item.id)
-      if (modeError) throw modeError
-    }
-
     const audit = buildAuditMetadata(data, previousData)
     const { error: auditError } = await supabaseClient.from("sync_audit_logs").insert({
       user_id: userId,
