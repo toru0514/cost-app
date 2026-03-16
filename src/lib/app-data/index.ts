@@ -41,9 +41,11 @@ export function useAppData(initialData?: AppData | null) {
 
   const update = useCallback(
     (updater: (prev: AppData) => AppData) => {
-      setData(updater)
+      const next = updater(persistence.dataRef.current)
+      persistence.dataRef.current = next
+      setData(next)
     },
-    [setData]
+    [setData, persistence.dataRef]
   )
 
   const actions = useCrudActions(update, persistence.dataRef, authState, {
