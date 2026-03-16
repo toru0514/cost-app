@@ -6,10 +6,16 @@ import { useAuth } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
+  BarChart3,
+  Box,
+  Boxes,
   Camera,
+  ClipboardList,
+  FileText,
   LayoutDashboard,
   LogOut,
   Menu,
+  Package,
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
@@ -59,6 +65,54 @@ export function AuthPageLayout({ children, title, activeMenu }: AuthPageLayoutPr
           >
             <LayoutDashboard className="h-5 w-5 shrink-0" />
             {!sidebarCollapsed && <span>原価サマリ</span>}
+          </Link>
+          <Link
+            href="/analytics"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={sidebarCollapsed ? "集計データ" : undefined}
+          >
+            <BarChart3 className="h-5 w-5 shrink-0" />
+            {!sidebarCollapsed && <span>集計データ</span>}
+          </Link>
+          <Link
+            href="/product"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={sidebarCollapsed ? "商品登録" : undefined}
+          >
+            <Package className="h-5 w-5 shrink-0" />
+            {!sidebarCollapsed && <span>商品登録</span>}
+          </Link>
+          <Link
+            href="/master"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={sidebarCollapsed ? "マスタ登録" : undefined}
+          >
+            <Boxes className="h-5 w-5 shrink-0" />
+            {!sidebarCollapsed && <span>マスタ登録</span>}
+          </Link>
+          <Link
+            href="/list"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={sidebarCollapsed ? "商品/在庫一覧" : undefined}
+          >
+            <ClipboardList className="h-5 w-5 shrink-0" />
+            {!sidebarCollapsed && <span>商品/在庫一覧</span>}
+          </Link>
+          <Link
+            href="/bulk"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={sidebarCollapsed ? "一括処理" : undefined}
+          >
+            <Box className="h-5 w-5 shrink-0" />
+            {!sidebarCollapsed && <span>一括処理</span>}
+          </Link>
+          <Link
+            href="/audit"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={sidebarCollapsed ? "監査ログ" : undefined}
+          >
+            <FileText className="h-5 w-5 shrink-0" />
+            {!sidebarCollapsed && <span>監査ログ</span>}
           </Link>
         </nav>
         <div className="mt-auto space-y-1 border-t pt-3">
@@ -132,6 +186,54 @@ export function AuthPageLayout({ children, title, activeMenu }: AuthPageLayoutPr
               >
                 <LayoutDashboard className="h-5 w-5 shrink-0" />
                 <span>原価サマリ</span>
+              </Link>
+              <Link
+                href="/analytics"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <BarChart3 className="h-5 w-5 shrink-0" />
+                <span>集計データ</span>
+              </Link>
+              <Link
+                href="/product"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <Package className="h-5 w-5 shrink-0" />
+                <span>商品登録</span>
+              </Link>
+              <Link
+                href="/master"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <Boxes className="h-5 w-5 shrink-0" />
+                <span>マスタ登録</span>
+              </Link>
+              <Link
+                href="/list"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <ClipboardList className="h-5 w-5 shrink-0" />
+                <span>商品/在庫一覧</span>
+              </Link>
+              <Link
+                href="/bulk"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <Box className="h-5 w-5 shrink-0" />
+                <span>一括処理</span>
+              </Link>
+              <Link
+                href="/audit"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <FileText className="h-5 w-5 shrink-0" />
+                <span>監査ログ</span>
               </Link>
             </nav>
             <div className="mt-auto space-y-1 border-t pt-3">
