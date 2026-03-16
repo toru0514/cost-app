@@ -59,6 +59,17 @@ export async function PUT(request: Request) {
       return NextResponse.json({ error: "Invalid notification type" }, { status: 400 })
     }
 
+    // Slack webhook URLのバリデーション（SSRF防止）
+    if (notification_type === "slack" && config?.webhook_url) {
+      const webhookUrl = String(config.webhook_url)
+      if (!webhookUrl.startsWith("https://hooks.slack.com/services/")) {
+        return NextResponse.json(
+          { error: "Webhook URLはhttps://hooks.slack.com/services/で始まる必要があります" },
+          { status: 400 }
+        )
+      }
+    }
+
     const { error } = await supabase
       .from("notification_settings")
       .upsert({
