@@ -214,7 +214,9 @@ async function fallbackUpsertMaterials(userId: string, materials: Material[]) {
 export async function saveUserAppData(userId: string, data: AppData, previousData?: AppData) {
   try {
     const payload = buildSyncPayload(data, previousData)
-    console.log("[sync] Saving materials:", data.materials.map((m) => ({ id: m.id.slice(0, 8), name: m.name })))
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[sync] Saving materials:", data.materials.map((m) => ({ id: m.id.slice(0, 8), name: m.name })))
+    }
 
     const { error } = await supabaseClient.rpc("sync_app_data", {
       p_user_id: userId,
@@ -223,23 +225,35 @@ export async function saveUserAppData(userId: string, data: AppData, previousDat
     if (error) {
       throw error
     }
-    console.log("[sync] RPC completed successfully")
 
     // 材料の保存を検証し、不一致があればフォールバックで再保存
     if (data.materials.length > 0) {
       const { data: savedMaterials, error: verifyError } = await supabaseClient
         .from("materials")
-        .select("id, name")
+        .select("id, name, supplier, note, size_description")
         .eq("user_id", userId)
       if (verifyError) {
         console.warn("[sync] Verification query failed:", verifyError)
       } else if (savedMaterials) {
-        const savedMap = new Map(savedMaterials.map((m: { id: string; name: string }) => [m.id, m.name]))
-        const mismatched = data.materials.filter((m) => savedMap.get(m.id) !== m.name)
+        type SavedRow = { id: string; name: string; supplier: string | null; note: string | null; size_description: string | null }
+        const savedMap = new Map(savedMaterials.map((m: SavedRow) => [m.id, m]))
+        const mismatched = data.materials.filter((m) => {
+          const saved = savedMap.get(m.id)
+          if (!saved) return true
+          return (
+            saved.name !== m.name ||
+            (saved.supplier ?? undefined) !== (m.supplier ?? undefined) ||
+            (saved.note ?? undefined) !== (m.note ?? undefined) ||
+            (saved.size_description ?? undefined) !== (m.sizeDescription ?? undefined)
+          )
+        })
         if (mismatched.length > 0) {
           console.error("[sync] Material save verification failed:", {
-            expected: mismatched.map((m) => ({ id: m.id.slice(0, 8), name: m.name })),
-            actual: mismatched.map((m) => ({ id: m.id.slice(0, 8), name: savedMap.get(m.id) ?? "NOT_FOUND" })),
+            expected: mismatched.map((m) => ({ id: m.id.slice(0, 8), name: m.name, supplier: m.supplier, note: m.note })),
+            actual: mismatched.map((m) => {
+              const saved = savedMap.get(m.id)
+              return { id: m.id.slice(0, 8), name: saved?.name ?? "NOT_FOUND", supplier: saved?.supplier, note: saved?.note }
+            }),
           })
           await fallbackUpsertMaterials(userId, mismatched)
         } else {
