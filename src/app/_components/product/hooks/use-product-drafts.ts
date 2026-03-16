@@ -197,7 +197,7 @@ export function useProductDraftState({
   }
 
   const buildInitialPackagingDrafts = () => {
-    if (!editingProductId) return [createPackagingDraft()]
+    if (!editingProductId) return []
     const entries = data.costEntries.packaging
       .filter((entry) => entry.productId === editingProductId)
       .map((entry) => ({
@@ -205,7 +205,7 @@ export function useProductDraftState({
         packagingItemId: entry.packagingItemId,
         quantity: entry.quantity,
       }))
-    return entries.length ? entries : [createPackagingDraft()]
+    return entries
   }
 
   const buildInitialLaborDrafts = () => {
@@ -265,14 +265,14 @@ export function useProductDraftState({
   }
 
   const buildInitialLogisticsDrafts = () => {
-    if (!editingProductId) return [createLogisticsDraft()]
+    if (!editingProductId) return []
     const entries = data.costEntries.logistics
       .filter((entry) => entry.productId === editingProductId)
       .map((entry) => ({
         id: createTempId(),
         shippingMethodId: entry.shippingMethodId,
       }))
-    return entries.length ? entries : [createLogisticsDraft()]
+    return entries
   }
 
   const buildInitialElectricityDrafts = () => {
