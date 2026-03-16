@@ -14,6 +14,7 @@ import {
 } from "@/app/_components/shared/search-with-scope"
 import { TableToolbar } from "@/app/_components/shared/table-toolbar"
 import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
+import { useBulkSelection } from "@/hooks/use-bulk-selection"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import {
@@ -90,7 +91,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
   const [savingStockId, setSavingStockId] = useState<string | null>(null)
   const [adjustAmounts, setAdjustAmounts] = useState<Map<string, string>>(new Map())
   const [busy, setBusy] = useState<string | null>(null)
-  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+  const { selectedIds, handleSelectAll: bulkSelectAll, handleSelectOne, clearSelection, isAllSelected, isSomeSelected, getOtherPageCount } = useBulkSelection()
   const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
   const [showBulkEditDialog, setShowBulkEditDialog] = useState(false)
   const [bulkEditFields, setBulkEditFields] = useState<{
@@ -116,39 +117,12 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
   const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(sortedItems)
 
   const currentPageIds = useMemo(() => pagedRows.map((m) => m.id), [pagedRows])
-  const allCurrentPageSelected = useMemo(
-    () => currentPageIds.length > 0 && currentPageIds.every((id) => selectedIds.has(id)),
-    [currentPageIds, selectedIds]
-  )
-  const someCurrentPageSelected = useMemo(
-    () => currentPageIds.some((id) => selectedIds.has(id)),
-    [currentPageIds, selectedIds]
-  )
+  const allCurrentPageSelected = isAllSelected(currentPageIds)
+  const someCurrentPageSelected = isSomeSelected(currentPageIds)
 
   const handleSelectAll = useCallback(() => {
-    if (allCurrentPageSelected) {
-      setSelectedIds((prev) => {
-        const next = new Set(prev)
-        currentPageIds.forEach((id) => next.delete(id))
-        return next
-      })
-    } else {
-      setSelectedIds((prev) => {
-        const next = new Set(prev)
-        currentPageIds.forEach((id) => next.add(id))
-        return next
-      })
-    }
-  }, [allCurrentPageSelected, currentPageIds])
-
-  const handleSelectOne = useCallback((id: string, checked: boolean) => {
-    setSelectedIds((prev) => {
-      const next = new Set(prev)
-      if (checked) next.add(id)
-      else next.delete(id)
-      return next
-    })
-  }, [])
+    bulkSelectAll(currentPageIds)
+  }, [bulkSelectAll, currentPageIds])
 
   const selectedMaterials = useMemo(
     () => data.materials.filter((m) => selectedIds.has(m.id)),
@@ -159,9 +133,9 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
     if (selectedMaterials.length === 0) return
     actions.bulkRemoveMaterials(selectedMaterials.map((m) => m.id))
     toast.success(`${selectedMaterials.length}件の材料を削除しました`)
-    setSelectedIds(new Set())
+    clearSelection()
     setShowBulkDeleteDialog(false)
-  }, [selectedMaterials, actions])
+  }, [selectedMaterials, actions, clearSelection])
 
   const handleBulkEdit = useCallback(() => {
     const updates: Partial<Pick<Material, "supplier" | "currency" | "unit" | "usePercentageMode">> = {}
@@ -172,9 +146,9 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
     if (Object.keys(updates).length === 0) return
     actions.bulkUpdateMaterials(selectedMaterials.map((m) => m.id), updates)
     toast.success(`${selectedMaterials.length}件の材料を更新しました`)
-    setSelectedIds(new Set())
+    clearSelection()
     setShowBulkEditDialog(false)
-  }, [selectedMaterials, actions, bulkEditFields])
+  }, [selectedMaterials, actions, bulkEditFields, clearSelection])
 
   const resetBulkEditFields = useCallback(() => {
     setBulkEditFields({
@@ -372,9 +346,9 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
             <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
               <span className="text-sm font-medium">{selectedIds.size}件選択中</span>
               {(() => {
-                const otherPageCount = selectedIds.size - currentPageIds.filter((id) => selectedIds.has(id)).length
-                return otherPageCount > 0 ? (
-                  <span className="text-xs text-amber-600 dark:text-amber-400">（他のページに{otherPageCount}件の選択あり）</span>
+                const otherCount = getOtherPageCount(currentPageIds)
+                return otherCount > 0 ? (
+                  <span className="text-xs text-amber-600 dark:text-amber-400">（他のページに{otherCount}件の選択あり）</span>
                 ) : null
               })()}
               <Button type="button" size="sm" variant="outline" onClick={() => { resetBulkEditFields(); setShowBulkEditDialog(true) }}>
@@ -383,7 +357,7 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
               <Button type="button" size="sm" variant="destructive" onClick={() => setShowBulkDeleteDialog(true)}>
                 一括削除
               </Button>
-              <Button type="button" size="sm" variant="ghost" onClick={() => setSelectedIds(new Set())}>
+              <Button type="button" size="sm" variant="ghost" onClick={clearSelection}>
                 選択解除
               </Button>
             </div>

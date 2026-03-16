@@ -183,6 +183,71 @@ export function useCrudActions(
     }))
   }, [update])
 
+  // --- Bulk Categories ---
+  const bulkRemoveLargeCategories = useCallback((ids: string[]) => {
+    const idSet = new Set(ids)
+    update((prev) => {
+      const mediumIdsToRemove = new Set(
+        prev.categories.medium.filter((c) => idSet.has(c.largeId)).map((c) => c.id)
+      )
+      const smallIdsToRemove = new Set(
+        prev.categories.small.filter((c) => mediumIdsToRemove.has(c.mediumId)).map((c) => c.id)
+      )
+      return {
+        ...prev,
+        categories: {
+          ...prev.categories,
+          large: prev.categories.large.filter((c) => !idSet.has(c.id)),
+          medium: prev.categories.medium.filter((c) => !mediumIdsToRemove.has(c.id)),
+          small: prev.categories.small.filter((c) => !smallIdsToRemove.has(c.id)),
+        },
+        products: prev.products.map((product) => ({
+          ...product,
+          categoryLargeId: product.categoryLargeId && idSet.has(product.categoryLargeId) ? null : product.categoryLargeId,
+          categoryMediumId: product.categoryMediumId && mediumIdsToRemove.has(product.categoryMediumId) ? null : product.categoryMediumId,
+          categorySmallId: product.categorySmallId && smallIdsToRemove.has(product.categorySmallId) ? null : product.categorySmallId,
+        })),
+      }
+    })
+  }, [update])
+
+  const bulkRemoveMediumCategories = useCallback((ids: string[]) => {
+    const idSet = new Set(ids)
+    update((prev) => {
+      const smallIdsToRemove = new Set(
+        prev.categories.small.filter((c) => idSet.has(c.mediumId)).map((c) => c.id)
+      )
+      return {
+        ...prev,
+        categories: {
+          ...prev.categories,
+          medium: prev.categories.medium.filter((c) => !idSet.has(c.id)),
+          small: prev.categories.small.filter((c) => !smallIdsToRemove.has(c.id)),
+        },
+        products: prev.products.map((product) => ({
+          ...product,
+          categoryMediumId: product.categoryMediumId && idSet.has(product.categoryMediumId) ? null : product.categoryMediumId,
+          categorySmallId: product.categorySmallId && smallIdsToRemove.has(product.categorySmallId) ? null : product.categorySmallId,
+        })),
+      }
+    })
+  }, [update])
+
+  const bulkRemoveSmallCategories = useCallback((ids: string[]) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      categories: {
+        ...prev.categories,
+        small: prev.categories.small.filter((c) => !idSet.has(c.id)),
+      },
+      products: prev.products.map((product) => ({
+        ...product,
+        categorySmallId: product.categorySmallId && idSet.has(product.categorySmallId) ? null : product.categorySmallId,
+      })),
+    }))
+  }, [update])
+
   // --- Master data ---
   const addMaterial = useCallback(
     (input: Omit<Material, "id"> & { id?: string }) => {
@@ -238,6 +303,30 @@ export function useCrudActions(
     ids.forEach((id) => stockCleanup.cleanupMaterialStock(id))
   }, [update, stockCleanup])
 
+  // --- Bulk Packaging ---
+  const bulkUpdatePackagingItems = useCallback((ids: string[], updates: Partial<Pick<PackagingItem, "currency" | "unit">>) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      packagingItems: prev.packagingItems.map((item) =>
+        idSet.has(item.id) ? { ...item, ...updates } : item
+      ),
+    }))
+  }, [update])
+
+  const bulkRemovePackagingItems = useCallback((ids: string[]) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      packagingItems: prev.packagingItems.filter((item) => !idSet.has(item.id)),
+      costEntries: {
+        ...prev.costEntries,
+        packaging: prev.costEntries.packaging.filter((entry) => !idSet.has(entry.packagingItemId)),
+      },
+    }))
+    ids.forEach((id) => stockCleanup.cleanupPackagingStock(id))
+  }, [update, stockCleanup])
+
   const addPackagingItem = useCallback(
     (input: Omit<PackagingItem, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -272,6 +361,29 @@ export function useCrudActions(
     stockCleanup.cleanupPackagingStock(id)
   }, [update, stockCleanup])
 
+  // --- Bulk Shipping ---
+  const bulkUpdateShippingMethods = useCallback((ids: string[], updates: Partial<Pick<ShippingMethod, "currency">>) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      shippingMethods: (prev.shippingMethods ?? []).map((method) =>
+        idSet.has(method.id) ? { ...method, ...updates } : method
+      ),
+    }))
+  }, [update])
+
+  const bulkRemoveShippingMethods = useCallback((ids: string[]) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      shippingMethods: (prev.shippingMethods ?? []).filter((method) => !idSet.has(method.id)),
+      costEntries: {
+        ...prev.costEntries,
+        logistics: prev.costEntries.logistics.filter((entry) => !idSet.has(entry.shippingMethodId)),
+      },
+    }))
+  }, [update])
+
   const addShippingMethod = useCallback(
     (input: Omit<ShippingMethod, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -305,6 +417,29 @@ export function useCrudActions(
     }))
   }, [update])
 
+  // --- Bulk Labor ---
+  const bulkUpdateLaborRoles = useCallback((ids: string[], updates: Partial<Pick<LaborRole, "currency">>) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      laborRoles: prev.laborRoles.map((role) =>
+        idSet.has(role.id) ? { ...role, ...updates } : role
+      ),
+    }))
+  }, [update])
+
+  const bulkRemoveLaborRoles = useCallback((ids: string[]) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      laborRoles: prev.laborRoles.filter((role) => !idSet.has(role.id)),
+      costEntries: {
+        ...prev.costEntries,
+        labor: prev.costEntries.labor.filter((entry) => !idSet.has(entry.laborRoleId)),
+      },
+    }))
+  }, [update])
+
   const addLaborRole = useCallback(
     (input: Omit<LaborRole, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -332,6 +467,15 @@ export function useCrudActions(
         ...prev.costEntries,
         labor: prev.costEntries.labor.filter((entry) => entry.laborRoleId !== id),
       },
+    }))
+  }, [update])
+
+  // --- Bulk Option Presets ---
+  const bulkRemoveOptionPresets = useCallback((ids: string[]) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      optionPresets: (prev.optionPresets ?? []).filter((preset) => !idSet.has(preset.id)),
     }))
   }, [update])
 
@@ -370,6 +514,33 @@ export function useCrudActions(
     }))
   }, [update])
 
+  // --- Bulk Equipment ---
+  const bulkUpdateEquipments = useCallback((ids: string[], updates: Partial<Pick<Equipment, "currency">>) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      equipments: prev.equipments.map((equipment) =>
+        idSet.has(equipment.id) ? { ...equipment, ...updates } : equipment
+      ),
+    }))
+  }, [update])
+
+  const bulkRemoveEquipments = useCallback((ids: string[]) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      equipments: prev.equipments.filter((equipment) => !idSet.has(equipment.id)),
+      products: prev.products.map((product) => ({
+        ...product,
+        equipmentIds: product.equipmentIds.filter((equipmentId) => !idSet.has(equipmentId)),
+      })),
+      costEntries: {
+        ...prev.costEntries,
+        equipmentAllocations: prev.costEntries.equipmentAllocations.filter((entry) => !idSet.has(entry.equipmentId)),
+      },
+    }))
+  }, [update])
+
   const addEquipment = useCallback(
     (input: Omit<Equipment, "id"> & { id?: string }) => {
       const { id, ...rest } = input
@@ -400,6 +571,29 @@ export function useCrudActions(
       costEntries: {
         ...prev.costEntries,
         equipmentAllocations: prev.costEntries.equipmentAllocations.filter((entry) => entry.equipmentId !== id),
+      },
+    }))
+  }, [update])
+
+  // --- Bulk Fees ---
+  const bulkUpdateFees = useCallback((ids: string[], updates: Partial<Pick<Fee, "currency">>) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      fees: prev.fees.map((fee) =>
+        idSet.has(fee.id) ? { ...fee, ...updates } : fee
+      ),
+    }))
+  }, [update])
+
+  const bulkRemoveFees = useCallback((ids: string[]) => {
+    const idSet = new Set(ids)
+    update((prev) => ({
+      ...prev,
+      fees: prev.fees.filter((fee) => !idSet.has(fee.id)),
+      costEntries: {
+        ...prev.costEntries,
+        fees: prev.costEntries.fees.filter((entry) => !idSet.has(entry.feeId)),
       },
     }))
   }, [update])
@@ -638,24 +832,38 @@ export function useCrudActions(
     removeMaterial,
     bulkUpdateMaterials,
     bulkRemoveMaterials,
+    bulkRemoveLargeCategories,
+    bulkRemoveMediumCategories,
+    bulkRemoveSmallCategories,
     addPackagingItem,
     updatePackagingItem,
     removePackagingItem,
+    bulkUpdatePackagingItems,
+    bulkRemovePackagingItems,
     addShippingMethod,
     updateShippingMethod,
     removeShippingMethod,
+    bulkUpdateShippingMethods,
+    bulkRemoveShippingMethods,
     addLaborRole,
     updateLaborRole,
     removeLaborRole,
+    bulkUpdateLaborRoles,
+    bulkRemoveLaborRoles,
     addOptionPreset,
     updateOptionPreset,
     removeOptionPreset,
+    bulkRemoveOptionPresets,
     addEquipment,
     updateEquipment,
     removeEquipment,
+    bulkUpdateEquipments,
+    bulkRemoveEquipments,
     addFee,
     updateFee,
     removeFee,
+    bulkUpdateFees,
+    bulkRemoveFees,
     addProduct,
     updateProduct,
     addMaterialCostEntry,

@@ -1,8 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useBulkSelection } from "@/hooks/use-bulk-selection"
 
 import {
   filterRowsBySearch,
@@ -61,6 +63,45 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
   ], [])
   const { sortedItems, sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts } = useTableSort(filteredRows, sortOptions, "name", "asc")
   const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(sortedItems)
+
+  const { selectedIds, handleSelectAll: bulkSelectAll, handleSelectOne, clearSelection, isAllSelected, isSomeSelected, getOtherPageCount } = useBulkSelection()
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false)
+  const [bulkEditFields, setBulkEditFields] = useState<{
+    currency: { enabled: boolean; value: string }
+  }>({ currency: { enabled: false, value: "JPY" } })
+
+  const currentPageIds = useMemo(() => pagedRows.map((m) => m.id), [pagedRows])
+  const allCurrentPageSelected = isAllSelected(currentPageIds)
+  const someCurrentPageSelected = isSomeSelected(currentPageIds)
+  const handleSelectAllPage = useCallback(() => { bulkSelectAll(currentPageIds) }, [bulkSelectAll, currentPageIds])
+
+  const selectedItems = useMemo(
+    () => (data.shippingMethods ?? []).filter((m) => selectedIds.has(m.id)),
+    [data.shippingMethods, selectedIds]
+  )
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedItems.length === 0) return
+    actions.bulkRemoveShippingMethods(selectedItems.map((m) => m.id))
+    toast.success(`${selectedItems.length}件の配送方法を削除しました`)
+    clearSelection()
+    setShowBulkDeleteDialog(false)
+  }, [selectedItems, actions, clearSelection])
+
+  const handleBulkEdit = useCallback(() => {
+    const updates: Partial<Pick<ShippingMethod, "currency">> = {}
+    if (bulkEditFields.currency.enabled) updates.currency = bulkEditFields.currency.value
+    if (Object.keys(updates).length === 0) return
+    actions.bulkUpdateShippingMethods(selectedItems.map((m) => m.id), updates)
+    toast.success(`${selectedItems.length}件の配送方法を更新しました`)
+    clearSelection()
+    setShowBulkEditDialog(false)
+  }, [selectedItems, actions, bulkEditFields, clearSelection])
+
+  const resetBulkEditFields = useCallback(() => {
+    setBulkEditFields({ currency: { enabled: false, value: "JPY" } })
+  }, [])
 
   const { updateShippingMethod, removeShippingMethod, addShippingMethod } = actions
 
@@ -147,10 +188,26 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
             search={{ fields: searchFields, query, onQueryChange: setQuery, checkedFields, onCheckedFieldsChange: setCheckedFields }}
             sort={{ sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts }}
           />
+          {selectedIds.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
+              <span className="text-sm font-medium">{selectedIds.size}件選択中</span>
+              {(() => { const otherCount = getOtherPageCount(currentPageIds); return otherCount > 0 ? <span className="text-xs text-amber-600 dark:text-amber-400">（他のページに{otherCount}件の選択あり）</span> : null })()}
+              <Button type="button" size="sm" variant="outline" onClick={() => { resetBulkEditFields(); setShowBulkEditDialog(true) }}>一括編集</Button>
+              <Button type="button" size="sm" variant="destructive" onClick={() => setShowBulkDeleteDialog(true)}>一括削除</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={clearSelection}>選択解除</Button>
+            </div>
+          )}
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="min-w-[640px]">
+            <Table className="min-w-[680px]">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allCurrentPageSelected ? true : someCurrentPageSelected ? "indeterminate" : false}
+                      onCheckedChange={handleSelectAllPage}
+                      aria-label="全選択"
+                    />
+                  </TableHead>
                   <TableHead>名称</TableHead>
                   <TableHead>説明</TableHead>
                   <TableHead>単価</TableHead>
@@ -165,6 +222,13 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
                   const isEditing = editingShipping.id === method.id
                   return (
                     <TableRow key={method.id} className="group">
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(method.id)}
+                          onCheckedChange={(checked) => handleSelectOne(method.id, !!checked)}
+                          aria-label={`${method.name}を選択`}
+                        />
+                      </TableCell>
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -289,6 +353,53 @@ export function ShippingListSection({ data, actions, createTempId }: ShippingLis
             <Button type="button" variant="destructive" onClick={confirmDelete}>
               削除する
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedItems.length}件の配送方法を削除しますか？</DialogTitle>
+            <DialogDescription>以下の配送方法を削除します。この操作は取り消せません。</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-40 overflow-y-auto rounded border p-2">
+            <ul className="space-y-1 text-sm">{selectedItems.map((m) => <li key={m.id}>・{m.name}</li>)}</ul>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setShowBulkDeleteDialog(false)}>キャンセル</Button>
+            <Button type="button" variant="destructive" onClick={handleBulkDelete}>削除する</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showBulkEditDialog} onOpenChange={setShowBulkEditDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>一括編集（{selectedItems.length}件の配送方法）</DialogTitle>
+            <DialogDescription>チェックを入れた項目のみ更新されます。</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-32 overflow-y-auto rounded border p-2 mb-2">
+            <ul className="space-y-1 text-sm">{selectedItems.map((m) => <li key={m.id}>・{m.name}</li>)}</ul>
+          </div>
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <Checkbox
+                checked={bulkEditFields.currency.enabled}
+                onCheckedChange={(checked) => setBulkEditFields((prev) => ({ ...prev, currency: { ...prev.currency, enabled: !!checked } }))}
+              />
+              <span className="text-sm w-16">通貨</span>
+              <Select
+                value={bulkEditFields.currency.value}
+                onValueChange={(value) => setBulkEditFields((prev) => ({ ...prev, currency: { ...prev.currency, value } }))}
+                disabled={!bulkEditFields.currency.enabled}
+              >
+                <SelectTrigger className="w-28"><SelectValue /></SelectTrigger>
+                <SelectContent>{currencyOptions.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}</SelectContent>
+              </Select>
+            </div>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setShowBulkEditDialog(false)}>キャンセル</Button>
+            <Button type="button" onClick={handleBulkEdit} disabled={!bulkEditFields.currency.enabled}>更新する</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

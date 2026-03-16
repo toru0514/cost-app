@@ -1,8 +1,9 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
 
 import {
   filterRowsBySearch,
@@ -27,6 +28,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { Textarea } from "@/components/ui/textarea"
+import { useBulkSelection } from "@/hooks/use-bulk-selection"
 import { useTablePagination } from "@/hooks/use-table-pagination"
 import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
@@ -63,6 +65,52 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
   ], [])
   const { sortedItems, sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts } = useTableSort(filteredRows, sortOptions, "name", "asc")
   const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(sortedItems)
+
+  const { selectedIds, handleSelectAll: bulkSelectAll, handleSelectOne, clearSelection, isAllSelected, isSomeSelected, getOtherPageCount } = useBulkSelection()
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
+  const [showBulkEditDialog, setShowBulkEditDialog] = useState(false)
+  const [bulkEditFields, setBulkEditFields] = useState<{
+    currency: { enabled: boolean; value: string }
+  }>({
+    currency: { enabled: false, value: "JPY" },
+  })
+
+  const currentPageIds = useMemo(() => pagedRows.map((e) => e.id), [pagedRows])
+  const allCurrentPageSelected = isAllSelected(currentPageIds)
+  const someCurrentPageSelected = isSomeSelected(currentPageIds)
+
+  const handleSelectAllPage = useCallback(() => {
+    bulkSelectAll(currentPageIds)
+  }, [bulkSelectAll, currentPageIds])
+
+  const selectedItems = useMemo(
+    () => data.equipments.filter((e) => selectedIds.has(e.id)),
+    [data.equipments, selectedIds]
+  )
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedItems.length === 0) return
+    actions.bulkRemoveEquipments(selectedItems.map((e) => e.id))
+    toast.success(`${selectedItems.length}件の設備を削除しました`)
+    clearSelection()
+    setShowBulkDeleteDialog(false)
+  }, [selectedItems, actions, clearSelection])
+
+  const handleBulkEdit = useCallback(() => {
+    const updates: Partial<Pick<Equipment, "currency">> = {}
+    if (bulkEditFields.currency.enabled) updates.currency = bulkEditFields.currency.value
+    if (Object.keys(updates).length === 0) return
+    actions.bulkUpdateEquipments(selectedItems.map((e) => e.id), updates)
+    toast.success(`${selectedItems.length}件の設備を更新しました`)
+    clearSelection()
+    setShowBulkEditDialog(false)
+  }, [selectedItems, actions, bulkEditFields, clearSelection])
+
+  const resetBulkEditFields = useCallback(() => {
+    setBulkEditFields({
+      currency: { enabled: false, value: "JPY" },
+    })
+  }, [])
 
   const { updateEquipment, removeEquipment, addEquipment } = actions
 
@@ -162,10 +210,37 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
             search={{ fields: searchFields, query, onQueryChange: setQuery, checkedFields, onCheckedFieldsChange: setCheckedFields }}
             sort={{ sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts }}
           />
+          {selectedIds.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
+              <span className="text-sm font-medium">{selectedIds.size}件選択中</span>
+              {(() => {
+                const otherCount = getOtherPageCount(currentPageIds)
+                return otherCount > 0 ? (
+                  <span className="text-xs text-amber-600 dark:text-amber-400">（他のページに{otherCount}件の選択あり）</span>
+                ) : null
+              })()}
+              <Button type="button" size="sm" variant="outline" onClick={() => { resetBulkEditFields(); setShowBulkEditDialog(true) }}>
+                一括編集
+              </Button>
+              <Button type="button" size="sm" variant="destructive" onClick={() => setShowBulkDeleteDialog(true)}>
+                一括削除
+              </Button>
+              <Button type="button" size="sm" variant="ghost" onClick={clearSelection}>
+                選択解除
+              </Button>
+            </div>
+          )}
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="min-w-[740px]">
+            <Table className="min-w-[780px]">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allCurrentPageSelected ? true : someCurrentPageSelected ? "indeterminate" : false}
+                      onCheckedChange={handleSelectAllPage}
+                      aria-label="全選択"
+                    />
+                  </TableHead>
                   <TableHead>名称</TableHead>
                   <TableHead>取得額</TableHead>
                   <TableHead>償却年数</TableHead>
@@ -182,6 +257,13 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                   const isEditing = editingEquipment.id === equipment.id
                   return (
                     <TableRow key={equipment.id} className="group">
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(equipment.id)}
+                          onCheckedChange={(checked) => handleSelectOne(equipment.id, !!checked)}
+                          aria-label={`${equipment.name}を選択`}
+                        />
+                      </TableCell>
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -330,6 +412,85 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
         )}
       </CardContent>
     </Card>
+    <Dialog open={showBulkDeleteDialog} onOpenChange={(open) => !open && setShowBulkDeleteDialog(false)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>一括削除の確認</DialogTitle>
+          <DialogDescription>
+            {selectedItems.length}件の設備を削除しますか？関連するコスト明細も削除されます。この操作は取り消せません。
+          </DialogDescription>
+        </DialogHeader>
+        <div className="max-h-40 overflow-y-auto rounded border bg-muted/30 px-3 py-2">
+          <ul className="space-y-1 text-sm">
+            {selectedItems.map((e) => (
+              <li key={e.id} className="truncate">・{e.name}</li>
+            ))}
+          </ul>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setShowBulkDeleteDialog(false)}>
+            キャンセル
+          </Button>
+          <Button type="button" variant="destructive" onClick={handleBulkDelete}>
+            {selectedItems.length}件を削除
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={showBulkEditDialog} onOpenChange={(open) => !open && setShowBulkEditDialog(false)}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>一括編集（{selectedItems.length}件の設備）</DialogTitle>
+          <DialogDescription>
+            チェックしたフィールドのみ、選択中の設備に一括適用されます。
+          </DialogDescription>
+        </DialogHeader>
+        <div className="max-h-28 overflow-y-auto rounded border bg-muted/30 px-3 py-2">
+          <ul className="flex flex-wrap gap-x-3 gap-y-1 text-xs text-muted-foreground">
+            {selectedItems.map((e) => (
+              <li key={e.id} className="truncate">{e.name}</li>
+            ))}
+          </ul>
+        </div>
+        <div className="space-y-4 py-2">
+          <label className="flex items-center gap-3">
+            <Checkbox
+              checked={bulkEditFields.currency.enabled}
+              onCheckedChange={(checked) => setBulkEditFields((prev) => ({ ...prev, currency: { ...prev.currency, enabled: !!checked } }))}
+            />
+            <span className="w-20 text-sm font-medium">通貨</span>
+            <Select
+              value={bulkEditFields.currency.value}
+              onValueChange={(value) => setBulkEditFields((prev) => ({ ...prev, currency: { ...prev.currency, value } }))}
+              disabled={!bulkEditFields.currency.enabled}
+            >
+              <SelectTrigger className="flex-1">
+                <SelectValue placeholder="通貨" />
+              </SelectTrigger>
+              <SelectContent>
+                {currencyOptions.map((currency) => (
+                  <SelectItem key={currency} value={currency}>
+                    {currency}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </label>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setShowBulkEditDialog(false)}>
+            キャンセル
+          </Button>
+          <Button
+            type="button"
+            onClick={handleBulkEdit}
+            disabled={!bulkEditFields.currency.enabled}
+          >
+            適用する
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
     <Dialog open={deleteTarget !== null} onOpenChange={(open) => !open && setDeleteTarget(null)}>
       <DialogContent>
         <DialogHeader>

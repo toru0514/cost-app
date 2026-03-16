@@ -1,8 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useBulkSelection } from "@/hooks/use-bulk-selection"
 
 import {
   filterRowsBySearch,
@@ -53,6 +55,27 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
   ], [])
   const { sortedItems, sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts } = useTableSort(filteredRows, sortOptions, "name", "asc")
   const { pagedRows, currentPage, totalPages, onPageChange } = useTablePagination(sortedItems)
+
+  const { selectedIds, handleSelectAll: bulkSelectAll, handleSelectOne, clearSelection, isAllSelected, isSomeSelected, getOtherPageCount } = useBulkSelection()
+  const [showBulkDeleteDialog, setShowBulkDeleteDialog] = useState(false)
+
+  const currentPageIds = useMemo(() => pagedRows.map((p) => p.id), [pagedRows])
+  const allCurrentPageSelected = isAllSelected(currentPageIds)
+  const someCurrentPageSelected = isSomeSelected(currentPageIds)
+  const handleSelectAllPage = useCallback(() => { bulkSelectAll(currentPageIds) }, [bulkSelectAll, currentPageIds])
+
+  const selectedItems = useMemo(
+    () => (data.optionPresets ?? []).filter((p) => selectedIds.has(p.id)),
+    [data.optionPresets, selectedIds]
+  )
+
+  const handleBulkDelete = useCallback(() => {
+    if (selectedItems.length === 0) return
+    actions.bulkRemoveOptionPresets(selectedItems.map((p) => p.id))
+    toast.success(`${selectedItems.length}件のオプションプリセットを削除しました`)
+    clearSelection()
+    setShowBulkDeleteDialog(false)
+  }, [selectedItems, actions, clearSelection])
 
   const { updateOptionPreset, removeOptionPreset, addOptionPreset } = actions
 
@@ -144,10 +167,25 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
             search={{ fields: searchFields, query, onQueryChange: setQuery, checkedFields, onCheckedFieldsChange: setCheckedFields }}
             sort={{ sortKey, sortDirection, setSortKey, setSortDirection, sortOptions: sortOpts }}
           />
+          {selectedIds.size > 0 && (
+            <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
+              <span className="text-sm font-medium">{selectedIds.size}件選択中</span>
+              {(() => { const otherCount = getOtherPageCount(currentPageIds); return otherCount > 0 ? <span className="text-xs text-amber-600 dark:text-amber-400">（他のページに{otherCount}件の選択あり）</span> : null })()}
+              <Button type="button" size="sm" variant="destructive" onClick={() => setShowBulkDeleteDialog(true)}>一括削除</Button>
+              <Button type="button" size="sm" variant="ghost" onClick={clearSelection}>選択解除</Button>
+            </div>
+          )}
           <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="min-w-[640px]">
+            <Table className="min-w-[680px]">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10">
+                    <Checkbox
+                      checked={allCurrentPageSelected ? true : someCurrentPageSelected ? "indeterminate" : false}
+                      onCheckedChange={handleSelectAllPage}
+                      aria-label="全選択"
+                    />
+                  </TableHead>
                   <TableHead>名称</TableHead>
                   <TableHead>内容</TableHead>
                   <TableHead className="w-40 text-right">
@@ -164,6 +202,13 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
                       : "-"
                   return (
                     <TableRow key={preset.id} className="group">
+                      <TableCell>
+                        <Checkbox
+                          checked={selectedIds.has(preset.id)}
+                          onCheckedChange={(checked) => handleSelectOne(preset.id, !!checked)}
+                          aria-label={`${preset.name}を選択`}
+                        />
+                      </TableCell>
                       <TableCell>
                         {isEditing ? (
                           <Input
@@ -281,6 +326,21 @@ export function OptionPresetListSection({ data, actions, createTempId }: OptionP
           <Button type="button" variant="destructive" onClick={confirmDelete}>
             削除する
           </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+    <Dialog open={showBulkDeleteDialog} onOpenChange={setShowBulkDeleteDialog}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{selectedItems.length}件のオプションプリセットを削除しますか？</DialogTitle>
+          <DialogDescription>以下のオプションプリセットを削除します。この操作は取り消せません。</DialogDescription>
+        </DialogHeader>
+        <div className="max-h-40 overflow-y-auto rounded border p-2">
+          <ul className="space-y-1 text-sm">{selectedItems.map((p) => <li key={p.id}>・{p.name}</li>)}</ul>
+        </div>
+        <DialogFooter>
+          <Button type="button" variant="ghost" onClick={() => setShowBulkDeleteDialog(false)}>キャンセル</Button>
+          <Button type="button" variant="destructive" onClick={handleBulkDelete}>削除する</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
