@@ -1,5 +1,5 @@
 import { supabaseClient } from "../supabase-client"
-import type { AppData, AuditLog } from "../types"
+import type { AppData, AuditLog, Material } from "../types"
 import type {
   CategoryLargeRow,
   CategoryMediumRow,
@@ -182,15 +182,84 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
   }
 }
 
+async function fallbackUpsertMaterials(userId: string, materials: Material[]) {
+  for (const material of materials) {
+    const { error } = await supabaseClient
+      .from("materials")
+      .upsert(
+        {
+          id: material.id,
+          user_id: userId,
+          name: material.name,
+          unit: material.unit,
+          size_description: material.sizeDescription,
+          currency: material.currency,
+          unit_cost: material.unitCost,
+          use_percentage_mode: Boolean(material.usePercentageMode ?? false),
+          supplier: material.supplier ?? null,
+          note: material.note ?? null,
+          units_per_batch: material.unitsPerBatch ?? null,
+          image_url: material.imageUrl ?? null,
+        },
+        { onConflict: "user_id,id" }
+      )
+    if (error) {
+      console.error(`[sync] Fallback upsert failed for material ${material.id}:`, error)
+    } else {
+      console.log(`[sync] Fallback upsert succeeded for material "${material.name}" (${material.id.slice(0, 8)})`)
+    }
+  }
+}
+
 export async function saveUserAppData(userId: string, data: AppData, previousData?: AppData) {
   try {
     const payload = buildSyncPayload(data, previousData)
+    if (process.env.NODE_ENV !== "production") {
+      console.log("[sync] Saving materials:", data.materials.map((m) => ({ id: m.id.slice(0, 8), name: m.name })))
+    }
+
     const { error } = await supabaseClient.rpc("sync_app_data", {
       p_user_id: userId,
       p_payload: payload,
     })
     if (error) {
       throw error
+    }
+
+    // 材料の保存を検証し、不一致があればフォールバックで再保存
+    if (data.materials.length > 0) {
+      const { data: savedMaterials, error: verifyError } = await supabaseClient
+        .from("materials")
+        .select("id, name, supplier, note, size_description")
+        .eq("user_id", userId)
+      if (verifyError) {
+        console.warn("[sync] Verification query failed:", verifyError)
+      } else if (savedMaterials) {
+        type SavedRow = { id: string; name: string; supplier: string | null; note: string | null; size_description: string | null }
+        const savedMap = new Map(savedMaterials.map((m: SavedRow) => [m.id, m]))
+        const mismatched = data.materials.filter((m) => {
+          const saved = savedMap.get(m.id)
+          if (!saved) return true
+          return (
+            saved.name !== m.name ||
+            (saved.supplier ?? undefined) !== (m.supplier ?? undefined) ||
+            (saved.note ?? undefined) !== (m.note ?? undefined) ||
+            (saved.size_description ?? undefined) !== (m.sizeDescription ?? undefined)
+          )
+        })
+        if (mismatched.length > 0) {
+          console.error("[sync] Material save verification failed:", {
+            expected: mismatched.map((m) => ({ id: m.id.slice(0, 8), name: m.name, supplier: m.supplier, note: m.note })),
+            actual: mismatched.map((m) => {
+              const saved = savedMap.get(m.id)
+              return { id: m.id.slice(0, 8), name: saved?.name ?? "NOT_FOUND", supplier: saved?.supplier, note: saved?.note }
+            }),
+          })
+          await fallbackUpsertMaterials(userId, mismatched)
+        } else {
+          console.log("[sync] Verification passed: all", data.materials.length, "materials match")
+        }
+      }
     }
 
     const audit = buildAuditMetadata(data, previousData)
