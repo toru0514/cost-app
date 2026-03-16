@@ -410,12 +410,12 @@ export function useProductDraftState({
     const emptyProductForm = createEmptyProductForm()
     setProductForm(emptyProductForm)
     setMaterialDrafts([createMaterialDraft()])
-    setPackagingDrafts([createPackagingDraft()])
+    setPackagingDrafts([])
     setLaborDrafts([createLaborDraft()])
     setOutsourcingDrafts([createOutsourcingDraft()])
     setDevelopmentDrafts([createDevelopmentDraft()])
     setEquipmentAllocDrafts([])
-    setLogisticsDrafts([createLogisticsDraft()])
+    setLogisticsDrafts([])
     setElectricityDrafts([createElectricityDraft()])
     setFeeDrafts(data.fees.length ? [createFeeDraft()] : [])
     setInitialStockValue(emptyProductForm.productionLotSize)
@@ -424,10 +424,8 @@ export function useProductDraftState({
     createDevelopmentDraft,
     createElectricityDraft,
     createLaborDraft,
-    createLogisticsDraft,
     createMaterialDraft,
     createOutsourcingDraft,
-    createPackagingDraft,
     createFeeDraft,
     data.fees.length,
   ])
