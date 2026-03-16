@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { NumberInput } from "@/components/ui/number-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { ImageUrlField } from "@/app/_components/shared/image-url-field"
 import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
@@ -201,11 +202,9 @@ export function MaterialSection({ data, actions, isAuthenticated, onSetMaterialS
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">画像URL</Label>
-            <Input
-              type="url"
-              placeholder="https://example.com/image.jpg"
+            <ImageUrlField
               value={materialForm.imageUrl ?? ""}
-              onChange={(event) => setMaterialForm((prev) => ({ ...prev, imageUrl: event.target.value || undefined }))}
+              onChange={(url) => setMaterialForm((prev) => ({ ...prev, imageUrl: url || undefined }))}
             />
           </div>
           <div className="flex justify-end pt-2">
