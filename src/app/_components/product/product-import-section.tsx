@@ -152,17 +152,7 @@ export function ProductImportSection({}: ProductImportSectionProps) {
   }, [sheetIdInput, sheetTitleInput, targetUserId])
 
   if (!isSheetAdmin) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>シート設定（管理者用）</CardTitle>
-          <CardDescription>管理者のみがシート設定を編集できます。</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">この画面を表示する権限がありません。</p>
-        </CardContent>
-      </Card>
-    )
+    return null
   }
 
   return (
