@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { formatCurrency } from "@/lib/calculations"
@@ -17,7 +17,7 @@ export function CategoryTrendSection({ entries, months, currentEnd }: CategoryTr
   const [selectedCategory, setSelectedCategory] = useState<string>("material")
 
   // Build monthly buckets per category
-  const series = (() => {
+  const series = useMemo(() => {
     const buckets: { key: string; label: string; values: Record<string, number> }[] = []
     const monthMap = new Map<string, Record<string, number>>()
 
@@ -47,7 +47,7 @@ export function CategoryTrendSection({ entries, months, currentEnd }: CategoryTr
     })
 
     return buckets
-  })()
+  }, [entries, months, currentEnd])
 
   const config = costKeyConfig.find((c) => c.key === selectedCategory)
   const displayData = series.map((bucket) => ({

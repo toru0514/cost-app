@@ -20,7 +20,7 @@ export function StatusBreakdownCard({ entries }: StatusBreakdownCardProps) {
   const breakdown = statusConfig.map((config) => {
     const matching = entries.filter(({ product }) => {
       const status = product.status ?? "unknown"
-      return status === config.key || (!product.status && config.key === "unknown")
+      return status === config.key
     })
     const totalCost = matching.reduce((sum, { product, costs }) => {
       const quantity = product.expectedProduction.quantity || 1
