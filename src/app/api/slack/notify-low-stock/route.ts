@@ -20,8 +20,9 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true, skipped: true })
   }
 
-  // Webhook URL解決: ユーザー設定 → システムデフォルト
-  const userWebhookUrl = slackSetting?.config?.webhook_url as string | undefined
+  // Webhook URL解決: ユーザー設定（SSRF防止チェック済み） → システムデフォルト
+  const rawWebhookUrl = slackSetting?.config?.webhook_url as string | undefined
+  const userWebhookUrl = rawWebhookUrl?.startsWith("https://hooks.slack.com/services/") ? rawWebhookUrl : undefined
   const webhookUrl = userWebhookUrl || process.env.SLACK_WEBHOOK_URL
   if (!webhookUrl) {
     return NextResponse.json({ error: "Slack webhook URL is not configured" }, { status: 500 })

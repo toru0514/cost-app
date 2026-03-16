@@ -138,7 +138,7 @@ export function NotificationSettingsSection() {
       setSettings((prev) =>
         prev.map((s) =>
           s.notification_type === "slack"
-            ? { ...s, config: { webhook_url: webhookUrl || undefined } }
+            ? { ...s, config: { ...s.config, webhook_url: webhookUrl || undefined } }
             : s
         )
       )
@@ -164,6 +164,29 @@ export function NotificationSettingsSection() {
 
     setTestingWebhook(true)
     try {
+      // テスト送信前に自動保存
+      const saveResponse = await fetchWithAuth("/api/notifications/settings", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          notification_type: "slack",
+          enabled: true,
+          config: { webhook_url: webhookUrl },
+        }),
+      })
+      if (!saveResponse.ok) {
+        const saveData = await saveResponse.json()
+        throw new Error(saveData.error || "Webhook URLの保存に失敗しました")
+      }
+
+      setSettings((prev) =>
+        prev.map((s) =>
+          s.notification_type === "slack"
+            ? { ...s, config: { ...s.config, webhook_url: webhookUrl } }
+            : s
+        )
+      )
+
       const response = await fetchWithAuth("/api/slack/test-webhook", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -175,7 +198,7 @@ export function NotificationSettingsSection() {
         throw new Error(data.error || "テスト送信に失敗しました")
       }
 
-      toast.success("テストメッセージを送信しました。Slackチャンネルを確認してください。")
+      toast.success("保存してテストメッセージを送信しました。Slackチャンネルを確認してください。")
     } catch (error) {
       console.error("Failed to test webhook:", error)
       toast.error(error instanceof Error ? error.message : "テスト送信に失敗しました")
