@@ -1,8 +1,9 @@
 "use client"
 
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import {
   Camera,
+  Copy,
   Loader2,
   ImageIcon,
   RotateCcw,
@@ -10,6 +11,7 @@ import {
   Check,
   AlertCircle,
   Plus,
+  RefreshCw,
 } from "lucide-react"
 import { toast } from "sonner"
 
@@ -28,14 +30,30 @@ export function PhotoUploadSection() {
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [files, setFiles] = useState<FileItem[]>([])
   const [uploading, setUploading] = useState(false)
+  // useRef でオブジェクトURLを追跡し、アンマウント時にクリーンアップ
+  const objectUrlsRef = useRef<Set<string>>(new Set())
+
+  useEffect(() => {
+    const urls = objectUrlsRef.current
+    return () => {
+      for (const url of urls) {
+        URL.revokeObjectURL(url)
+      }
+      urls.clear()
+    }
+  }, [])
 
   const addFiles = useCallback((newFiles: FileList) => {
-    const items: FileItem[] = Array.from(newFiles).map((file) => ({
-      id: crypto.randomUUID(),
-      file,
-      previewUrl: URL.createObjectURL(file),
-      status: "pending" as const,
-    }))
+    const items: FileItem[] = Array.from(newFiles).map((file) => {
+      const previewUrl = URL.createObjectURL(file)
+      objectUrlsRef.current.add(previewUrl)
+      return {
+        id: crypto.randomUUID(),
+        file,
+        previewUrl,
+        status: "pending" as const,
+      }
+    })
     setFiles((prev) => [...prev, ...items])
   }, [])
 
@@ -52,21 +70,29 @@ export function PhotoUploadSection() {
   const handleRemoveFile = useCallback((id: string) => {
     setFiles((prev) => {
       const item = prev.find((f) => f.id === id)
-      if (item) URL.revokeObjectURL(item.previewUrl)
+      if (item) {
+        URL.revokeObjectURL(item.previewUrl)
+        objectUrlsRef.current.delete(item.previewUrl)
+      }
       return prev.filter((f) => f.id !== id)
     })
   }, [])
 
   const handleReset = useCallback(() => {
     setFiles((prev) => {
-      for (const item of prev) URL.revokeObjectURL(item.previewUrl)
+      for (const item of prev) {
+        URL.revokeObjectURL(item.previewUrl)
+        objectUrlsRef.current.delete(item.previewUrl)
+      }
       return []
     })
     if (fileInputRef.current) fileInputRef.current.value = ""
   }, [])
 
   const handleUploadAll = useCallback(async () => {
-    const pendingFiles = files.filter((f) => f.status === "pending")
+    const pendingFiles = files.filter(
+      (f) => f.status === "pending" || f.status === "error"
+    )
     if (pendingFiles.length === 0) return
 
     setUploading(true)
@@ -75,7 +101,9 @@ export function PhotoUploadSection() {
 
     for (const item of pendingFiles) {
       setFiles((prev) =>
-        prev.map((f) => (f.id === item.id ? { ...f, status: "uploading" } : f))
+        prev.map((f) =>
+          f.id === item.id ? { ...f, status: "uploading", error: undefined } : f
+        )
       )
 
       try {
@@ -115,11 +143,14 @@ export function PhotoUploadSection() {
     if (errorCount === 0) {
       toast.success(`${successCount}枚の画像をアップロードしました`)
     } else {
-      toast.error(
-        `${successCount}枚成功、${errorCount}枚失敗しました`
-      )
+      toast.error(`${successCount}枚成功、${errorCount}枚失敗しました`)
     }
   }, [files])
+
+  const handleCopyUrl = useCallback(async (url: string) => {
+    await navigator.clipboard.writeText(url)
+    toast.success("URLをコピーしました")
+  }, [])
 
   const formatFileSize = (bytes: number) => {
     if (bytes < 1024) return `${bytes} B`
@@ -129,16 +160,19 @@ export function PhotoUploadSection() {
 
   const hasFiles = files.length > 0
   const pendingCount = files.filter((f) => f.status === "pending").length
+  const errorCount = files.filter((f) => f.status === "error").length
   const doneCount = files.filter((f) => f.status === "done").length
-  const allDone = hasFiles && pendingCount === 0 && !uploading
+  const allDone =
+    hasFiles && pendingCount === 0 && errorCount === 0 && !uploading
+  const hasRetryable = errorCount > 0 && !uploading
 
   return (
     <div className="space-y-6">
+      {/* capture なし・multiple ありで、PCでもモバイルでもファイル選択UIを表示 */}
       <input
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         multiple
         className="hidden"
         onChange={handleFileChange}
@@ -223,6 +257,18 @@ export function PhotoUploadSection() {
                   </button>
                 )}
 
+                {/* URLコピーボタン（done時） */}
+                {item.status === "done" && item.uploadedUrl && (
+                  <button
+                    type="button"
+                    onClick={() => handleCopyUrl(item.uploadedUrl!)}
+                    className="absolute right-1 top-1 flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white transition-colors hover:bg-black/80"
+                    title="URLをコピー"
+                  >
+                    <Copy className="h-3 w-3" />
+                  </button>
+                )}
+
                 {/* ファイル情報 */}
                 <div className="flex items-center gap-1 bg-muted/80 px-2 py-1 text-xs text-muted-foreground">
                   <ImageIcon className="h-3 w-3 shrink-0" />
@@ -237,8 +283,8 @@ export function PhotoUploadSection() {
 
           {/* アクションボタン */}
           {!allDone ? (
-            <div className="flex gap-2">
-              {pendingCount > 0 && (
+            <div className="flex flex-wrap gap-2">
+              {(pendingCount > 0 || hasRetryable) && (
                 <Button
                   onClick={handleUploadAll}
                   disabled={uploading}
@@ -249,8 +295,13 @@ export function PhotoUploadSection() {
                       <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                       アップロード中...
                     </>
+                  ) : hasRetryable && pendingCount === 0 ? (
+                    <>
+                      <RefreshCw className="mr-2 h-4 w-4" />
+                      失敗した画像を再アップロード（{errorCount}枚）
+                    </>
                   ) : (
-                    `すべてアップロード（${pendingCount}枚）`
+                    `すべてアップロード（${pendingCount + errorCount}枚）`
                   )}
                 </Button>
               )}
