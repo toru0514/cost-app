@@ -4,8 +4,16 @@ import { useEffect, useMemo, useRef, useState, type ReactNode } from "react"
 
 import { Button } from "@/components/ui/button"
 import { EmptyState } from "@/components/ui/empty-state"
-import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import { TablePagination } from "@/components/ui/table-pagination"
+import { useTablePagination } from "@/hooks/use-table-pagination"
+import {
+  filterRowsBySearch,
+  useSearchWithScope,
+  type SearchField,
+} from "@/app/_components/shared/search-with-scope"
+import { TableToolbar } from "@/app/_components/shared/table-toolbar"
+import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
 
 export type FormSectionOpenSignal = { value: boolean; nonce: number }
 
@@ -170,6 +178,27 @@ export function FieldHint({ children }: { children: ReactNode }) {
   return <p className="text-xs text-muted-foreground">{children}</p>
 }
 
+type CostRow = { product: string; detail: string; amount: string }
+
+const costSearchFields: SearchField[] = [
+  { key: "product", label: "商品名" },
+  { key: "detail", label: "内容" },
+]
+
+const costSortOptions: SortOption<CostRow>[] = [
+  { key: "product", label: "商品名" },
+  { key: "detail", label: "内容" },
+  {
+    key: "amount",
+    label: "金額",
+    compareFn: (a, b) => {
+      const aVal = Number(a.amount.replace(/[^\d.-]/g, "")) || 0
+      const bVal = Number(b.amount.replace(/[^\d.-]/g, "")) || 0
+      return aVal - bVal
+    },
+  },
+]
+
 export function CostDisplay({
   title,
   description,
@@ -177,49 +206,28 @@ export function CostDisplay({
 }: {
   title: string
   description: string
-  rows: { product: string; detail: string; amount: string }[]
+  rows: CostRow[]
 }) {
-  const [productFilter, setProductFilter] = useState("")
-  const [sortKey, setSortKey] = useState<"product" | "detail" | "amount">("product")
-  const [sortDirection, setSortDirection] = useState<"asc" | "desc">("asc")
+  const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } =
+    useSearchWithScope(costSearchFields)
 
-  const sortLabelMap: Record<"product" | "detail" | "amount", string> = {
-    product: "商品名",
-    detail: "内容",
-    amount: "金額",
-  }
+  const filteredRows = useMemo(
+    () => filterRowsBySearch(rows, query, checkedFields, allFieldKeys),
+    [rows, query, checkedFields, allFieldKeys]
+  )
 
-  const displayedRows = useMemo(() => {
-    const collator = new Intl.Collator("ja-JP")
-    const query = productFilter.trim().toLowerCase()
-    const filtered = rows
-      .map((row) => ({
-        ...row,
-        amountValue: Number(row.amount.replace(/[^\d.-]/g, "")) || 0,
-      }))
-      .filter((row) => !query || row.product.toLowerCase().includes(query))
+  const {
+    sortedItems,
+    sortKey,
+    sortDirection,
+    setSortKey,
+    setSortDirection,
+    toggleSort,
+    renderSortMark,
+    sortOptions,
+  } = useTableSort(filteredRows, costSortOptions, "product", "asc")
 
-    return filtered.sort((a, b) => {
-      const direction = sortDirection === "asc" ? 1 : -1
-      if (sortKey === "amount") return (a.amountValue - b.amountValue) * direction
-      if (sortKey === "detail") return collator.compare(a.detail, b.detail) * direction
-      return collator.compare(a.product, b.product) * direction
-    })
-  }, [productFilter, rows, sortDirection, sortKey])
-
-  const toggleSort = (key: "product" | "detail" | "amount") => {
-    if (sortKey === key) {
-      setSortDirection((prev) => (prev === "asc" ? "desc" : "asc"))
-      return
-    }
-    setSortKey(key)
-    setSortDirection("asc")
-  }
-
-  const renderSortMark = (key: "product" | "detail" | "amount") => {
-    if (sortKey !== key) return ""
-    return sortDirection === "asc" ? " ↑" : " ↓"
-  }
+  const pagination = useTablePagination(sortedItems)
 
   return (
     <section className="min-w-0 space-y-3 rounded-lg border p-4">
@@ -228,17 +236,26 @@ export function CostDisplay({
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
       <div className="space-y-3">
-        <Input
-          value={productFilter}
-          onChange={(event) => setProductFilter(event.target.value)}
-          placeholder="商品名で絞り込み"
-          className="w-full md:w-72"
+        <TableToolbar
+          search={{
+            fields: costSearchFields,
+            query,
+            onQueryChange: setQuery,
+            checkedFields,
+            onCheckedFieldsChange: setCheckedFields,
+            placeholder: "キーワードで絞り込み",
+            resultCount: query.trim() ? filteredRows.length : undefined,
+            totalCount: query.trim() ? rows.length : undefined,
+          }}
+          sort={{
+            sortKey,
+            sortDirection,
+            setSortKey,
+            setSortDirection,
+            sortOptions,
+          }}
         />
-        <p className="text-xs text-muted-foreground">
-          並び順: {sortLabelMap[sortKey]}（{sortDirection === "asc" ? "昇順" : "降順"}）
-          {productFilter && ` / フィルター: 商品「${productFilter}」`}
-        </p>
-        {displayedRows.length === 0 ? (
+        {sortedItems.length === 0 ? (
           <EmptyState
             title={rows.length === 0 ? "まだデータがありません。" : "条件に一致するデータがありません。"}
             description={rows.length > 0 ? "検索条件を変更してください。" : undefined}
@@ -266,7 +283,7 @@ export function CostDisplay({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {displayedRows.map((row, index) => (
+                {pagination.pagedRows.map((row, index) => (
                   <TableRow key={`${title}-${index}`}>
                     <TableCell>{row.product}</TableCell>
                     <TableCell>{row.detail}</TableCell>
@@ -275,6 +292,11 @@ export function CostDisplay({
                 ))}
               </TableBody>
             </Table>
+            <TablePagination
+              currentPage={pagination.currentPage}
+              totalPages={pagination.totalPages}
+              onPageChange={pagination.onPageChange}
+            />
           </div>
         )}
       </div>
