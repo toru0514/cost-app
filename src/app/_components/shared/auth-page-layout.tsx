@@ -6,6 +6,7 @@ import { useAuth } from "@/lib/auth"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
+  Camera,
   LayoutDashboard,
   LogOut,
   Menu,
@@ -20,7 +21,7 @@ import Link from "next/link"
 type AuthPageLayoutProps = {
   children: React.ReactNode
   title: string
-  activeMenu?: "teams" | "settings"
+  activeMenu?: "teams" | "settings" | "photos"
 }
 
 export function AuthPageLayout({ children, title, activeMenu }: AuthPageLayoutProps) {
@@ -61,6 +62,18 @@ export function AuthPageLayout({ children, title, activeMenu }: AuthPageLayoutPr
           </Link>
         </nav>
         <div className="mt-auto space-y-1 border-t pt-3">
+          <Link
+            href="/photos"
+            className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+              activeMenu === "photos"
+                ? "bg-primary text-primary-foreground"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            }`}
+            title={sidebarCollapsed ? "写真管理" : undefined}
+          >
+            <Camera className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && <span>写真管理</span>}
+          </Link>
           <Link
             href="/teams"
             className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
@@ -122,6 +135,18 @@ export function AuthPageLayout({ children, title, activeMenu }: AuthPageLayoutPr
               </Link>
             </nav>
             <div className="mt-auto space-y-1 border-t pt-3">
+              <Link
+                href="/photos"
+                onClick={() => setMobileNavOpen(false)}
+                className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
+                  activeMenu === "photos"
+                    ? "bg-primary text-primary-foreground"
+                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                }`}
+              >
+                <Camera className="h-4 w-4 shrink-0" />
+                <span>写真管理</span>
+              </Link>
               <Link
                 href="/teams"
                 onClick={() => setMobileNavOpen(false)}

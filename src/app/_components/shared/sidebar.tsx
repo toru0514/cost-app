@@ -3,6 +3,7 @@
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
+  Camera,
   FileDown,
   FileUp,
   LogIn,
@@ -140,6 +141,16 @@ export function Sidebar({
           )}
           {isAuthenticated && (
             <Link
+              href="/photos"
+              className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              title={sidebarCollapsed ? "写真管理" : undefined}
+            >
+              <Camera className="h-4 w-4 shrink-0" />
+              {!sidebarCollapsed && <span>写真管理</span>}
+            </Link>
+          )}
+          {isAuthenticated && (
+            <Link
               href="/teams"
               className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
               title={sidebarCollapsed ? "チーム" : undefined}
@@ -256,6 +267,16 @@ export function Sidebar({
                   <X className="h-4 w-4 shrink-0" />
                   <span>データクリア</span>
                 </button>
+              )}
+              {isAuthenticated && (
+                <Link
+                  href="/photos"
+                  onClick={() => onMobileNavOpenChange(false)}
+                  className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                >
+                  <Camera className="h-4 w-4 shrink-0" />
+                  <span>写真管理</span>
+                </Link>
               )}
               {isAuthenticated && (
                 <Link
