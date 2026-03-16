@@ -1,8 +1,10 @@
 "use client"
 
-import { useMemo, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
+import { Checkbox } from "@/components/ui/checkbox"
+import { useBulkSelection } from "@/hooks/use-bulk-selection"
 
 import {
   filterRowsBySearch,
@@ -105,6 +107,51 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
   ], [])
   const { sortedItems: sortedSmall, sortKey: smallSortKey, sortDirection: smallSortDir, setSortKey: setSmallSortKey, setSortDirection: setSmallSortDir, sortOptions: smallSortOpts } = useTableSort(filteredSmall, smallSortOptions, "name", "asc")
   const { pagedRows: pagedSmall, currentPage: smallCurrentPage, totalPages: smallTotalPages, onPageChange: onSmallPageChange } = useTablePagination(sortedSmall)
+
+  // Bulk selection for each category level
+  const largeBulk = useBulkSelection()
+  const mediumBulk = useBulkSelection()
+  const smallBulk = useBulkSelection()
+
+  const [showBulkDeleteLarge, setShowBulkDeleteLarge] = useState(false)
+  const [showBulkDeleteMedium, setShowBulkDeleteMedium] = useState(false)
+  const [showBulkDeleteSmall, setShowBulkDeleteSmall] = useState(false)
+
+  const largePageIds = useMemo(() => pagedLarge.map((c) => c.id), [pagedLarge])
+  const mediumPageIds = useMemo(() => pagedMedium.map((c) => c.id), [pagedMedium])
+  const smallPageIds = useMemo(() => pagedSmall.map((c) => c.id), [pagedSmall])
+
+  const handleSelectAllLarge = useCallback(() => { largeBulk.handleSelectAll(largePageIds) }, [largeBulk, largePageIds])
+  const handleSelectAllMedium = useCallback(() => { mediumBulk.handleSelectAll(mediumPageIds) }, [mediumBulk, mediumPageIds])
+  const handleSelectAllSmall = useCallback(() => { smallBulk.handleSelectAll(smallPageIds) }, [smallBulk, smallPageIds])
+
+  const selectedLargeItems = useMemo(() => data.categories.large.filter((c) => largeBulk.selectedIds.has(c.id)), [data.categories.large, largeBulk.selectedIds])
+  const selectedMediumItems = useMemo(() => data.categories.medium.filter((c) => mediumBulk.selectedIds.has(c.id)), [data.categories.medium, mediumBulk.selectedIds])
+  const selectedSmallItems = useMemo(() => data.categories.small.filter((c) => smallBulk.selectedIds.has(c.id)), [data.categories.small, smallBulk.selectedIds])
+
+  const handleBulkDeleteLarge = useCallback(() => {
+    if (selectedLargeItems.length === 0) return
+    actions.bulkRemoveLargeCategories(selectedLargeItems.map((c) => c.id))
+    toast.success(`${selectedLargeItems.length}件の大カテゴリを削除しました`)
+    largeBulk.clearSelection()
+    setShowBulkDeleteLarge(false)
+  }, [selectedLargeItems, actions, largeBulk])
+
+  const handleBulkDeleteMedium = useCallback(() => {
+    if (selectedMediumItems.length === 0) return
+    actions.bulkRemoveMediumCategories(selectedMediumItems.map((c) => c.id))
+    toast.success(`${selectedMediumItems.length}件の中カテゴリを削除しました`)
+    mediumBulk.clearSelection()
+    setShowBulkDeleteMedium(false)
+  }, [selectedMediumItems, actions, mediumBulk])
+
+  const handleBulkDeleteSmall = useCallback(() => {
+    if (selectedSmallItems.length === 0) return
+    actions.bulkRemoveSmallCategories(selectedSmallItems.map((c) => c.id))
+    toast.success(`${selectedSmallItems.length}件の小カテゴリを削除しました`)
+    smallBulk.clearSelection()
+    setShowBulkDeleteSmall(false)
+  }, [selectedSmallItems, actions, smallBulk])
 
   const {
     addLargeCategory,
@@ -329,10 +376,25 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
               search={{ fields: largeSearchFields, query: largeQuery, onQueryChange: setLargeQuery, checkedFields: largeCheckedFields, onCheckedFieldsChange: setLargeCheckedFields }}
               sort={{ sortKey: largeSortKey, sortDirection: largeSortDir, setSortKey: setLargeSortKey, setSortDirection: setLargeSortDir, sortOptions: largeSortOpts }}
             />
+            {largeBulk.selectedIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
+                <span className="text-sm font-medium">{largeBulk.selectedIds.size}件選択中</span>
+                {(() => { const c = largeBulk.getOtherPageCount(largePageIds); return c > 0 ? <span className="text-xs text-amber-600 dark:text-amber-400">（他のページに{c}件の選択あり）</span> : null })()}
+                <Button type="button" size="sm" variant="destructive" onClick={() => setShowBulkDeleteLarge(true)}>一括削除</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={largeBulk.clearSelection}>選択解除</Button>
+              </div>
+            )}
             <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-              <Table className="min-w-[640px]">
+              <Table className="min-w-[680px]">
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={largeBulk.isAllSelected(largePageIds) ? true : largeBulk.isSomeSelected(largePageIds) ? "indeterminate" : false}
+                        onCheckedChange={handleSelectAllLarge}
+                        aria-label="全選択"
+                      />
+                    </TableHead>
                     <TableHead>名称</TableHead>
                     <TableHead>概要</TableHead>
                     <TableHead className="w-36 text-right">
@@ -345,6 +407,13 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                     const isEditing = editingLarge.id === category.id
                     return (
                       <TableRow key={category.id} className="group">
+                        <TableCell>
+                          <Checkbox
+                            checked={largeBulk.selectedIds.has(category.id)}
+                            onCheckedChange={(checked) => largeBulk.handleSelectOne(category.id, !!checked)}
+                            aria-label={`${category.name}を選択`}
+                          />
+                        </TableCell>
                         <TableCell>
                           {isEditing ? (
                             <Input
@@ -434,10 +503,25 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
               search={{ fields: mediumSearchFields, query: mediumQuery, onQueryChange: setMediumQuery, checkedFields: mediumCheckedFields, onCheckedFieldsChange: setMediumCheckedFields }}
               sort={{ sortKey: mediumSortKey, sortDirection: mediumSortDir, setSortKey: setMediumSortKey, setSortDirection: setMediumSortDir, sortOptions: mediumSortOpts }}
             />
+            {mediumBulk.selectedIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
+                <span className="text-sm font-medium">{mediumBulk.selectedIds.size}件選択中</span>
+                {(() => { const c = mediumBulk.getOtherPageCount(mediumPageIds); return c > 0 ? <span className="text-xs text-amber-600 dark:text-amber-400">（他のページに{c}件の選択あり）</span> : null })()}
+                <Button type="button" size="sm" variant="destructive" onClick={() => setShowBulkDeleteMedium(true)}>一括削除</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={mediumBulk.clearSelection}>選択解除</Button>
+              </div>
+            )}
             <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-              <Table className="min-w-[700px]">
+              <Table className="min-w-[740px]">
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={mediumBulk.isAllSelected(mediumPageIds) ? true : mediumBulk.isSomeSelected(mediumPageIds) ? "indeterminate" : false}
+                        onCheckedChange={handleSelectAllMedium}
+                        aria-label="全選択"
+                      />
+                    </TableHead>
                     <TableHead>名称</TableHead>
                     <TableHead>親カテゴリ</TableHead>
                     <TableHead>概要</TableHead>
@@ -452,6 +536,13 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                     const parentName = data.categories.large.find((c) => c.id === category.largeId)?.name ?? "-"
                     return (
                       <TableRow key={category.id} className="group">
+                        <TableCell>
+                          <Checkbox
+                            checked={mediumBulk.selectedIds.has(category.id)}
+                            onCheckedChange={(checked) => mediumBulk.handleSelectOne(category.id, !!checked)}
+                            aria-label={`${category.name}を選択`}
+                          />
+                        </TableCell>
                         <TableCell>
                           {isEditing ? (
                             <Input
@@ -564,10 +655,25 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
               search={{ fields: smallSearchFields, query: smallQuery, onQueryChange: setSmallQuery, checkedFields: smallCheckedFields, onCheckedFieldsChange: setSmallCheckedFields }}
               sort={{ sortKey: smallSortKey, sortDirection: smallSortDir, setSortKey: setSmallSortKey, setSortDirection: setSmallSortDir, sortOptions: smallSortOpts }}
             />
+            {smallBulk.selectedIds.size > 0 && (
+              <div className="flex flex-wrap items-center gap-2 rounded-md border bg-muted/50 px-3 py-2">
+                <span className="text-sm font-medium">{smallBulk.selectedIds.size}件選択中</span>
+                {(() => { const c = smallBulk.getOtherPageCount(smallPageIds); return c > 0 ? <span className="text-xs text-amber-600 dark:text-amber-400">（他のページに{c}件の選択あり）</span> : null })()}
+                <Button type="button" size="sm" variant="destructive" onClick={() => setShowBulkDeleteSmall(true)}>一括削除</Button>
+                <Button type="button" size="sm" variant="ghost" onClick={smallBulk.clearSelection}>選択解除</Button>
+              </div>
+            )}
             <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-              <Table className="min-w-[720px]">
+              <Table className="min-w-[760px]">
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={smallBulk.isAllSelected(smallPageIds) ? true : smallBulk.isSomeSelected(smallPageIds) ? "indeterminate" : false}
+                        onCheckedChange={handleSelectAllSmall}
+                        aria-label="全選択"
+                      />
+                    </TableHead>
                     <TableHead>名称</TableHead>
                     <TableHead>親カテゴリ</TableHead>
                     <TableHead>概要</TableHead>
@@ -582,6 +688,13 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
                     const parent = data.categories.medium.find((c) => c.id === category.mediumId)?.name ?? "-"
                     return (
                       <TableRow key={category.id} className="group">
+                        <TableCell>
+                          <Checkbox
+                            checked={smallBulk.selectedIds.has(category.id)}
+                            onCheckedChange={(checked) => smallBulk.handleSelectOne(category.id, !!checked)}
+                            aria-label={`${category.name}を選択`}
+                          />
+                        </TableCell>
                         <TableCell>
                           {isEditing ? (
                             <Input
@@ -702,6 +815,51 @@ export function CategoryListSection({ data, actions, createTempId }: CategoryLis
             <Button type="button" variant="destructive" onClick={confirmDeleteCategory}>
               削除する
             </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showBulkDeleteLarge} onOpenChange={setShowBulkDeleteLarge}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedLargeItems.length}件の大カテゴリを削除しますか？</DialogTitle>
+            <DialogDescription>関連する中カテゴリ・小カテゴリも削除され、商品のカテゴリ設定が解除されます。</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-40 overflow-y-auto rounded border p-2">
+            <ul className="space-y-1 text-sm">{selectedLargeItems.map((c) => <li key={c.id}>・{c.name}</li>)}</ul>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setShowBulkDeleteLarge(false)}>キャンセル</Button>
+            <Button type="button" variant="destructive" onClick={handleBulkDeleteLarge}>削除する</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showBulkDeleteMedium} onOpenChange={setShowBulkDeleteMedium}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedMediumItems.length}件の中カテゴリを削除しますか？</DialogTitle>
+            <DialogDescription>関連する小カテゴリも削除され、商品のカテゴリ設定が解除されます。</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-40 overflow-y-auto rounded border p-2">
+            <ul className="space-y-1 text-sm">{selectedMediumItems.map((c) => <li key={c.id}>・{c.name}</li>)}</ul>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setShowBulkDeleteMedium(false)}>キャンセル</Button>
+            <Button type="button" variant="destructive" onClick={handleBulkDeleteMedium}>削除する</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+      <Dialog open={showBulkDeleteSmall} onOpenChange={setShowBulkDeleteSmall}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{selectedSmallItems.length}件の小カテゴリを削除しますか？</DialogTitle>
+            <DialogDescription>商品のカテゴリ設定が解除されます。</DialogDescription>
+          </DialogHeader>
+          <div className="max-h-40 overflow-y-auto rounded border p-2">
+            <ul className="space-y-1 text-sm">{selectedSmallItems.map((c) => <li key={c.id}>・{c.name}</li>)}</ul>
+          </div>
+          <DialogFooter>
+            <Button type="button" variant="ghost" onClick={() => setShowBulkDeleteSmall(false)}>キャンセル</Button>
+            <Button type="button" variant="destructive" onClick={handleBulkDeleteSmall}>削除する</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
