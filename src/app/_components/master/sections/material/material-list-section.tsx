@@ -12,6 +12,7 @@ import {
   useSearchWithScope,
   type SearchField,
 } from "@/app/_components/shared/search-with-scope"
+import { ImageUrlField } from "@/app/_components/shared/image-url-field"
 import { TableToolbar } from "@/app/_components/shared/table-toolbar"
 import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
 import { useBulkSelection } from "@/hooks/use-bulk-selection"
@@ -518,12 +519,11 @@ export function MaterialListSection({ data, actions, createTempId, isAuthenticat
                       </TableCell>
                       <TableCell>
                         {isEditing ? (
-                          <Input
-                            type="url"
+                          <ImageUrlField
+                            value={editingMaterial.imageUrl ?? ""}
+                            onChange={(url) => setEditingMaterial((prev) => ({ ...prev, imageUrl: url }))}
                             placeholder="https://..."
-                            value={editingMaterial.imageUrl}
-                            onChange={(event) => setEditingMaterial((prev) => ({ ...prev, imageUrl: event.target.value }))}
-                            className="w-40"
+                            inputClassName="w-40"
                           />
                         ) : material.imageUrl ? (
                           /* eslint-disable-next-line @next/next/no-img-element */

@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { NumberInput } from "@/components/ui/number-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { ImageUrlField } from "../shared/image-url-field"
 import { FieldHint } from "../shared/ui"
 import type { AppData, Product, ProductStatus } from "@/lib/types"
 
@@ -305,11 +306,9 @@ export function ProductBasicsSection({
       </div>
       <div className="space-y-1">
         <Label className="text-xs text-muted-foreground">画像URL</Label>
-        <Input
-          type="url"
-          placeholder="https://example.com/image.jpg"
+        <ImageUrlField
           value={productForm.imageUrl ?? ""}
-          onChange={(event) => setProductForm((prev) => ({ ...prev, imageUrl: event.target.value || undefined }))}
+          onChange={(url) => setProductForm((prev) => ({ ...prev, imageUrl: url || undefined }))}
         />
       </div>
       <div className="grid gap-2 md:grid-cols-3">
