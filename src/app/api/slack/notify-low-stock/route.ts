@@ -5,8 +5,25 @@ import { authenticateApiRequest } from "@/lib/server/api-auth"
 export async function POST(request: Request) {
   const auth = await authenticateApiRequest(request)
   if ("error" in auth) return auth.error
+  const { user, supabase } = auth
 
-  const webhookUrl = process.env.SLACK_WEBHOOK_URL
+  // ユーザーのSlack通知設定を取得
+  const { data: slackSetting } = await supabase
+    .from("notification_settings")
+    .select("enabled, config")
+    .eq("user_id", user.id)
+    .eq("notification_type", "slack")
+    .single()
+
+  // Slack通知が無効の場合はスキップ
+  if (slackSetting && !slackSetting.enabled) {
+    return NextResponse.json({ ok: true, skipped: true })
+  }
+
+  // Webhook URL解決: ユーザー設定（SSRF防止チェック済み） → システムデフォルト
+  const rawWebhookUrl = slackSetting?.config?.webhook_url as string | undefined
+  const userWebhookUrl = rawWebhookUrl?.startsWith("https://hooks.slack.com/services/") ? rawWebhookUrl : undefined
+  const webhookUrl = userWebhookUrl || process.env.SLACK_WEBHOOK_URL
   if (!webhookUrl) {
     return NextResponse.json({ error: "Slack webhook URL is not configured" }, { status: 500 })
   }
@@ -25,6 +42,8 @@ export async function POST(request: Request) {
 
   const itemTypeLabel =
     itemType === "product" ? "商品" : itemType === "material" ? "材料" : itemType === "packaging" ? "梱包材" : "アイテム"
+
+  const userName = user.user_metadata?.name || user.email || "不明"
 
   const slackPayload = {
     blocks: [
@@ -49,7 +68,7 @@ export async function POST(request: Request) {
         elements: [
           {
             type: "mrkdwn",
-            text: `在庫数が閾値以下になりました。補充をご検討ください。`,
+            text: `在庫数が閾値以下になりました。補充をご検討ください。（通知元: ${userName}）`,
           },
         ],
       },
