@@ -8,6 +8,7 @@ import { Label } from "@/components/ui/label"
 import { NumberInput } from "@/components/ui/number-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { ImageUrlField } from "@/app/_components/shared/image-url-field"
 import type { AppActions } from "@/lib/app-data"
 import { formatCurrency } from "@/lib/calculations"
 import { currencyOptions } from "@/lib/constants"
@@ -144,11 +145,10 @@ export function PackagingSection({ data, actions, isAuthenticated, onSetPackagin
           </div>
           <div className="space-y-1">
             <Label className="text-xs text-muted-foreground">画像URL</Label>
-            <Input
-              type="url"
+            <ImageUrlField
+              value={packagingForm.imageUrl ?? ""}
+              onChange={(url) => setPackagingForm((prev) => ({ ...prev, imageUrl: url }))}
               placeholder="https://..."
-              value={packagingForm.imageUrl}
-              onChange={(event) => setPackagingForm((prev) => ({ ...prev, imageUrl: event.target.value }))}
             />
           </div>
           <div className="space-y-1">

@@ -10,6 +10,7 @@ import {
   useSearchWithScope,
   type SearchField,
 } from "@/app/_components/shared/search-with-scope"
+import { ImageUrlField } from "@/app/_components/shared/image-url-field"
 import { TableToolbar } from "@/app/_components/shared/table-toolbar"
 import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
 import { Button } from "@/components/ui/button"
@@ -344,12 +345,11 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
                       </TableCell>
                       <TableCell>
                         {isEditing ? (
-                          <Input
-                            type="url"
+                          <ImageUrlField
+                            value={editingEquipment.imageUrl ?? ""}
+                            onChange={(url) => setEditingEquipment((prev) => ({ ...prev, imageUrl: url }))}
                             placeholder="https://..."
-                            value={editingEquipment.imageUrl}
-                            onChange={(event) => setEditingEquipment((prev) => ({ ...prev, imageUrl: event.target.value }))}
-                            className="w-40"
+                            inputClassName="w-40"
                           />
                         ) : equipment.imageUrl ? (
                           /* eslint-disable-next-line @next/next/no-img-element */
