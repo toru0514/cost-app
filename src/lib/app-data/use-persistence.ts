@@ -140,7 +140,6 @@ export function usePersistence(
           // ignore parse errors
         }
       }
-      skipSaveCounterRef.current += 1
       window.localStorage.removeItem(STORAGE_KEY)
       setData(emptyAppData)
       startTransition(() => setHydrated(true))
