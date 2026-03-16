@@ -24,12 +24,7 @@ export const fetchBulkSyncSheetPayload = async (spreadsheetId: string) => {
   const payload = results.reduce<BulkSyncPayload>((acc, { entity, result }) => {
     const columns = SHEET_COLUMNS[entity]
     const records = result.rows.map((row) => pickRowValues(row.values, columns))
-    if (entity === "products") {
-      const normalized = records.map(({ status: _status, ...rest }) => rest)
-      acc[entity] = normalized
-    } else {
-      acc[entity] = records
-    }
+    acc[entity] = records
     return acc
   }, {})
 
