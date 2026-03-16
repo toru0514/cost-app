@@ -42,15 +42,19 @@ export function usePersistence(
     saveRetryRef.current.attempts = 0
   }, [])
 
+  const isSavingInFlightRef = useRef(false)
+
   const persistSupabaseWithRetry = useCallback(() => {
     if (authState.status !== "authenticated") return
     if (!hasMeaningfulData(dataRef.current)) {
       console.warn("Skip saving empty dataset to Supabase")
       return
     }
+    if (isSavingInFlightRef.current) return
     const attemptSave = async () => {
       if (authState.status !== "authenticated") return
       if (!hasMeaningfulData(dataRef.current)) return
+      isSavingInFlightRef.current = true
       setIsSaving(true)
       try {
         await saveUserAppData(authState.user.id, dataRef.current, lastSyncedDataRef.current)
@@ -58,22 +62,31 @@ export function usePersistence(
         await refreshAuditLogs()
         clearSaveRetry()
         setIsSaving(false)
+        isSavingInFlightRef.current = false
       } catch (error) {
         console.error("Failed to save data to Supabase", error)
         const nextAttempts = saveRetryRef.current.attempts + 1
         saveRetryRef.current.attempts = nextAttempts
+        if (nextAttempts === 1) {
+          toast.warning("データの保存に失敗しました。再試行中…")
+        }
         if (nextAttempts >= MAX_SAVE_RETRIES) {
           toast.error("Supabase への保存に失敗しました。接続を確認して再同期してください。")
           clearSaveRetry()
           setIsSaving(false)
+          isSavingInFlightRef.current = false
         } else {
+          isSavingInFlightRef.current = false
           saveRetryRef.current.timeoutId = setTimeout(() => {
             void attemptSave()
           }, nextAttempts * 2000)
         }
       }
     }
-    clearSaveRetry()
+    if (saveRetryRef.current.timeoutId) {
+      clearTimeout(saveRetryRef.current.timeoutId)
+      saveRetryRef.current.timeoutId = null
+    }
     void attemptSave()
   }, [authState, clearSaveRetry, refreshAuditLogs])
 
