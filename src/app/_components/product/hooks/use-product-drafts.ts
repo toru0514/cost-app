@@ -516,7 +516,7 @@ export function useProductDraftState({
               quantity: entry.quantity,
             })),
           createPackagingDraft,
-          false
+          true
         )
       )
 
@@ -592,7 +592,7 @@ export function useProductDraftState({
               currency: entry.currency,
             })),
           createLogisticsDraft,
-          false
+          true
         )
       )
 
