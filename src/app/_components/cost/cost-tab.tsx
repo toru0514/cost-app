@@ -14,6 +14,7 @@ import { ElectricityCostSection } from "./sections/electricity-cost-section"
 import { EquipmentAllocationSection } from "./sections/equipment-allocation-section"
 import { FeesCostSection } from "./sections/fees-cost-section"
 import { LaborCostSection } from "./sections/labor-cost-section"
+import { MaterialCostSection } from "./sections/material-cost-section"
 import { LogisticsCostSection } from "./sections/logistics-cost-section"
 import { OutsourcingCostSection } from "./sections/outsourcing-cost-section"
 import { PackagingCostSection } from "./sections/packaging-cost-section"
@@ -28,6 +29,7 @@ type CostSectionKey =
   | "summary"
   | "costVarianceSimulation"
   | "profitSimulation"
+  | "material"
   | "packaging"
   | "labor"
   | "outsourcing"
@@ -41,6 +43,7 @@ const defaultOpenState: Record<CostSectionKey, boolean> = {
   summary: true,
   costVarianceSimulation: true,
   profitSimulation: true,
+  material: true,
   packaging: true,
   labor: true,
   outsourcing: true,
@@ -143,6 +146,11 @@ export function CostTab({ data, exchangeRateMap }: CostTabProps) {
       <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
         {renderSectionToggle("profitSimulation", "利益シミュレーション")}
         {openState.profitSimulation && <ProfitSimulationSection data={data} exchangeRateMap={exchangeRateMap} />}
+      </div>
+
+      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
+        {renderSectionToggle("material", "材料費集計")}
+        {openState.material && <MaterialCostSection data={data} />}
       </div>
 
       <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
