@@ -82,6 +82,7 @@ type BulkSyncSectionProps = {
   description: string
   placeholder: string
   target: "master" | "products"
+  disabled?: boolean
 }
 const filterDiffByTarget = (diff: DiffResponse, target: "master" | "products") => {
   const items =
@@ -99,7 +100,7 @@ const filterDiffByTarget = (diff: DiffResponse, target: "master" | "products") =
   return { summary, items }
 }
 
-export function BulkSyncSection({ title, description, placeholder, target }: BulkSyncSectionProps) {
+export function BulkSyncSection({ title, description, placeholder, target, disabled }: BulkSyncSectionProps) {
   const [payloadInput, setPayloadInput] = useState("")
   const [diffResult, setDiffResult] = useState<DiffResponse | null>(null)
   const [applyResult, setApplyResult] = useState<ApplyResponse | null>(null)
@@ -415,7 +416,7 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
           <h2 className="text-lg font-semibold">{title}</h2>
           <p className="text-sm text-muted-foreground">{description}</p>
         </div>
-        <Button type="button" variant="outline" size="sm" onClick={handleOpenSpreadsheet} disabled={openingSheet}>
+        <Button type="button" variant="outline" size="sm" onClick={handleOpenSpreadsheet} disabled={disabled || openingSheet}>
           <ExternalLink className="mr-1 h-4 w-4" />
           {openingSheet ? "シート確認中..." : "スプレッドシートを開く"}
         </Button>
@@ -437,6 +438,7 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
                 className="h-8 rounded border px-2 text-sm"
                 value={exportMode}
                 onChange={(event) => setExportMode(event.target.value as "overwrite" | "append")}
+                disabled={disabled}
               >
                 <option value="overwrite">上書き</option>
                 <option value="append">追記</option>
@@ -444,19 +446,19 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
             </label>
           </div>
           <div className="flex flex-col gap-2">
-            <Button onClick={handleDiff} disabled={busy !== null}>
+            <Button onClick={handleDiff} disabled={disabled || busy !== null}>
               差分を確認
             </Button>
-            <Button onClick={() => setExportConfirmOpen(true)} disabled={busy !== null} variant="outline">
+            <Button onClick={() => setExportConfirmOpen(true)} disabled={disabled || busy !== null} variant="outline">
               シートへ書き出し
             </Button>
-            <Button onClick={() => setImportConfirmOpen(true)} disabled={busy !== null} variant="default">
+            <Button onClick={() => setImportConfirmOpen(true)} disabled={disabled || busy !== null} variant="default">
               シートから読み込み
             </Button>
-            <Button onClick={() => handleRollback()} disabled={busy !== null} variant="outline">
+            <Button onClick={() => handleRollback()} disabled={disabled || busy !== null} variant="outline">
               直前の反映をロールバック
             </Button>
-            <Button onClick={handleLoadHistory} disabled={busy !== null} variant="outline">
+            <Button onClick={handleLoadHistory} disabled={disabled || busy !== null} variant="outline">
               <History className="mr-1 h-4 w-4" />
               履歴から選択してロールバック
             </Button>
@@ -474,7 +476,7 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setExportConfirmOpen(false)} disabled={busy !== null}>
+              <Button variant="outline" onClick={() => setExportConfirmOpen(false)} disabled={disabled || busy !== null}>
                 キャンセル
               </Button>
               <Button
@@ -483,7 +485,7 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
                   setExportConfirmOpen(false)
                   await handleExport()
                 }}
-                disabled={busy !== null}
+                disabled={disabled || busy !== null}
               >
                 書き出しを実行
               </Button>
@@ -500,7 +502,7 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
               </DialogDescription>
             </DialogHeader>
             <DialogFooter>
-              <Button variant="outline" onClick={() => setImportConfirmOpen(false)} disabled={busy !== null}>
+              <Button variant="outline" onClick={() => setImportConfirmOpen(false)} disabled={disabled || busy !== null}>
                 キャンセル
               </Button>
               <Button
@@ -509,7 +511,7 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
                   setImportConfirmOpen(false)
                   await handleApply()
                 }}
-                disabled={busy !== null}
+                disabled={disabled || busy !== null}
               >
                 読み込みを実行
               </Button>
@@ -523,6 +525,7 @@ export function BulkSyncSection({ title, description, placeholder, target }: Bul
               type="checkbox"
               checked={useManualJson}
               onChange={(event) => setUseManualJson(event.target.checked)}
+              disabled={disabled}
             />
             JSON を手動で指定する（高度な操作）
           </label>
