@@ -24,7 +24,6 @@ interface MaterialCostSectionProps {
 
 type SortKey = "product" | "detail" | "amount"
 type SortDirection = "asc" | "desc"
-type SummarySortDirection = "asc" | "desc"
 
 export function MaterialCostSection({ data }: MaterialCostSectionProps) {
   const [materialDetailOpen, setMaterialDetailOpen] = useState(true)
@@ -34,7 +33,7 @@ export function MaterialCostSection({ data }: MaterialCostSectionProps) {
   const [sortKey, setSortKey] = useState<SortKey>("product")
   const [sortDirection, setSortDirection] = useState<SortDirection>("asc")
   const [summaryProductFilter, setSummaryProductFilter] = useState("all")
-  const [summarySortDirection, setSummarySortDirection] = useState<SummarySortDirection>("desc")
+  const [summarySortDirection, setSummarySortDirection] = useState<SortDirection>("desc")
 
   const detailSearchFields: SearchField[] = useMemo(
     () => [
@@ -55,12 +54,11 @@ export function MaterialCostSection({ data }: MaterialCostSectionProps) {
     return data.costEntries.materials.map((entry) => {
       const productName = data.products.find((product) => product.id === entry.productId)?.name ?? "未設定"
       const materialName = data.materials.find((m) => m.id === entry.materialId)?.name ?? "-"
-      const detail = materialName
       const amountValue = entry.costPerUnit
       return {
         product: productName,
         materialName,
-        detail,
+        detail: materialName,
         amount: formatCurrency(amountValue, entry.currency),
         amountValue,
       }
@@ -214,85 +212,85 @@ export function MaterialCostSection({ data }: MaterialCostSectionProps) {
         )}
         {materialDetailOpen && (
           <div className="space-y-3">
-          <div className="grid gap-2 md:grid-cols-2">
-            <Select value={productFilter} onValueChange={setProductFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="商品名で絞り込み" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">商品: すべて</SelectItem>
-                {productOptions.map((product) => (
-                  <SelectItem key={`product-filter-${product}`} value={product}>
-                    {product}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={materialFilter} onValueChange={setMaterialFilter}>
-              <SelectTrigger>
-                <SelectValue placeholder="材料名で絞り込み" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">材料: すべて</SelectItem>
-                {materialOptions.map((material) => (
-                  <SelectItem key={`material-filter-${material}`} value={material}>
-                    {material}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-          <SearchWithScope
-            fields={detailSearchFields}
-            query={detailSearch.query}
-            onQueryChange={detailSearch.setQuery}
-            checkedFields={detailSearch.checkedFields}
-            onCheckedFieldsChange={detailSearch.setCheckedFields}
-            placeholder="材料費を検索..."
-          />
-          <p className="text-xs text-muted-foreground">
-            並び順: {sortLabelMap[sortKey]}（{sortDirection === "asc" ? "昇順" : "降順"}）
-            {(productFilter !== "all" || materialFilter !== "all") &&
-              ` / フィルター: 商品「${productFilter === "all" ? "未指定" : productFilter}」、材料「${materialFilter === "all" ? "未指定" : materialFilter}」`}
-          </p>
-          {searchFilteredRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">条件に一致するデータがありません。</p>
-          ) : (
-            <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-              <Table className="w-auto min-w-max">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>
-                      <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("product")}>
-                        商品{renderSortMark("product")}
-                      </button>
-                    </TableHead>
-                    <TableHead>
-                      <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("detail")}>
-                        内容{renderSortMark("detail")}
-                      </button>
-                    </TableHead>
-                    <TableHead className="text-right">
-                      <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("amount")}>
-                        金額{renderSortMark("amount")}
-                      </button>
-                    </TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {detailPagination.pagedRows.map((row, index) => (
-                    <TableRow key={`${row.product}-${row.materialName}-${index}`}>
-                      <TableCell>{row.product}</TableCell>
-                      <TableCell>{row.detail}</TableCell>
-                      <TableCell className="text-right font-medium">{row.amount}</TableCell>
-                    </TableRow>
+            <div className="grid gap-2 md:grid-cols-2">
+              <Select value={productFilter} onValueChange={setProductFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="商品名で絞り込み" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">商品: すべて</SelectItem>
+                  {productOptions.map((product) => (
+                    <SelectItem key={`product-filter-${product}`} value={product}>
+                      {product}
+                    </SelectItem>
                   ))}
-                </TableBody>
-              </Table>
-              <TablePagination currentPage={detailPagination.currentPage} totalPages={detailPagination.totalPages} onPageChange={detailPagination.onPageChange} />
+                </SelectContent>
+              </Select>
+              <Select value={materialFilter} onValueChange={setMaterialFilter}>
+                <SelectTrigger>
+                  <SelectValue placeholder="材料名で絞り込み" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">材料: すべて</SelectItem>
+                  {materialOptions.map((material) => (
+                    <SelectItem key={`material-filter-${material}`} value={material}>
+                      {material}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
-          )}
-        </div>
+            <SearchWithScope
+              fields={detailSearchFields}
+              query={detailSearch.query}
+              onQueryChange={detailSearch.setQuery}
+              checkedFields={detailSearch.checkedFields}
+              onCheckedFieldsChange={detailSearch.setCheckedFields}
+              placeholder="材料費を検索..."
+            />
+            <p className="text-xs text-muted-foreground">
+              並び順: {sortLabelMap[sortKey]}（{sortDirection === "asc" ? "昇順" : "降順"}）
+              {(productFilter !== "all" || materialFilter !== "all") &&
+                ` / フィルター: 商品「${productFilter === "all" ? "未指定" : productFilter}」、材料「${materialFilter === "all" ? "未指定" : materialFilter}」`}
+            </p>
+            {searchFilteredRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">条件に一致するデータがありません。</p>
+            ) : (
+              <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="w-auto min-w-max">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>
+                        <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("product")}>
+                          商品{renderSortMark("product")}
+                        </button>
+                      </TableHead>
+                      <TableHead>
+                        <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("detail")}>
+                          内容{renderSortMark("detail")}
+                        </button>
+                      </TableHead>
+                      <TableHead className="text-right">
+                        <button type="button" className="font-medium hover:underline" onClick={() => toggleSort("amount")}>
+                          金額{renderSortMark("amount")}
+                        </button>
+                      </TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {detailPagination.pagedRows.map((row, index) => (
+                      <TableRow key={`${row.product}-${row.materialName}-${index}`}>
+                        <TableCell>{row.product}</TableCell>
+                        <TableCell>{row.detail}</TableCell>
+                        <TableCell className="text-right font-medium">{row.amount}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <TablePagination currentPage={detailPagination.currentPage} totalPages={detailPagination.totalPages} onPageChange={detailPagination.onPageChange} />
+              </div>
+            )}
+          </div>
         )}
       </section>
 
@@ -305,58 +303,58 @@ export function MaterialCostSection({ data }: MaterialCostSectionProps) {
         )}
         {materialSummaryOpen && (
           <div className="space-y-3">
-          <div className="flex flex-col gap-2 md:flex-row md:items-center">
-            <Select value={summaryProductFilter} onValueChange={setSummaryProductFilter}>
-              <SelectTrigger className="md:max-w-xs">
-                <SelectValue placeholder="商品名で絞り込み" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">商品: すべて</SelectItem>
-                {productOptions.map((product) => (
-                  <SelectItem key={`summary-product-filter-${product}`} value={product}>
-                    {product}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <button
-              type="button"
-              className="text-left text-sm font-medium hover:underline md:text-right"
-              onClick={() => setSummarySortDirection((prev) => (prev === "asc" ? "desc" : "asc"))}
-            >
-              合計で並び替え（{summarySortDirection === "asc" ? "昇順" : "降順"}）
-            </button>
-          </div>
-          <p className="text-xs text-muted-foreground">
-            並び順: 合計（{summarySortDirection === "asc" ? "昇順" : "降順"}）
-            {summaryProductFilter !== "all" && ` / フィルター: 商品「${summaryProductFilter}」`}
-          </p>
-          {summaryRows.length === 0 ? (
-            <p className="text-sm text-muted-foreground">条件に一致するデータがありません。</p>
-          ) : (
-            <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-              <Table className="w-auto min-w-max">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>商品</TableHead>
-                    <TableHead>内訳</TableHead>
-                    <TableHead className="text-right">合計</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {summaryPagination.pagedRows.map((row, index) => (
-                    <TableRow key={`${row.product}-${index}`}>
-                      <TableCell className="font-medium">{row.product}</TableCell>
-                      <TableCell>{row.details.map((detail) => detail.text).join(" | ")}</TableCell>
-                      <TableCell className="text-right font-semibold">{row.totalText}</TableCell>
-                    </TableRow>
+            <div className="flex flex-col gap-2 md:flex-row md:items-center">
+              <Select value={summaryProductFilter} onValueChange={setSummaryProductFilter}>
+                <SelectTrigger className="md:max-w-xs">
+                  <SelectValue placeholder="商品名で絞り込み" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">商品: すべて</SelectItem>
+                  {productOptions.map((product) => (
+                    <SelectItem key={`summary-product-filter-${product}`} value={product}>
+                      {product}
+                    </SelectItem>
                   ))}
-                </TableBody>
-              </Table>
-              <TablePagination currentPage={summaryPagination.currentPage} totalPages={summaryPagination.totalPages} onPageChange={summaryPagination.onPageChange} />
+                </SelectContent>
+              </Select>
+              <button
+                type="button"
+                className="text-left text-sm font-medium hover:underline md:text-right"
+                onClick={() => setSummarySortDirection((prev) => (prev === "asc" ? "desc" : "asc"))}
+              >
+                合計で並び替え（{summarySortDirection === "asc" ? "昇順" : "降順"}）
+              </button>
             </div>
-          )}
-        </div>
+            <p className="text-xs text-muted-foreground">
+              並び順: 合計（{summarySortDirection === "asc" ? "昇順" : "降順"}）
+              {summaryProductFilter !== "all" && ` / フィルター: 商品「${summaryProductFilter}」`}
+            </p>
+            {summaryRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">条件に一致するデータがありません。</p>
+            ) : (
+              <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
+                <Table className="w-auto min-w-max">
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>商品</TableHead>
+                      <TableHead>内訳</TableHead>
+                      <TableHead className="text-right">合計</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {summaryPagination.pagedRows.map((row, index) => (
+                      <TableRow key={`${row.product}-${index}`}>
+                        <TableCell className="font-medium">{row.product}</TableCell>
+                        <TableCell>{row.details.map((detail) => detail.text).join(" | ")}</TableCell>
+                        <TableCell className="text-right font-semibold">{row.totalText}</TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+                <TablePagination currentPage={summaryPagination.currentPage} totalPages={summaryPagination.totalPages} onPageChange={summaryPagination.onPageChange} />
+              </div>
+            )}
+          </div>
         )}
       </section>
     </div>
