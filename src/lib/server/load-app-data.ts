@@ -1,6 +1,8 @@
 import type { SupabaseClient } from "@supabase/supabase-js"
 import type { AppData } from "../types"
+import type { TimeRecordLap } from "../types"
 import { emptyAppData } from "../types"
+import type { TimeRecordRow } from "../sync/row-types"
 
 const TABLES = {
   categories: {
@@ -40,9 +42,9 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       fetchRows(supabase, TABLES.products, userId),
     ])
 
-  let timeRecords: any[] = []
+  let timeRecords: TimeRecordRow[] = []
   try {
-    timeRecords = await fetchRows(supabase, "time_records", userId)
+    timeRecords = await fetchRows<TimeRecordRow>(supabase, "time_records", userId)
   } catch {
     // テーブル未作成の場合はスキップ
   }
@@ -126,11 +128,11 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       name: row.name,
       variants: Array.isArray(row.variants) ? row.variants : [],
     })),
-    timeRecords: timeRecords.map((row: any) => ({
+    timeRecords: timeRecords.map((row) => ({
       id: row.id,
       taskName: row.task_name ?? "",
       totalDuration: row.total_duration ?? 0,
-      laps: Array.isArray(row.laps) ? row.laps : [],
+      laps: Array.isArray(row.laps) ? (row.laps as unknown as TimeRecordLap[]) : [],
       note: row.note ?? undefined,
       createdAt: row.created_at ?? new Date().toISOString(),
       updatedAt: row.updated_at ?? new Date().toISOString(),

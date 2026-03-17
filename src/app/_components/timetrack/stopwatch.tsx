@@ -12,7 +12,7 @@ export type LapData = {
 
 type StopwatchState = "idle" | "running" | "paused"
 
-function formatTime(ms: number): string {
+export function formatTime(ms: number): string {
   const totalSeconds = Math.floor(ms / 1000)
   const hours = Math.floor(totalSeconds / 3600)
   const minutes = Math.floor((totalSeconds % 3600) / 60)
@@ -171,7 +171,7 @@ export function Stopwatch({ onComplete }: StopwatchProps) {
         <div className="w-full max-w-md">
           <h3 className="mb-2 text-sm font-medium text-muted-foreground">ラップ一覧</h3>
           <div className="divide-y rounded-md border">
-            {[...laps].reverse().map((lap, i) => (
+            {[...laps].reverse().map((lap) => (
               <div key={lap.id} className="flex items-center justify-between px-4 py-2 text-sm">
                 <span className="text-muted-foreground">{lap.label}</span>
                 <span className="font-mono tabular-nums">{formatTime(lap.duration)}</span>
@@ -183,5 +183,3 @@ export function Stopwatch({ onComplete }: StopwatchProps) {
     </div>
   )
 }
-
-export { formatTime }
