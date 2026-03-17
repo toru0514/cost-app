@@ -82,6 +82,21 @@ export function ProductBasicsSection({
     const parts = [largeName, mediumName, smallName].filter(Boolean)
     return parts.length ? parts.join(" / ") : undefined
   }, [largeCategories, mediumCategories, smallCategories, productForm.categoryLargeId, productForm.categoryMediumId, productForm.categorySmallId])
+  const taskNameOptions = useMemo(() => {
+    const byName = new Map<string, { taskName: string; hours: number; updatedAt: string }>()
+    for (const record of data.timeRecords) {
+      const existing = byName.get(record.taskName)
+      if (!existing || record.updatedAt > existing.updatedAt) {
+        byName.set(record.taskName, {
+          taskName: record.taskName,
+          hours: Math.round((record.totalDuration / 1000 / 3600) * 100) / 100,
+          updatedAt: record.updatedAt,
+        })
+      }
+    }
+    return Array.from(byName.values())
+  }, [data.timeRecords])
+
   const optionPresets = data.optionPresets ?? []
   const [selectedPresetId, setSelectedPresetId] = useState<string>(optionPresets[0]?.id ?? "")
   const selectedPresetExists = optionPresets.some((preset) => preset.id === selectedPresetId)
@@ -314,6 +329,27 @@ export function ProductBasicsSection({
       <div className="grid gap-2 md:grid-cols-3">
         <div className="space-y-1">
           <Label className="text-xs text-muted-foreground">制作工数 (時間)</Label>
+          {taskNameOptions.length > 0 && (
+            <Select
+              onValueChange={(taskName) => {
+                const option = taskNameOptions.find((o) => o.taskName === taskName)
+                if (option) {
+                  setProductForm((prev) => ({ ...prev, baseManHours: option.hours }))
+                }
+              }}
+            >
+              <SelectTrigger className="w-full">
+                <SelectValue placeholder="時間計測から選択" />
+              </SelectTrigger>
+              <SelectContent>
+                {taskNameOptions.map((option) => (
+                  <SelectItem key={option.taskName} value={option.taskName}>
+                    {option.taskName}（{option.hours}時間）
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          )}
           <NumberInput
             placeholder="例: 1.5"
             value={productForm.baseManHours}
