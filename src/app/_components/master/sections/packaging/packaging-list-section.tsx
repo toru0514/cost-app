@@ -4,6 +4,8 @@ import { useCallback, useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
+import { ViewToggle } from "@/app/_components/shared/view-toggle"
+import { PackagingCardGrid } from "@/app/_components/master/sections/packaging/packaging-card-grid"
 import { useBulkSelection } from "@/hooks/use-bulk-selection"
 
 import {
@@ -72,6 +74,16 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
     note: "",
     imageUrl: "",
   })
+  const [viewMode, setViewMode] = useState<"table" | "grid">(() => {
+    if (typeof window === "undefined") return "table"
+    const stored = localStorage.getItem("view-mode-packaging")
+    return stored === "grid" ? "grid" : "table"
+  })
+
+  const handleViewModeChange = (next: "table" | "grid") => {
+    setViewMode(next)
+    localStorage.setItem("view-mode-packaging", next)
+  }
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
   const [editingStock, setEditingStock] = useState<{ id: string; value: string; unit: string } | null>(null)
@@ -266,12 +278,33 @@ export function PackagingListSection({ data, actions, createTempId, isAuthentica
   return (
     <>
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>梱包材一覧</CardTitle>
+        <ViewToggle value={viewMode} onChange={handleViewModeChange} />
       </CardHeader>
       <CardContent>
         {data.packagingItems.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
+        ) : viewMode === "grid" ? (
+          <PackagingCardGrid
+            items={data.packagingItems}
+            onEdit={(item) => {
+              setEditingStock(null)
+              setEditingPackaging({
+                id: item.id,
+                name: item.name,
+                unit: item.unit,
+                sizeDescription: item.sizeDescription ?? "",
+                currency: item.currency,
+                unitCost: item.unitCost,
+                unitsPerBatch: item.unitsPerBatch ?? 1,
+                note: item.note ?? "",
+                imageUrl: item.imageUrl ?? "",
+              })
+            }}
+            onCopy={handlePackagingCopy}
+            onDelete={(item) => setDeleteTarget({ id: item.id, name: item.name })}
+          />
         ) : (
           <div className="space-y-2">
           <TableToolbar

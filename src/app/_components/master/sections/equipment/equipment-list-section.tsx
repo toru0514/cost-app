@@ -4,6 +4,8 @@ import { useCallback, useMemo, useState } from "react"
 
 import { Copy, Edit3, Trash2 } from "lucide-react"
 import { Checkbox } from "@/components/ui/checkbox"
+import { ViewToggle } from "@/app/_components/shared/view-toggle"
+import { EquipmentCardGrid } from "@/app/_components/master/sections/equipment/equipment-card-grid"
 
 import {
   filterRowsBySearch,
@@ -54,6 +56,16 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
     note: "",
     imageUrl: "",
   })
+  const [viewMode, setViewMode] = useState<"table" | "grid">(() => {
+    if (typeof window === "undefined") return "table"
+    const stored = localStorage.getItem("view-mode-equipment")
+    return stored === "grid" ? "grid" : "table"
+  })
+
+  const handleViewModeChange = (next: "table" | "grid") => {
+    setViewMode(next)
+    localStorage.setItem("view-mode-equipment", next)
+  }
 
   const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string } | null>(null)
 
@@ -199,12 +211,31 @@ export function EquipmentListSection({ data, actions, createTempId }: EquipmentL
   return (
     <>
     <Card>
-      <CardHeader>
+      <CardHeader className="flex flex-row items-center justify-between">
         <CardTitle>設備一覧</CardTitle>
+        <ViewToggle value={viewMode} onChange={handleViewModeChange} />
       </CardHeader>
       <CardContent>
         {data.equipments.length === 0 ? (
           <p className="text-sm text-muted-foreground">まだ登録がありません。</p>
+        ) : viewMode === "grid" ? (
+          <EquipmentCardGrid
+            items={data.equipments}
+            onEdit={(equipment) => {
+              setEditingEquipment({
+                id: equipment.id,
+                name: equipment.name,
+                acquisitionCost: equipment.acquisitionCost,
+                currency: equipment.currency,
+                amortizationYears: equipment.amortizationYears,
+                utilizationRate: equipment.utilizationRate ?? 100,
+                note: equipment.note ?? "",
+                imageUrl: equipment.imageUrl ?? "",
+              })
+            }}
+            onCopy={handleEquipmentCopy}
+            onDelete={(equipment) => setDeleteTarget({ id: equipment.id, name: equipment.name })}
+          />
         ) : (
           <div className="space-y-2">
           <TableToolbar
