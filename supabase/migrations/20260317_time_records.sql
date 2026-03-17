@@ -20,5 +20,9 @@ ALTER TABLE time_records
 -- RLS を有効化
 ALTER TABLE time_records ENABLE ROW LEVEL SECURITY;
 
--- 既存テーブルと同じパターンの RLS ポリシー
-SELECT ensure_user_owned_policies('time_records');
+-- RLS ポリシー（既存テーブルと同じパターン）
+CREATE POLICY time_records_select_own ON time_records
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY time_records_modify_own ON time_records
+  FOR ALL USING (auth.uid() = user_id) WITH CHECK (auth.uid() = user_id);
