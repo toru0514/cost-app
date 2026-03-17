@@ -128,7 +128,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
           </CardHeader>
           <CardContent>
             <RecordHistory
-              records={data.timeRecords ?? []}
+              records={data.timeRecords}
               onUpdate={actions.updateTimeRecord}
               onRemove={actions.removeTimeRecord}
             />

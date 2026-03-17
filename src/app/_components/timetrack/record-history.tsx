@@ -101,7 +101,11 @@ export function RecordHistory({ records, onUpdate, onRemove }: RecordHistoryProp
                       variant="ghost"
                       size="icon"
                       className="h-8 w-8 text-destructive hover:text-destructive"
-                      onClick={() => onRemove(record.id)}
+                      onClick={() => {
+                        if (window.confirm(`「${record.taskName}」の記録を削除しますか？`)) {
+                          onRemove(record.id)
+                        }
+                      }}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

@@ -786,7 +786,7 @@ export function useCrudActions(
       const record: TimeRecord = { ...rest, id: inputId ?? createId() }
       update((prev) => ({
         ...prev,
-        timeRecords: [...(prev.timeRecords ?? []), record],
+        timeRecords: [...prev.timeRecords, record],
       }))
     },
     [update]
@@ -796,7 +796,7 @@ export function useCrudActions(
     (input: TimeRecord) => {
       update((prev) => ({
         ...prev,
-        timeRecords: (prev.timeRecords ?? []).map((r) => (r.id === input.id ? input : r)),
+        timeRecords: prev.timeRecords.map((r) => (r.id === input.id ? input : r)),
       }))
     },
     [update]
@@ -806,18 +806,7 @@ export function useCrudActions(
     (id: string) => {
       update((prev) => ({
         ...prev,
-        timeRecords: (prev.timeRecords ?? []).filter((r) => r.id !== id),
-      }))
-    },
-    [update]
-  )
-
-  const bulkRemoveTimeRecords = useCallback(
-    (ids: string[]) => {
-      const idSet = new Set(ids)
-      update((prev) => ({
-        ...prev,
-        timeRecords: (prev.timeRecords ?? []).filter((r) => !idSet.has(r.id)),
+        timeRecords: prev.timeRecords.filter((r) => r.id !== id),
       }))
     },
     [update]
@@ -925,7 +914,6 @@ export function useCrudActions(
     addTimeRecord,
     updateTimeRecord,
     removeTimeRecord,
-    bulkRemoveTimeRecords,
     resetAll,
     seedSample,
     importGuestData,
