@@ -144,6 +144,16 @@ export type FeeCostRow = {
   currency: string | null
 }
 
+export type TimeRecordRow = {
+  id: string
+  task_name: string
+  total_duration: number | null
+  laps: JsonValue | null
+  note: string | null
+  created_at: string | null
+  updated_at: string | null
+}
+
 export type AuditLogRow = {
   id: string
   user_id: string

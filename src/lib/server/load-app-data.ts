@@ -40,6 +40,13 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       fetchRows(supabase, TABLES.products, userId),
     ])
 
+  let timeRecords: any[] = []
+  try {
+    timeRecords = await fetchRows(supabase, "time_records", userId)
+  } catch {
+    // テーブル未作成の場合はスキップ
+  }
+
   return {
     ...emptyAppData,
     categories: {
@@ -118,6 +125,15 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       id: row.id,
       name: row.name,
       variants: Array.isArray(row.variants) ? row.variants : [],
+    })),
+    timeRecords: timeRecords.map((row: any) => ({
+      id: row.id,
+      taskName: row.task_name ?? "",
+      totalDuration: row.total_duration ?? 0,
+      laps: Array.isArray(row.laps) ? row.laps : [],
+      note: row.note ?? undefined,
+      createdAt: row.created_at ?? new Date().toISOString(),
+      updatedAt: row.updated_at ?? new Date().toISOString(),
     })),
     products: products.map((row: any) => ({
       id: row.id,

@@ -142,6 +142,16 @@ export function buildSyncPayload(data: AppData, previous?: AppData) {
       status: item.status ?? "active",
     })),
     products_deleted: toDeletePayload(prev.products, data.products),
+    time_records: (data.timeRecords ?? []).map((item) => ({
+      id: item.id,
+      task_name: item.taskName,
+      total_duration: item.totalDuration,
+      laps: item.laps,
+      note: item.note ?? null,
+      created_at: item.createdAt,
+      updated_at: item.updatedAt,
+    })),
+    time_records_deleted: toDeletePayload(prev.timeRecords ?? [], data.timeRecords ?? []),
     cost_entries_materials: data.costEntries.materials.map((item) => ({
       id: item.id,
       product_id: item.productId,
