@@ -12,6 +12,7 @@ export type { OutsourcingCostEntry, DevelopmentCostEntry, ElectricityCostEntry }
 export type { StockAlertSetting } from "./types/stock"
 export type { AuditLogMetadata, ChangeSummary, AuditFilters, AuditLog } from "./types/audit"
 export type { ExchangeRate } from "./types/exchange-rate"
+export type { TimeRecord, TimeRecordLap } from "./types/time-record"
 export type { AppData } from "./types/app-data"
 export { emptyAppData } from "./types/app-data"
 export { sampleAppData, defaultAppData } from "./types/sample-data"

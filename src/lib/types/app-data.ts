@@ -7,6 +7,7 @@ import type { Equipment, EquipmentAllocationEntry } from "./equipment"
 import type { Fee, FeeCostEntry } from "./fee"
 import type { Product, OptionPreset } from "./product"
 import type { OutsourcingCostEntry, DevelopmentCostEntry, ElectricityCostEntry } from "./cost-entry"
+import type { TimeRecord } from "./time-record"
 
 export type AppData = {
   categories: {
@@ -22,6 +23,7 @@ export type AppData = {
   fees: Fee[]
   optionPresets: OptionPreset[]
   products: Product[]
+  timeRecords: TimeRecord[]
   costEntries: {
     materials: MaterialCostEntry[]
     packaging: PackagingCostEntry[]
@@ -49,6 +51,7 @@ export const emptyAppData: AppData = {
   fees: [],
   optionPresets: [],
   products: [],
+  timeRecords: [],
   costEntries: {
     materials: [],
     packaging: [],

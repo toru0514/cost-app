@@ -142,6 +142,18 @@ export function buildSyncPayload(data: AppData, previous?: AppData) {
       status: item.status ?? "active",
     })),
     products_deleted: toDeletePayload(prev.products, data.products),
+    // NOTE: time_records テーブルおよび sync_app_data RPC関数の更新は未対応。
+    // Supabaseマイグレーション追加後に有効化される。現状はlocalStorageのみで永続化。
+    time_records: data.timeRecords.map((item) => ({
+      id: item.id,
+      task_name: item.taskName,
+      total_duration: item.totalDuration,
+      laps: item.laps,
+      note: item.note ?? null,
+      created_at: item.createdAt,
+      updated_at: item.updatedAt,
+    })),
+    time_records_deleted: toDeletePayload(prev.timeRecords, data.timeRecords),
     cost_entries_materials: data.costEntries.materials.map((item) => ({
       id: item.id,
       product_id: item.productId,

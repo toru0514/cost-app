@@ -22,6 +22,7 @@ import type {
   ElectricityCostRow,
   FeeCostRow,
   AuditLogRow,
+  TimeRecordRow,
 } from "./row-types"
 import {
   mapLarge,
@@ -44,6 +45,7 @@ import {
   mapLogisticsEntry,
   mapElectricEntry,
   mapFeeEntry,
+  mapTimeRecord,
   mapAuditLog,
 } from "./row-mappers"
 import { buildSyncPayload, buildAuditMetadata } from "./build-sync-payload"
@@ -69,6 +71,7 @@ const TABLES = {
   fees: "fees",
   optionPresets: "option_presets",
   products: "products",
+  timeRecords: "time_records",
   costEntries: {
     materials: "cost_entries_materials",
     packaging: "cost_entries_packaging",
@@ -134,6 +137,14 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
     fetchRows<FeeCostRow>(TABLES.costEntries.fees, userId),
   ])
 
+    // time_records テーブルが存在しない場合はスキップ
+    let timeRecords: TimeRecordRow[] = []
+    try {
+      timeRecords = await fetchRows<TimeRecordRow>(TABLES.timeRecords, userId)
+    } catch {
+      // テーブル未作成の場合は空配列
+    }
+
     const hasData =
       large.length ||
       medium.length ||
@@ -164,6 +175,7 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       fees: fees.map(mapFee),
       optionPresets: optionPresets.map(mapOptionPreset),
       products: products.map(mapProduct),
+      timeRecords: timeRecords.map(mapTimeRecord),
       costEntries: {
         materials: costMaterials.map(mapMaterialEntry),
         packaging: costPackaging.map(mapPackagingEntry),

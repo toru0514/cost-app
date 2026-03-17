@@ -20,6 +20,8 @@ import type {
   ElectricityCostEntry,
   FeeCostEntry,
   AuditLog,
+  TimeRecord,
+  TimeRecordLap,
 } from "../types"
 import type {
   CategoryLargeRow,
@@ -43,6 +45,7 @@ import type {
   ElectricityCostRow,
   FeeCostRow,
   AuditLogRow,
+  TimeRecordRow,
 } from "./row-types"
 
 const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
@@ -235,6 +238,16 @@ export const mapFeeEntry = (row: FeeCostRow): FeeCostEntry => ({
   ratePercent: Number(row.rate_percent ?? 0),
   fixedAmount: Number(row.fixed_amount ?? 0),
   currency: row.currency ?? "JPY",
+})
+
+export const mapTimeRecord = (row: TimeRecordRow): TimeRecord => ({
+  id: row.id,
+  taskName: row.task_name,
+  totalDuration: Number(row.total_duration ?? 0),
+  laps: (Array.isArray(row.laps) ? row.laps : []) as TimeRecordLap[],
+  note: row.note ?? undefined,
+  createdAt: row.created_at ?? new Date().toISOString(),
+  updatedAt: row.updated_at ?? new Date().toISOString(),
 })
 
 export const mapAuditLog = (row: AuditLogRow): AuditLog => ({

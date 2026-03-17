@@ -24,6 +24,7 @@ import type {
   LogisticsCostEntry,
   ElectricityCostEntry,
   FeeCostEntry,
+  TimeRecord,
 } from "../types"
 import { emptyAppData, sampleAppData } from "../types"
 import type { AuthState } from "../auth"
@@ -778,6 +779,39 @@ export function useCrudActions(
     [update]
   )
 
+  // --- Time Records ---
+  const addTimeRecord = useCallback(
+    (input: Omit<TimeRecord, "id"> & { id?: string }) => {
+      const { id: inputId, ...rest } = input
+      const record: TimeRecord = { ...rest, id: inputId ?? createId() }
+      update((prev) => ({
+        ...prev,
+        timeRecords: [...prev.timeRecords, record],
+      }))
+    },
+    [update]
+  )
+
+  const updateTimeRecord = useCallback(
+    (input: TimeRecord) => {
+      update((prev) => ({
+        ...prev,
+        timeRecords: prev.timeRecords.map((r) => (r.id === input.id ? input : r)),
+      }))
+    },
+    [update]
+  )
+
+  const removeTimeRecord = useCallback(
+    (id: string) => {
+      update((prev) => ({
+        ...prev,
+        timeRecords: prev.timeRecords.filter((r) => r.id !== id),
+      }))
+    },
+    [update]
+  )
+
   // --- Utility actions ---
   const resetAll = useCallback(() => {
     if (authState.status === "authenticated") {
@@ -877,6 +911,9 @@ export function useCrudActions(
     addFeeCostEntry,
     removeProduct,
     removeCostEntriesByProduct,
+    addTimeRecord,
+    updateTimeRecord,
+    removeTimeRecord,
     resetAll,
     seedSample,
     importGuestData,

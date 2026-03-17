@@ -22,6 +22,7 @@ export const normalizeAppData = (dataset?: Partial<AppData> | null): AppData => 
     fees: ensureArray(source.fees),
     optionPresets: ensureArray(source.optionPresets),
     products: ensureArray(source.products),
+    timeRecords: ensureArray(source.timeRecords),
     costEntries: {
       materials: ensureArray(costEntries.materials),
       packaging: ensureArray(costEntries.packaging),
@@ -47,6 +48,7 @@ export const hasMeaningfulData = (dataset: AppData) => {
   if (dataset.equipments.length > 0) return true
   if (dataset.fees.length > 0) return true
   if (dataset.optionPresets.length > 0) return true
+  if (dataset.timeRecords.length > 0) return true
   if (dataset.categories.large.length > 0) return true
   if (dataset.categories.medium.length > 0) return true
   if (dataset.categories.small.length > 0) return true
@@ -83,6 +85,7 @@ export const mergeAppData = (base: AppData, guest: AppData): AppData => {
     fees: mergeById(base.fees, guest.fees),
     optionPresets: mergeById(base.optionPresets, guest.optionPresets),
     products: mergeById(base.products, guest.products),
+    timeRecords: mergeById(base.timeRecords, guest.timeRecords),
     costEntries: {
       materials: mergeById(base.costEntries.materials, guest.costEntries.materials),
       packaging: mergeById(base.costEntries.packaging, guest.costEntries.packaging),

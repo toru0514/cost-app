@@ -12,6 +12,7 @@ import {
   PanelLeftOpen,
   Plus,
   Settings,
+  Timer,
   Users,
   X,
   Menu,
@@ -139,6 +140,14 @@ export function Sidebar({
               {!sidebarCollapsed && <span className="truncate">データクリア</span>}
             </button>
           )}
+          <Link
+            href="/timetrack"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={sidebarCollapsed ? "時間計測" : undefined}
+          >
+            <Timer className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && <span>時間計測</span>}
+          </Link>
           {isAuthenticated && (
             <Link
               href="/photos"
@@ -268,6 +277,14 @@ export function Sidebar({
                   <span>データクリア</span>
                 </button>
               )}
+              <Link
+                href="/timetrack"
+                onClick={() => onMobileNavOpenChange(false)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <Timer className="h-4 w-4 shrink-0" />
+                <span>時間計測</span>
+              </Link>
               {isAuthenticated && (
                 <Link
                   href="/photos"

@@ -131,6 +131,7 @@ export const sampleAppData: AppData = {
       ],
     },
   ],
+  timeRecords: [],
   products: [
     {
       id: "prod-1",
