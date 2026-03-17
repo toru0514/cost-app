@@ -65,8 +65,8 @@ export function RecordHistory({ records, onUpdate, onRemove }: RecordHistoryProp
         />
       </div>
 
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border overflow-x-auto overscroll-x-contain touch-pan-x">
+        <Table className="min-w-[680px]">
           <TableHeader>
             <TableRow>
               <TableHead>作業名</TableHead>
