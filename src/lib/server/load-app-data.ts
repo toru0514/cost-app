@@ -79,6 +79,7 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       currency: row.currency ?? "JPY",
       unitsPerBatch: row.units_per_batch ?? undefined,
       note: row.note ?? undefined,
+      imageUrl: row.image_url ?? undefined,
     })),
     shippingMethods: shipping.map((row: any) => ({
       id: row.id,
@@ -103,6 +104,7 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       amortizationYears: row.amortization_years ?? 0,
       utilizationRate: row.utilization_rate ?? undefined,
       note: row.note ?? undefined,
+      imageUrl: row.image_url ?? undefined,
     })),
     fees: fees.map((row: any) => ({
       id: row.id,
@@ -136,6 +138,7 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       },
       equipmentIds: Array.isArray(row.equipment_ids) ? row.equipment_ids : [],
       imageUrl: row.image_url ?? undefined,
+      status: (row.status as "draft" | "active" | "discontinued") ?? "active",
     })),
   }
 }

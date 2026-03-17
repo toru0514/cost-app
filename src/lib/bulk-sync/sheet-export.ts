@@ -125,7 +125,7 @@ export const buildBulkSyncSheetRows = (data: AppData, stocks?: StockMaps) => {
     ]),
     products: data.products.map((item) => [
       item.id,
-      "",
+      item.status ?? "active",
       item.name,
       item.categoryLargeId ? categoryLargeById.get(item.categoryLargeId) ?? "" : "",
       item.categoryMediumId ? categoryMediumById.get(item.categoryMediumId) ?? "" : "",
