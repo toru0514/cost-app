@@ -85,6 +85,7 @@ export function ProductBasicsSection({
   const taskNameOptions = useMemo(() => {
     const byName = new Map<string, { taskName: string; hours: number; updatedAt: string }>()
     for (const record of data.timeRecords) {
+      if (!record.taskName) continue
       const existing = byName.get(record.taskName)
       if (!existing || record.updatedAt > existing.updatedAt) {
         byName.set(record.taskName, {
