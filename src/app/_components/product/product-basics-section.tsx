@@ -85,12 +85,12 @@ export function ProductBasicsSection({
   const taskNameOptions = useMemo(() => {
     const byName = new Map<string, { taskName: string; hours: number; updatedAt: string }>()
     for (const record of data.timeRecords) {
-      if (!record.taskName) continue
+      if (!record.taskName || record.totalDuration <= 0) continue
       const existing = byName.get(record.taskName)
       if (!existing || record.updatedAt > existing.updatedAt) {
         byName.set(record.taskName, {
           taskName: record.taskName,
-          hours: Math.round((record.totalDuration / 1000 / 3600) * 100) / 100,
+          hours: Math.max(0.01, Math.round((record.totalDuration / 1000 / 3600) * 100) / 100),
           updatedAt: record.updatedAt,
         })
       }
