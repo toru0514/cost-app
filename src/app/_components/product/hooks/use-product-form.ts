@@ -389,8 +389,16 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
       for (const draft of processDrafts) {
         processIdMap.set(draft.id, createTempId())
       }
+      // Filter out empty-name drafts, and also exclude children whose parent was filtered
+      const validParentIds = new Set(
+        processDrafts.filter((d) => !d.parentId && d.name.trim()).map((d) => d.id)
+      )
       processDrafts
-        .filter((draft) => draft.name.trim())
+        .filter((draft) => {
+          if (!draft.name.trim()) return false
+          if (draft.parentId && !validParentIds.has(draft.parentId)) return false
+          return true
+        })
         .forEach((draft) => {
           addProductProcess({
             id: processIdMap.get(draft.id),

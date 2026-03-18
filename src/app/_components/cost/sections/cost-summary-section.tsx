@@ -5,7 +5,7 @@ import { useMemo } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { useTablePagination } from "@/hooks/use-table-pagination"
-import { calculateProductUnitCosts, calculateEffectiveProfitRate, formatCurrency } from "@/lib/calculations"
+import { calculateProductUnitCosts, calculateEffectiveProfitRate, buildTimeRecordIndex, formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
 import {
   filterRowsBySearch,
@@ -31,10 +31,12 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
   )
   const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
 
+  const timeRecordIdx = useMemo(() => buildTimeRecordIndex(data), [data])
+
   const allRows = useMemo(() => {
     return data.products.map((product) => {
       const costs = calculateProductUnitCosts(product.id, data, exchangeRateMap)
-      const effectiveResult = calculateEffectiveProfitRate(product.id, data, exchangeRateMap)
+      const effectiveResult = calculateEffectiveProfitRate(product.id, data, exchangeRateMap, costs, timeRecordIdx)
       const detailText = [
         `材料 ${formatCurrency(costs.material)}`,
         `梱包 ${formatCurrency(costs.packaging)}`,
@@ -138,8 +140,8 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
                     <TableCell>{formatCurrency(costs.fees)}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(costs.total)}</TableCell>
                     <TableCell>
-                      {effectiveResult.minRecordCount > 0
-                        ? `${effectiveResult.effectiveProfitRate?.toFixed(1)}%`
+                      {effectiveResult.minRecordCount > 0 && effectiveResult.effectiveProfitRate != null
+                        ? `${effectiveResult.effectiveProfitRate.toFixed(1)}%`
                         : <span className="text-muted-foreground">-</span>}
                     </TableCell>
                     <TableCell>
@@ -168,7 +170,7 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
                     <div>
                       <p className="text-xs text-muted-foreground">実質利益率</p>
                       <p className="text-lg font-semibold">
-                        {effectiveResult.effectiveProfitRate?.toFixed(1)}%
+                        {effectiveResult.effectiveProfitRate != null ? `${effectiveResult.effectiveProfitRate.toFixed(1)}%` : "-"}
                       </p>
                     </div>
                     <div>

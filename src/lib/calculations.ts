@@ -327,12 +327,32 @@ export type EffectiveProfitResult = {
   minRecordCount: number
 }
 
+/**
+ * Build an index of timeRecords grouped by productProcessId for O(1) lookup.
+ * Call once and pass to calculateEffectiveProfitRate to avoid O(N*M*R) filtering.
+ */
+export function buildTimeRecordIndex(data: AppData): Map<string, typeof data.timeRecords> {
+  const map = new Map<string, typeof data.timeRecords>()
+  for (const tr of data.timeRecords) {
+    if (!tr.productProcessId) continue
+    const list = map.get(tr.productProcessId)
+    if (list) {
+      list.push(tr)
+    } else {
+      map.set(tr.productProcessId, [tr])
+    }
+  }
+  return map
+}
+
 export function calculateEffectiveProfitRate(
   productId: string,
   data: AppData,
-  exchangeRateMap?: Map<string, number>
+  exchangeRateMap?: Map<string, number>,
+  precomputedCosts?: ReturnType<typeof calculateProductUnitCosts>,
+  timeRecordIndex?: Map<string, typeof data.timeRecords>,
 ): EffectiveProfitResult {
-  const unitCosts = calculateProductUnitCosts(productId, data, exchangeRateMap)
+  const unitCosts = precomputedCosts ?? calculateProductUnitCosts(productId, data, exchangeRateMap)
   const product = data.products.find((p) => p.id === productId)
   const salePrice = product?.salePrice || 0
 
@@ -341,9 +361,9 @@ export function calculateEffectiveProfitRate(
 
   // 工程ごとの実績時間を集計
   const actualLaborByProcess: ActualLaborByProcess[] = processes.map((process) => {
-    const records = data.timeRecords.filter(
-      (tr) => tr.productProcessId === process.id
-    )
+    const records = timeRecordIndex
+      ? (timeRecordIndex.get(process.id) ?? [])
+      : data.timeRecords.filter((tr) => tr.productProcessId === process.id)
     const totalMs = records.reduce((sum, r) => sum + r.totalDuration, 0)
     const avgMs = records.length > 0 ? totalMs / records.length : 0
     const avgMinutes = avgMs / 60000

@@ -147,22 +147,22 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
     let timeRecords: TimeRecordRow[] = []
     try {
       timeRecords = await fetchRows<TimeRecordRow>(TABLES.timeRecords, userId)
-    } catch {
-      // テーブル未作成の場合は空配列
+    } catch (e) {
+      console.warn("Failed to fetch time_records (table may not exist):", e)
     }
 
     // process_templates / product_processes テーブルが存在しない場合はスキップ
     let processTemplateRows: ProcessTemplateRow[] = []
     try {
       processTemplateRows = await fetchRows<ProcessTemplateRow>(TABLES.processTemplates, userId)
-    } catch {
-      // テーブル未作成の場合は空配列
+    } catch (e) {
+      console.warn("Failed to fetch process_templates (table may not exist):", e)
     }
     let productProcessRows: ProductProcessRow[] = []
     try {
       productProcessRows = await fetchRows<ProductProcessRow>(TABLES.productProcesses, userId)
-    } catch {
-      // テーブル未作成の場合は空配列
+    } catch (e) {
+      console.warn("Failed to fetch product_processes (table may not exist):", e)
     }
 
     const hasData =
@@ -175,7 +175,10 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       labor.length ||
       equipments.length ||
       optionPresets.length ||
-      products.length
+      products.length ||
+      processTemplateRows.length ||
+      productProcessRows.length ||
+      timeRecords.length
 
     if (!hasData) {
       return null

@@ -35,7 +35,12 @@ ALTER TABLE product_processes ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Users can manage own product_processes" ON product_processes
   FOR ALL USING (auth.uid() = user_id);
 
+-- パフォーマンス用インデックス
+CREATE INDEX IF NOT EXISTS idx_product_processes_product_id ON product_processes(product_id);
+
 -- time_records に商品・工程紐付けカラム追加
 ALTER TABLE time_records
   ADD COLUMN IF NOT EXISTS product_id UUID REFERENCES products(id) ON DELETE SET NULL,
   ADD COLUMN IF NOT EXISTS product_process_id UUID REFERENCES product_processes(id) ON DELETE SET NULL;
+
+CREATE INDEX IF NOT EXISTS idx_time_records_product_process_id ON time_records(product_process_id);

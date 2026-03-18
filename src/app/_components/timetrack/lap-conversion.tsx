@@ -126,7 +126,7 @@ export function LapConversionPanel({
                     onUpdate(
                       conv.lapId,
                       "hourlyRate",
-                      Number(e.target.value) || 0
+                      Math.max(0, Number(e.target.value) || 0)
                     )
                   }
                   className="h-8 w-24 pr-7 text-sm"

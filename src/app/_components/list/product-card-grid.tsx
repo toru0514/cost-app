@@ -85,7 +85,7 @@ export function ProductCardGrid({ entries, onEdit, onCopy, onDelete }: ProductCa
             </p>
             {effectiveResult && effectiveResult.minRecordCount > 0 && (
               <p className="text-xs text-muted-foreground">
-                実質利益率 {effectiveResult.effectiveProfitRate?.toFixed(1)}%
+                実質利益率 {effectiveResult.effectiveProfitRate != null ? `${effectiveResult.effectiveProfitRate.toFixed(1)}%` : "-"}
               </p>
             )}
           </div>

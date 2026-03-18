@@ -45,18 +45,18 @@ const INITIAL_FORM: FormState = {
   color: "",
 }
 
-function buildHierarchyItems(templates: ProcessTemplate[]): string[] {
+function buildHierarchyItems(templates: ProcessTemplate[]): { id: string; label: string }[] {
   const topLevel = templates.filter((t) => !t.parentId)
   const children = templates.filter((t) => t.parentId)
-  const items: string[] = []
+  const items: { id: string; label: string }[] = []
 
   for (const parent of topLevel) {
     const colorLabel = parent.color ? ` [${parent.color}]` : ""
-    items.push(`${parent.name} / ${formatCurrency(parent.defaultHourlyRate, "JPY")}/h${colorLabel}`)
+    items.push({ id: parent.id, label: `${parent.name} / ${formatCurrency(parent.defaultHourlyRate, "JPY")}/h${colorLabel}` })
     const subs = children.filter((c) => c.parentId === parent.id)
     for (const sub of subs) {
       const subColorLabel = sub.color ? ` [${sub.color}]` : ""
-      items.push(`  - ${sub.name} / ${formatCurrency(sub.defaultHourlyRate, "JPY")}/h${subColorLabel}`)
+      items.push({ id: sub.id, label: `  - ${sub.name} / ${formatCurrency(sub.defaultHourlyRate, "JPY")}/h${subColorLabel}` })
     }
   }
 
@@ -65,7 +65,7 @@ function buildHierarchyItems(templates: ProcessTemplate[]): string[] {
   const orphans = children.filter((c) => c.parentId && !topLevelIds.has(c.parentId))
   for (const orphan of orphans) {
     const colorLabel = orphan.color ? ` [${orphan.color}]` : ""
-    items.push(`${orphan.name} / ${formatCurrency(orphan.defaultHourlyRate, "JPY")}/h${colorLabel}`)
+    items.push({ id: orphan.id, label: `${orphan.name} / ${formatCurrency(orphan.defaultHourlyRate, "JPY")}/h${colorLabel}` })
   }
 
   return items
@@ -73,7 +73,7 @@ function buildHierarchyItems(templates: ProcessTemplate[]): string[] {
 
 export function ProcessTemplateSection({ data, actions, openSignal, onOpen, onClose }: ProcessTemplateSectionProps) {
   const [form, setForm] = useState<FormState>(INITIAL_FORM)
-  const { addProcessTemplate } = actions
+  const { addProcessTemplate, removeProcessTemplate } = actions
 
   const topLevelTemplates = data.processTemplates.filter((t) => !t.parentId)
 
@@ -162,6 +162,7 @@ export function ProcessTemplateSection({ data, actions, openSignal, onOpen, onCl
         <RegisteredList
           title="登録済み 工程テンプレート"
           items={buildHierarchyItems(data.processTemplates)}
+          onDelete={(id) => removeProcessTemplate(id)}
         />
       </form>
     </FormSection>

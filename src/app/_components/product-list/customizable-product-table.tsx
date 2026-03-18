@@ -479,7 +479,7 @@ export function CustomizableProductTable({
         if (!effResult || effResult.minRecordCount === 0) {
           return <span className="text-muted-foreground">-</span>
         }
-        return `${effResult.effectiveProfitRate?.toFixed(1)}%`
+        return effResult.effectiveProfitRate != null ? `${effResult.effectiveProfitRate.toFixed(1)}%` : "-"
       }
       case "notes": {
         const notesText = product.notes?.trim() || "-"

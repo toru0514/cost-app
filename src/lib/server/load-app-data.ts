@@ -47,22 +47,22 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
   let timeRecords: TimeRecordRow[] = []
   try {
     timeRecords = await fetchRows<TimeRecordRow>(supabase, "time_records", userId)
-  } catch {
-    // テーブル未作成の場合はスキップ
+  } catch (e) {
+    console.warn("Failed to fetch table (may not exist yet):", e)
   }
 
   let processTemplatesRows: ProcessTemplateRow[] = []
   try {
     processTemplatesRows = await fetchRows<ProcessTemplateRow>(supabase, TABLES.processTemplates, userId)
-  } catch {
-    // テーブル未作成の場合はスキップ
+  } catch (e) {
+    console.warn("Failed to fetch table (may not exist yet):", e)
   }
 
   let productProcessesRows: ProductProcessRow[] = []
   try {
     productProcessesRows = await fetchRows<ProductProcessRow>(supabase, TABLES.productProcesses, userId)
-  } catch {
-    // テーブル未作成の場合はスキップ
+  } catch (e) {
+    console.warn("Failed to fetch table (may not exist yet):", e)
   }
 
   return {
@@ -155,7 +155,7 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       createdAt: row.created_at ?? new Date().toISOString(),
       updatedAt: row.updated_at ?? new Date().toISOString(),
     })),
-    processTemplates: processTemplatesRows.map((row: any) => ({
+    processTemplates: processTemplatesRows.map((row: ProcessTemplateRow) => ({
       id: row.id,
       parentId: row.parent_id ?? undefined,
       name: row.name,
@@ -164,7 +164,7 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       icon: row.icon ?? undefined,
       sortOrder: row.sort_order ?? 0,
     })),
-    productProcesses: productProcessesRows.map((row: any) => ({
+    productProcesses: productProcessesRows.map((row: ProductProcessRow) => ({
       id: row.id,
       productId: row.product_id,
       parentId: row.parent_id ?? undefined,

@@ -319,17 +319,20 @@ export function useProductDraftState({
 
   const buildInitialProcessDrafts = (): ProductProcessDraft[] => {
     if (!editingProductId) return []
-    return data.productProcesses
-      .filter((pp) => pp.productId === editingProductId)
-      .map((pp) => ({
-        id: createTempId(),
-        parentId: pp.parentId,
-        processTemplateId: pp.processTemplateId,
-        name: pp.name,
-        hourlyRate: pp.hourlyRate,
-        estimatedMinutes: pp.estimatedMinutes,
-        sortOrder: pp.sortOrder,
-      }))
+    const existingProcesses = data.productProcesses.filter((pp) => pp.productId === editingProductId)
+    const idMap = new Map<string, string>()
+    for (const pp of existingProcesses) {
+      idMap.set(pp.id, createTempId())
+    }
+    return existingProcesses.map((pp) => ({
+      id: idMap.get(pp.id)!,
+      parentId: pp.parentId ? idMap.get(pp.parentId) : undefined,
+      processTemplateId: pp.processTemplateId,
+      name: pp.name,
+      hourlyRate: pp.hourlyRate,
+      estimatedMinutes: pp.estimatedMinutes,
+      sortOrder: pp.sortOrder,
+    }))
   }
 
   const [processDrafts, setProcessDrafts] = useState<ProductProcessDraft[]>(buildInitialProcessDrafts)

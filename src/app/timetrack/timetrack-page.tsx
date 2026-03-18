@@ -29,6 +29,11 @@ import { ArrowLeft, Timer, Clock, Zap, ChevronDown, ChevronUp } from "lucide-rea
 import Link from "next/link"
 import { toast } from "sonner"
 
+const createId = () =>
+  typeof crypto !== "undefined" && "randomUUID" in crypto
+    ? crypto.randomUUID()
+    : Math.random().toString(36).substring(2, 11)
+
 type TimeTrackPageProps = {
   initialData: AppData | null
 }
@@ -113,117 +118,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
     [activeProcess, isFreeTiming]
   )
 
-  const handleSave = useCallback(() => {
-    if (!pendingResult) return
-
-    if (activeProcess) {
-      // Flow A: save with productId and productProcessId
-      const name = activeProcess.name
-      const now = new Date().toISOString()
-      actions.addTimeRecord({
-        taskName: name,
-        totalDuration: pendingResult.totalDuration,
-        laps: pendingResult.laps,
-        note: note.trim() || undefined,
-        productId: selectedProductId || undefined,
-        productProcessId: activeProcess.id,
-        createdAt: now,
-        updatedAt: now,
-      })
-      toast.success("記録を保存しました", {
-        description: `「${name}」を保存しました。`,
-      })
-    } else {
-      // Free timer without conversion: save as before (taskName only)
-      const name = taskName.trim() || "無名の作業"
-      const now = new Date().toISOString()
-      actions.addTimeRecord({
-        taskName: name,
-        totalDuration: pendingResult.totalDuration,
-        laps: pendingResult.laps,
-        note: note.trim() || undefined,
-        productId: selectedProductId || undefined,
-        createdAt: now,
-        updatedAt: now,
-      })
-      toast.success("記録を保存しました", {
-        description: `「${name}」を保存しました。`,
-      })
-    }
-
-    setPendingResult(null)
-    setActiveProcess(null)
-    setIsFreeTiming(false)
-    setShowLapConversion(false)
-    setTaskName("")
-    setNote("")
-  }, [actions, activeProcess, note, pendingResult, selectedProductId, taskName])
-
-  const handleSaveWithConversion = useCallback(() => {
-    if (!pendingResult) return
-
-    const now = new Date().toISOString()
-
-    // Create ProductProcess entries for each lap conversion (if product selected)
-    const processIdMap = new Map<string, string>()
-
-    for (const conv of lapConversions) {
-      if (!conv.processName.trim()) continue
-
-      if (selectedProductId) {
-        // Create a ProductProcess for the product
-        const processId = crypto.randomUUID()
-        processIdMap.set(conv.lapId, processId)
-        actions.addProductProcess({
-          id: processId,
-          productId: selectedProductId,
-          name: conv.processName.trim(),
-          hourlyRate: conv.hourlyRate,
-          sortOrder: data.productProcesses.filter(
-            (pp) => pp.productId === selectedProductId
-          ).length,
-        })
-      }
-
-      // Create a TimeRecord for each lap
-      actions.addTimeRecord({
-        taskName: conv.processName.trim(),
-        totalDuration: conv.duration,
-        laps: [
-          {
-            id: conv.lapId,
-            label: conv.lapLabel,
-            duration: conv.duration,
-          },
-        ],
-        note: note.trim() || undefined,
-        productId: selectedProductId || undefined,
-        productProcessId: processIdMap.get(conv.lapId) || undefined,
-        createdAt: now,
-        updatedAt: now,
-      })
-    }
-
-    // Optionally save as process templates
-    if (saveAsTemplate) {
-      const existingNames = new Set(data.processTemplates.map((t) => t.name))
-      for (const conv of lapConversions) {
-        const name = conv.processName.trim()
-        if (name && !existingNames.has(name)) {
-          actions.addProcessTemplate({
-            name,
-            defaultHourlyRate: conv.hourlyRate,
-            sortOrder: data.processTemplates.length,
-          })
-          existingNames.add(name)
-        }
-      }
-    }
-
-    toast.success("工程として記録を保存しました", {
-      description: `${lapConversions.filter((c) => c.processName.trim()).length}件の工程を登録しました。`,
-    })
-
+  const resetTimerState = useCallback(() => {
     setPendingResult(null)
     setActiveProcess(null)
     setIsFreeTiming(false)
@@ -232,6 +127,106 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
     setSaveAsTemplate(false)
     setTaskName("")
     setNote("")
+  }, [])
+
+  const handleSave = useCallback(() => {
+    if (!pendingResult) return
+
+    try {
+      const name = activeProcess ? activeProcess.name : (taskName.trim() || "無名の作業")
+      const now = new Date().toISOString()
+      actions.addTimeRecord({
+        taskName: name,
+        totalDuration: pendingResult.totalDuration,
+        laps: pendingResult.laps,
+        note: note.trim() || undefined,
+        productId: selectedProductId || undefined,
+        productProcessId: activeProcess?.id,
+        createdAt: now,
+        updatedAt: now,
+      })
+      toast.success("記録を保存しました", {
+        description: `「${name}」を保存しました。`,
+      })
+      resetTimerState()
+    } catch (error) {
+      console.error("Failed to save time record", error)
+      toast.error("保存に失敗しました")
+    }
+  }, [actions, activeProcess, note, pendingResult, resetTimerState, selectedProductId, taskName])
+
+  const handleSaveWithConversion = useCallback(() => {
+    if (!pendingResult) return
+
+    try {
+      const now = new Date().toISOString()
+
+      // Create ProductProcess entries for each lap conversion (if product selected)
+      const processIdMap = new Map<string, string>()
+      const baseSortOrder = selectedProductId
+        ? data.productProcesses.filter((pp) => pp.productId === selectedProductId).length
+        : 0
+      let sortOffset = 0
+
+      for (const conv of lapConversions) {
+        if (!conv.processName.trim()) continue
+
+        if (selectedProductId) {
+          const processId = createId()
+          processIdMap.set(conv.lapId, processId)
+          actions.addProductProcess({
+            id: processId,
+            productId: selectedProductId,
+            name: conv.processName.trim(),
+            hourlyRate: conv.hourlyRate,
+            sortOrder: baseSortOrder + sortOffset,
+          })
+          sortOffset++
+        }
+
+        // Create a TimeRecord for each lap
+        actions.addTimeRecord({
+          taskName: conv.processName.trim(),
+          totalDuration: conv.duration,
+          laps: [
+            {
+              id: conv.lapId,
+              label: conv.lapLabel,
+              duration: conv.duration,
+            },
+          ],
+          note: note.trim() || undefined,
+          productId: selectedProductId || undefined,
+          productProcessId: processIdMap.get(conv.lapId) || undefined,
+          createdAt: now,
+          updatedAt: now,
+        })
+      }
+
+      // Optionally save as process templates
+      if (saveAsTemplate) {
+        const existingNames = new Set(data.processTemplates.map((t) => t.name))
+        for (const conv of lapConversions) {
+          const name = conv.processName.trim()
+          if (name && !existingNames.has(name)) {
+            actions.addProcessTemplate({
+              name,
+              defaultHourlyRate: conv.hourlyRate,
+              sortOrder: data.processTemplates.length,
+            })
+            existingNames.add(name)
+          }
+        }
+      }
+
+      toast.success("工程として記録を保存しました", {
+        description: `${lapConversions.filter((c) => c.processName.trim()).length}件の工程を登録しました。`,
+      })
+      resetTimerState()
+    } catch (error) {
+      console.error("Failed to save with conversion", error)
+      toast.error("保存に失敗しました")
+    }
   }, [
     actions,
     data.processTemplates,
@@ -239,6 +234,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
     lapConversions,
     note,
     pendingResult,
+    resetTimerState,
     saveAsTemplate,
     selectedProductId,
   ])
@@ -249,14 +245,8 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
   }, [])
 
   const handleDiscard = useCallback(() => {
-    setPendingResult(null)
-    setActiveProcess(null)
-    setIsFreeTiming(false)
-    setShowLapConversion(false)
-    setLapConversions([])
-    setTaskName("")
-    setNote("")
-  }, [])
+    resetTimerState()
+  }, [resetTimerState])
 
   const updateLapConversion = useCallback(
     (lapId: string, field: keyof LapConversion, value: string | number) => {

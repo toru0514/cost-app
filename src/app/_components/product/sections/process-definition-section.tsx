@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { NumberInput } from "@/components/ui/number-input"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
@@ -145,9 +146,7 @@ function ProcessDraftCard({
         <Label className="text-xs text-muted-foreground">
           {isChild ? "小工程名" : "工程名"}
         </Label>
-        <input
-          type="text"
-          className="flex h-9 w-full rounded-md border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+        <Input
           placeholder="例: 裁断"
           value={draft.name}
           onChange={(e) => onUpdate(draft.id, { name: e.target.value })}

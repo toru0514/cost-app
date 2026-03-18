@@ -7,7 +7,7 @@ import {
   loadProductListColumnSettings,
   upsertProductListColumnSettings,
 } from "@/lib/app-data-sync"
-import { calculateProductUnitCosts, calculateEffectiveProfitRate } from "@/lib/calculations"
+import { calculateProductUnitCosts, calculateEffectiveProfitRate, buildTimeRecordIndex } from "@/lib/calculations"
 import type { AppData, Product, StockAlertSetting } from "@/lib/types"
 import {
   CustomizableProductTable,
@@ -115,13 +115,16 @@ export function ListTab({
     return map
   }, [data, exchangeRateMap])
 
+  const timeRecordIdx = useMemo(() => buildTimeRecordIndex(data), [data])
+
   const effectiveProfitMap = useMemo(() => {
     const map = new Map<string, ReturnType<typeof calculateEffectiveProfitRate>>()
     data.products.forEach((product) => {
-      map.set(product.id, calculateEffectiveProfitRate(product.id, data, exchangeRateMap))
+      const costs = productCostMap.get(product.id)
+      map.set(product.id, calculateEffectiveProfitRate(product.id, data, exchangeRateMap, costs, timeRecordIdx))
     })
     return map
-  }, [data, exchangeRateMap])
+  }, [data, exchangeRateMap, productCostMap, timeRecordIdx])
 
   const shippingMethodNameMap = useMemo(() => {
     const map = new Map<string, string>()
