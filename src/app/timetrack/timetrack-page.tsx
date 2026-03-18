@@ -6,7 +6,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
-import { Checkbox } from "@/components/ui/checkbox"
+import { Badge } from "@/components/ui/badge"
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs"
 import {
   Select,
   SelectContent,
@@ -19,20 +20,17 @@ import type { AppData } from "@/lib/types"
 import type { ProductProcess } from "@/lib/types/process"
 import { Stopwatch, type LapData, formatTime } from "../_components/timetrack/stopwatch"
 import { RecordHistory } from "../_components/timetrack/record-history"
-import { ArrowLeft, Timer, Clock, Zap } from "lucide-react"
+import { ProcessGrid } from "../_components/timetrack/process-grid"
+import {
+  LapConversionPanel,
+  type LapConversion,
+} from "../_components/timetrack/lap-conversion"
+import { ArrowLeft, Timer, Clock, Zap, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
 
 type TimeTrackPageProps = {
   initialData: AppData | null
-}
-
-type LapConversion = {
-  lapId: string
-  lapLabel: string
-  duration: number
-  processName: string
-  hourlyRate: number
 }
 
 export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
@@ -46,6 +44,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
   // Task name / note (for free timer or fallback)
   const [taskName, setTaskName] = useState("")
   const [note, setNote] = useState("")
+  const [showNoteInput, setShowNoteInput] = useState(false)
 
   // Pending result from stopwatch
   const [pendingResult, setPendingResult] = useState<{
@@ -61,34 +60,13 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
   // Timer is active when we have an activeProcess or isFreeTiming, and no pendingResult yet
   const isTimerActive = (activeProcess !== null || isFreeTiming) && !pendingResult
 
-  // Get processes for selected product, organized by parent/child
+  // Get processes for selected product
   const productProcesses = useMemo(() => {
     if (!selectedProductId) return []
     return data.productProcesses
       .filter((pp) => pp.productId === selectedProductId)
       .sort((a, b) => a.sortOrder - b.sortOrder)
   }, [data.productProcesses, selectedProductId])
-
-  const parentProcesses = useMemo(() => {
-    return productProcesses.filter((pp) => !pp.parentId)
-  }, [productProcesses])
-
-  const childProcessesMap = useMemo(() => {
-    const map = new Map<string, ProductProcess[]>()
-    for (const pp of productProcesses) {
-      if (pp.parentId) {
-        const children = map.get(pp.parentId) ?? []
-        children.push(pp)
-        map.set(pp.parentId, children)
-      }
-    }
-    return map
-  }, [productProcesses])
-
-  // Process template names for autocomplete
-  const templateNames = useMemo(() => {
-    return data.processTemplates.map((t) => t.name)
-  }, [data.processTemplates])
 
   // Selected product name
   const selectedProduct = useMemo(() => {
@@ -103,6 +81,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
     setShowLapConversion(false)
     setPendingResult(null)
     setTaskName(process.name)
+    setShowNoteInput(false)
   }, [])
 
   const handleStartFreeTimer = useCallback(() => {
@@ -110,6 +89,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
     setIsFreeTiming(true)
     setShowLapConversion(false)
     setPendingResult(null)
+    setShowNoteInput(false)
   }, [])
 
   const handleStopwatchComplete = useCallback(
@@ -324,20 +304,26 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
             <Timer className="h-5 w-5 text-muted-foreground" />
             <h1 className="text-sm font-semibold md:text-base">時間計測</h1>
           </div>
+          {isTimerActive && (
+            <Badge
+              variant="destructive"
+              className="ml-auto animate-pulse gap-1.5"
+            >
+              <span className="inline-block h-2 w-2 rounded-full bg-white" />
+              計測中
+            </Badge>
+          )}
         </div>
       </header>
 
-      <main className="mx-auto max-w-3xl space-y-8 p-4 md:p-6">
-        {/* 商品選択 + 工程ボタン */}
+      <main className="mx-auto max-w-3xl space-y-6 p-4 md:p-6">
+        {/* ===== 開始画面 (改善A: タブ型) ===== */}
         {!isTimerActive && !pendingResult && (
           <Card>
-            <CardHeader>
+            <CardHeader className="pb-3">
               <CardTitle className="text-lg">計測を開始</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
               {/* 商品選択 */}
-              <div className="space-y-2">
-                <Label>商品を選択</Label>
+              <div className="pt-2">
                 <Select
                   value={selectedProductId}
                   onValueChange={setSelectedProductId}
@@ -354,146 +340,149 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
                   </SelectContent>
                 </Select>
               </div>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="process" className="w-full">
+                <TabsList className="w-full">
+                  <TabsTrigger value="process" className="gap-1.5">
+                    <Zap className="h-3.5 w-3.5" />
+                    工程タイマー
+                  </TabsTrigger>
+                  <TabsTrigger value="free" className="gap-1.5">
+                    <Clock className="h-3.5 w-3.5" />
+                    フリータイマー
+                  </TabsTrigger>
+                </TabsList>
 
-              {/* 工程ボタン (Flow A) */}
-              {selectedProductId && productProcesses.length > 0 && (
-                <div className="space-y-3">
-                  <Label className="flex items-center gap-2">
-                    <Zap className="h-4 w-4" />
-                    ワンタップで工程計測を開始
-                  </Label>
+                {/* 工程タイマータブ */}
+                <TabsContent value="process" className="mt-4">
+                  {selectedProductId && productProcesses.length > 0 && (
+                    <div className="space-y-3">
+                      <p className="text-xs text-muted-foreground">
+                        工程をタップすると計測を開始します
+                      </p>
+                      <ProcessGrid
+                        productProcesses={productProcesses}
+                        onStart={handleStartWithProcess}
+                      />
+                    </div>
+                  )}
+
+                  {selectedProductId && productProcesses.length === 0 && (
+                    <div className="rounded-lg border border-dashed p-6 text-center">
+                      <p className="text-sm text-muted-foreground">
+                        この商品にはまだ工程が登録されていません。
+                      </p>
+                      <p className="mt-1 text-xs text-muted-foreground">
+                        商品登録画面で工程を追加するか、フリータイマーで計測してください。
+                      </p>
+                    </div>
+                  )}
+
+                  {!selectedProductId && (
+                    <div className="rounded-lg border border-dashed p-6 text-center">
+                      <p className="text-sm text-muted-foreground">
+                        商品を選択すると、登録済みの工程が表示されます。
+                      </p>
+                    </div>
+                  )}
+                </TabsContent>
+
+                {/* フリータイマータブ */}
+                <TabsContent value="free" className="mt-4">
                   <div className="space-y-4">
-                    {parentProcesses.map((parent) => {
-                      const children = childProcessesMap.get(parent.id) ?? []
-                      return (
-                        <div key={parent.id} className="space-y-2">
-                          <Button
-                            onClick={() => handleStartWithProcess(parent)}
-                            variant="outline"
-                            className="flex flex-col items-center gap-1 h-auto py-3 px-4"
-                          >
-                            <span className="font-medium">{parent.name}</span>
-                            <span className="text-xs text-muted-foreground">
-                              ¥{parent.hourlyRate.toLocaleString()}/h
-                            </span>
-                          </Button>
-                          {children.length > 0 && (
-                            <div className="ml-6 flex flex-wrap gap-2">
-                              {children.map((child) => (
-                                <Button
-                                  key={child.id}
-                                  onClick={() =>
-                                    handleStartWithProcess(child)
-                                  }
-                                  variant="outline"
-                                  size="sm"
-                                  className="flex flex-col items-center gap-0.5 h-auto py-2 px-3"
-                                >
-                                  <span className="text-sm">
-                                    {child.name}
-                                  </span>
-                                  <span className="text-xs text-muted-foreground">
-                                    ¥{child.hourlyRate.toLocaleString()}/h
-                                  </span>
-                                </Button>
-                              ))}
-                            </div>
-                          )}
-                        </div>
-                      )
-                    })}
+                    <div className="space-y-2">
+                      <Label htmlFor="freeTaskName">作業名</Label>
+                      <Input
+                        id="freeTaskName"
+                        placeholder="例: 梱包作業"
+                        value={taskName}
+                        onChange={(e) => setTaskName(e.target.value)}
+                      />
+                    </div>
+                    <Button
+                      onClick={handleStartFreeTimer}
+                      size="lg"
+                      className="w-full gap-2"
+                    >
+                      <Clock className="h-5 w-5" />
+                      フリータイマーを開始
+                    </Button>
+                    <p className="text-center text-xs text-muted-foreground">
+                      ラップを記録して、後から工程に割り当てることができます
+                    </p>
                   </div>
-                </div>
-              )}
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+        )}
 
-              {selectedProductId && productProcesses.length === 0 && (
-                <p className="text-sm text-muted-foreground">
-                  この商品にはまだ工程が登録されていません。フリータイマーで計測し、後から工程を割り当てることができます。
-                </p>
-              )}
+        {/* ===== アクティブタイマー表示 (改善C: フォーカス強化) ===== */}
+        {isTimerActive && (
+          <Card className="border-primary/30">
+            <CardContent className="space-y-6 pt-6">
+              {/* Status + context info */}
+              <div className="text-center">
+                {activeProcess ? (
+                  <>
+                    <h2 className="text-2xl font-bold">
+                      {activeProcess.name}
+                    </h2>
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {selectedProduct && (
+                        <span>{selectedProduct.name} · </span>
+                      )}
+                      ¥{activeProcess.hourlyRate.toLocaleString()}/h
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <h2 className="text-2xl font-bold">
+                      {taskName || "フリータイマー"}
+                    </h2>
+                    {selectedProduct && (
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        {selectedProduct.name}
+                      </p>
+                    )}
+                  </>
+                )}
+              </div>
 
-              {/* フリータイマー (Flow B) */}
-              <div className="border-t pt-4">
-                <Button
-                  variant="secondary"
-                  onClick={handleStartFreeTimer}
-                  className="gap-2"
+              {/* Stopwatch */}
+              <Stopwatch onComplete={handleStopwatchComplete} />
+
+              {/* Collapsible note input */}
+              <div className="mx-auto w-full max-w-md">
+                <button
+                  type="button"
+                  onClick={() => setShowNoteInput(!showNoteInput)}
+                  className="flex w-full items-center justify-center gap-1 text-xs text-muted-foreground hover:text-foreground"
                 >
-                  <Clock className="h-4 w-4" />
-                  フリータイマー（工程なし）
-                </Button>
+                  {showNoteInput ? (
+                    <ChevronUp className="h-3 w-3" />
+                  ) : (
+                    <ChevronDown className="h-3 w-3" />
+                  )}
+                  メモを{showNoteInput ? "閉じる" : "追加"}
+                </button>
+                {showNoteInput && (
+                  <div className="mt-2">
+                    <Textarea
+                      placeholder="メモを入力..."
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                      rows={2}
+                    />
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
         )}
 
-        {/* アクティブタイマー表示 */}
-        {isTimerActive && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">
-                {activeProcess
-                  ? `${activeProcess.name}${selectedProduct ? ` - ${selectedProduct.name}` : ""}`
-                  : "フリータイマー"}
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* Active process info */}
-              {activeProcess && (
-                <div className="rounded-lg bg-muted/50 p-3 text-sm">
-                  <span className="text-muted-foreground">工程: </span>
-                  <span className="font-medium">{activeProcess.name}</span>
-                  <span className="ml-3 text-muted-foreground">
-                    ¥{activeProcess.hourlyRate.toLocaleString()}/h
-                  </span>
-                </div>
-              )}
-
-              {/* Free timer: show task name input */}
-              {isFreeTiming && (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div className="space-y-2">
-                    <Label htmlFor="taskName">作業名</Label>
-                    <Input
-                      id="taskName"
-                      placeholder="例: 梱包作業"
-                      value={taskName}
-                      onChange={(e) => setTaskName(e.target.value)}
-                    />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="note">メモ（任意）</Label>
-                    <Textarea
-                      id="note"
-                      placeholder="メモを入力..."
-                      value={note}
-                      onChange={(e) => setNote(e.target.value)}
-                      rows={1}
-                    />
-                  </div>
-                </div>
-              )}
-
-              {/* Note for process timer */}
-              {activeProcess && (
-                <div className="space-y-2">
-                  <Label htmlFor="note">メモ（任意）</Label>
-                  <Textarea
-                    id="note"
-                    placeholder="メモを入力..."
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                    rows={1}
-                  />
-                </div>
-              )}
-
-              <Stopwatch onComplete={handleStopwatchComplete} />
-            </CardContent>
-          </Card>
-        )}
-
-        {/* 保存確認 (Flow A or free timer without conversion) */}
+        {/* ===== 保存確認 (Flow A or free timer without conversion) ===== */}
         {pendingResult && !showLapConversion && (
           <Card>
             <CardHeader>
@@ -560,7 +549,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
           </Card>
         )}
 
-        {/* Flow B: Lap-to-Process Conversion UI */}
+        {/* ===== Flow B: ラップ→工程変換 (改善D: 簡素化) ===== */}
         {pendingResult && showLapConversion && (
           <Card>
             <CardHeader>
@@ -568,102 +557,20 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
                 ラップを工程に変換
               </CardTitle>
             </CardHeader>
-            <CardContent className="space-y-6">
-              <p className="text-sm text-muted-foreground">
-                各ラップに工程名と時給を設定して、個別の工程記録として保存できます。
-              </p>
-
-              <div className="space-y-4">
-                {lapConversions.map((conv) => (
-                  <div
-                    key={conv.lapId}
-                    className="rounded-lg border p-4 space-y-3"
-                  >
-                    <div className="flex items-center justify-between">
-                      <span className="text-sm font-medium">
-                        {conv.lapLabel}
-                      </span>
-                      <span className="font-mono text-sm tabular-nums text-muted-foreground">
-                        {formatTime(conv.duration)}
-                      </span>
-                    </div>
-                    <div className="grid gap-3 sm:grid-cols-2">
-                      <div className="space-y-1">
-                        <Label className="text-xs">工程名</Label>
-                        <Input
-                          placeholder="例: 裁断"
-                          value={conv.processName}
-                          onChange={(e) =>
-                            handleProcessNameChange(
-                              conv.lapId,
-                              e.target.value
-                            )
-                          }
-                          list={`templates-${conv.lapId}`}
-                        />
-                        <datalist id={`templates-${conv.lapId}`}>
-                          {templateNames.map((name) => (
-                            <option key={name} value={name} />
-                          ))}
-                        </datalist>
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs">時給 (¥/h)</Label>
-                        <Input
-                          type="number"
-                          placeholder="0"
-                          value={conv.hourlyRate || ""}
-                          onChange={(e) =>
-                            updateLapConversion(
-                              conv.lapId,
-                              "hourlyRate",
-                              Number(e.target.value) || 0
-                            )
-                          }
-                        />
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-
-              {/* Save as template checkbox */}
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="saveAsTemplate"
-                  checked={saveAsTemplate}
-                  onCheckedChange={(checked) =>
-                    setSaveAsTemplate(checked === true)
-                  }
-                />
-                <Label htmlFor="saveAsTemplate" className="text-sm">
-                  この工程セットをテンプレートとして保存
-                </Label>
-              </div>
-
-              {/* Note */}
-              <div className="space-y-2">
-                <Label htmlFor="noteConversion">メモ（任意）</Label>
-                <Textarea
-                  id="noteConversion"
-                  placeholder="メモを入力..."
-                  value={note}
-                  onChange={(e) => setNote(e.target.value)}
-                  rows={1}
-                />
-              </div>
-
-              <div className="flex items-center gap-3 flex-wrap">
-                <Button onClick={handleSaveWithConversion}>
-                  工程として登録
-                </Button>
-                <Button variant="outline" onClick={handleSkipConversion}>
-                  スキップ（工程なしで保存）
-                </Button>
-                <Button variant="ghost" onClick={handleDiscard}>
-                  破棄
-                </Button>
-              </div>
+            <CardContent>
+              <LapConversionPanel
+                lapConversions={lapConversions}
+                onUpdate={updateLapConversion}
+                onProcessNameChange={handleProcessNameChange}
+                processTemplates={data.processTemplates}
+                note={note}
+                onNoteChange={setNote}
+                saveAsTemplate={saveAsTemplate}
+                onSaveAsTemplateChange={setSaveAsTemplate}
+                onSave={handleSaveWithConversion}
+                onSkip={handleSkipConversion}
+                onDiscard={handleDiscard}
+              />
             </CardContent>
           </Card>
         )}
