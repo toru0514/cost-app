@@ -5,7 +5,7 @@ import { useMemo } from "react"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { useTablePagination } from "@/hooks/use-table-pagination"
-import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
+import { calculateProductUnitCosts, calculateEffectiveProfitRate, buildTimeRecordIndex, formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
 import {
   filterRowsBySearch,
@@ -31,9 +31,12 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
   )
   const { query, setQuery, checkedFields, setCheckedFields, allFieldKeys } = useSearchWithScope(searchFields)
 
+  const timeRecordIdx = useMemo(() => buildTimeRecordIndex(data), [data])
+
   const allRows = useMemo(() => {
     return data.products.map((product) => {
       const costs = calculateProductUnitCosts(product.id, data, exchangeRateMap)
+      const effectiveResult = calculateEffectiveProfitRate(product.id, data, exchangeRateMap, costs, timeRecordIdx)
       const detailText = [
         `材料 ${formatCurrency(costs.material)}`,
         `梱包 ${formatCurrency(costs.packaging)}`,
@@ -45,7 +48,7 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
         `電気 ${formatCurrency(costs.electricity)}`,
         `手数料 ${formatCurrency(costs.fees)}`,
       ].join(" / ")
-      return { product, costs, detailText, productName: product.name }
+      return { product, costs, effectiveResult, detailText, productName: product.name }
     })
   }, [data, exchangeRateMap])
 
@@ -118,10 +121,12 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
                       合計{renderSortMark("amount")}
                     </button>
                   </TableHead>
+                  <TableHead className="font-semibold">実質利益率</TableHead>
+                  <TableHead className="font-semibold">実質時給</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {pagination.pagedRows.map(({ product, costs }) => (
+                {pagination.pagedRows.map(({ product, costs, effectiveResult }) => (
                   <TableRow key={product.id}>
                     <TableCell className="font-medium">{product.name}</TableCell>
                     <TableCell>{formatCurrency(costs.material)}</TableCell>
@@ -134,11 +139,76 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
                     <TableCell>{formatCurrency(costs.electricity)}</TableCell>
                     <TableCell>{formatCurrency(costs.fees)}</TableCell>
                     <TableCell className="font-semibold">{formatCurrency(costs.total)}</TableCell>
+                    <TableCell>
+                      {effectiveResult.minRecordCount > 0 && effectiveResult.effectiveProfitRate != null
+                        ? `${effectiveResult.effectiveProfitRate.toFixed(1)}%`
+                        : <span className="text-muted-foreground">-</span>}
+                    </TableCell>
+                    <TableCell>
+                      {effectiveResult.minRecordCount > 0
+                        ? formatCurrency(effectiveResult.effectiveHourlyRate ?? 0)
+                        : <span className="text-muted-foreground">-</span>}
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
             <TablePagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} onPageChange={pagination.onPageChange} />
+          </div>
+        )}
+
+        {/* 実績ベース詳細 */}
+        {pagination.pagedRows.some((row) => row.effectiveResult.minRecordCount > 0) && (
+          <div className="space-y-4">
+            <h3 className="text-lg font-semibold">実績ベース詳細</h3>
+            {pagination.pagedRows
+              .filter((row) => row.effectiveResult.minRecordCount > 0)
+              .map(({ product, effectiveResult }) => (
+                <div key={product.id} className="rounded-lg border p-4 space-y-2">
+                  <h4 className="text-sm font-medium">{product.name} - 実績ベース</h4>
+                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+                    <div>
+                      <p className="text-xs text-muted-foreground">実質利益率</p>
+                      <p className="text-lg font-semibold">
+                        {effectiveResult.effectiveProfitRate != null ? `${effectiveResult.effectiveProfitRate.toFixed(1)}%` : "-"}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">実質時給</p>
+                      <p className="text-lg font-semibold">
+                        {formatCurrency(effectiveResult.effectiveHourlyRate ?? 0)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">実績人件費</p>
+                      <p className="text-lg font-semibold">
+                        {formatCurrency(effectiveResult.actualLaborCost)}
+                      </p>
+                    </div>
+                    <div>
+                      <p className="text-xs text-muted-foreground">実績合計時間</p>
+                      <p className="text-lg font-semibold">
+                        {effectiveResult.actualTotalHours.toFixed(1)}h
+                      </p>
+                    </div>
+                  </div>
+                  {effectiveResult.actualLaborByProcess.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs font-medium text-muted-foreground mb-1">工程別実績</p>
+                      <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                        {effectiveResult.actualLaborByProcess.map((proc) => (
+                          <div key={proc.processId} className="flex items-center justify-between rounded bg-muted/50 px-2 py-1 text-xs">
+                            <span>{proc.processName}</span>
+                            <span className="text-muted-foreground">
+                              {proc.avgMinutes.toFixed(1)}分 / {formatCurrency(proc.cost)} ({proc.recordCount}回)
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              ))}
           </div>
         )}
       </div>

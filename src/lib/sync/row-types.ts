@@ -150,8 +150,31 @@ export type TimeRecordRow = {
   total_duration: number | null
   laps: JsonValue | null
   note: string | null
+  product_id: string | null
+  product_process_id: string | null
   created_at: string | null
   updated_at: string | null
+}
+
+export type ProcessTemplateRow = {
+  id: string
+  parent_id: string | null
+  name: string
+  default_hourly_rate: number | null
+  color: string | null
+  icon: string | null
+  sort_order: number | null
+}
+
+export type ProductProcessRow = {
+  id: string
+  product_id: string
+  parent_id: string | null
+  process_template_id: string | null
+  name: string
+  hourly_rate: number | null
+  estimated_minutes: number | null
+  sort_order: number | null
 }
 
 export type AuditLogRow = {

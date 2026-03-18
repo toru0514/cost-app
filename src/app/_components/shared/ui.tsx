@@ -134,11 +134,13 @@ export function RegisteredList({
   title,
   items,
   onEdit,
+  onDelete,
   emptyLabel,
 }: {
   title: string
   items: (RegisteredItem | string)[]
   onEdit?: (id: string) => void
+  onDelete?: (id: string) => void
   emptyLabel?: string
 }) {
   return (
@@ -159,11 +161,18 @@ export function RegisteredList({
                 className="flex items-center justify-between gap-2 rounded border border-transparent px-2 py-1 hover:border-muted"
               >
                 <span className="flex-1">{normalized.label}</span>
-                {onEdit && (
-                  <Button type="button" size="sm" variant="outline" onClick={() => onEdit(normalized.id)}>
-                    編集
-                  </Button>
-                )}
+                <div className="flex items-center gap-1">
+                  {onEdit && (
+                    <Button type="button" size="sm" variant="outline" onClick={() => onEdit(normalized.id)}>
+                      編集
+                    </Button>
+                  )}
+                  {onDelete && (
+                    <Button type="button" size="sm" variant="ghost" className="text-destructive hover:text-destructive" onClick={() => onDelete(normalized.id)}>
+                      削除
+                    </Button>
+                  )}
+                </div>
               </li>
             )
           })}

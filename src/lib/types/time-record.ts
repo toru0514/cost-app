@@ -10,6 +10,8 @@ export type TimeRecord = {
   totalDuration: number
   laps: TimeRecordLap[]
   note?: string
+  productId?: string
+  productProcessId?: string
   createdAt: string
   updatedAt: string
 }

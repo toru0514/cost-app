@@ -3,6 +3,7 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import type { AppData, Product } from "@/lib/types"
+import { createTempId } from "@/lib/utils"
 import type {
   DevelopmentCostDraft,
   ElectricityCostDraft,
@@ -13,12 +14,8 @@ import type {
   OutsourcingCostDraft,
   PackagingCostDraft,
   FeeCostDraft,
+  ProductProcessDraft,
 } from "../types"
-
-const createTempId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).substring(2, 11)
 
 const addDraft = <T extends { id: string }>(setState: Dispatch<SetStateAction<T[]>>, draft: T) => {
   setState((prev) => [...prev, draft])
@@ -63,6 +60,7 @@ export interface ProductDraftStateResult {
   logisticsDrafts: LogisticsCostDraft[]
   electricityDrafts: ElectricityCostDraft[]
   feeDrafts: FeeCostDraft[]
+  processDrafts: ProductProcessDraft[]
   totalEquipmentHours: number
   handleToggleEquipment: (equipmentId: string, checked: boolean) => void
   handleAddMaterialDraft: () => void
@@ -90,6 +88,11 @@ export interface ProductDraftStateResult {
   handleAddFeeDraft: () => void
   handleUpdateFeeDraft: (id: string, patch: Partial<FeeCostDraft>) => void
   handleRemoveFeeDraft: (id: string) => void
+  handleAddProcessDraft: () => void
+  handleAddProcessFromTemplate: (templateId: string) => void
+  handleUpdateProcessDraft: (id: string, patch: Partial<ProductProcessDraft>) => void
+  handleRemoveProcessDraft: (id: string) => void
+  handleAddChildProcess: (parentId: string) => void
   resetFormState: () => void
   handleCancelEdit: () => void
 }
@@ -309,6 +312,26 @@ export function useProductDraftState({
   const [logisticsDrafts, setLogisticsDrafts] = useState<LogisticsCostDraft[]>(buildInitialLogisticsDrafts)
   const [electricityDrafts, setElectricityDrafts] = useState<ElectricityCostDraft[]>(buildInitialElectricityDrafts)
   const [feeDrafts, setFeeDrafts] = useState<FeeCostDraft[]>(buildInitialFeeDrafts)
+
+  const buildInitialProcessDrafts = (): ProductProcessDraft[] => {
+    if (!editingProductId) return []
+    const existingProcesses = data.productProcesses.filter((pp) => pp.productId === editingProductId)
+    const idMap = new Map<string, string>()
+    for (const pp of existingProcesses) {
+      idMap.set(pp.id, createTempId())
+    }
+    return existingProcesses.map((pp) => ({
+      id: idMap.get(pp.id)!,
+      parentId: pp.parentId ? idMap.get(pp.parentId) : undefined,
+      processTemplateId: pp.processTemplateId,
+      name: pp.name,
+      hourlyRate: pp.hourlyRate,
+      estimatedMinutes: pp.estimatedMinutes,
+      sortOrder: pp.sortOrder,
+    }))
+  }
+
+  const [processDrafts, setProcessDrafts] = useState<ProductProcessDraft[]>(buildInitialProcessDrafts)
   const [productForm, setProductForm] = useState<Omit<Product, "id">>(createEmptyProductForm)
   const [initialStock, setInitialStockValue] = useState<number>(1)
   const [initialStockOverridden, setInitialStockOverridden] = useState(false)
@@ -407,6 +430,70 @@ export function useProductDraftState({
   )
   const handleRemoveFeeDraft = useCallback((id: string) => removeDraft(setFeeDrafts, id), [])
 
+  const handleAddProcessDraft = useCallback(() => {
+    const maxSort = processDrafts.filter((d) => !d.parentId).reduce((max, d) => Math.max(max, d.sortOrder), -1)
+    addDraft(setProcessDrafts, {
+      id: createTempId(),
+      name: "",
+      hourlyRate: 0,
+      sortOrder: maxSort + 1,
+    })
+  }, [processDrafts])
+
+  const handleAddProcessFromTemplate = useCallback(
+    (templateId: string) => {
+      const template = data.processTemplates.find((t) => t.id === templateId)
+      if (!template) return
+      const maxSort = processDrafts.filter((d) => !d.parentId).reduce((max, d) => Math.max(max, d.sortOrder), -1)
+      const parentDraftId = createTempId()
+      const parentDraft: ProductProcessDraft = {
+        id: parentDraftId,
+        processTemplateId: template.id,
+        name: template.name,
+        hourlyRate: template.defaultHourlyRate,
+        sortOrder: maxSort + 1,
+      }
+      // Also add child templates if any
+      const childTemplates = data.processTemplates
+        .filter((t) => t.parentId === templateId)
+        .sort((a, b) => a.sortOrder - b.sortOrder)
+      const childDrafts: ProductProcessDraft[] = childTemplates.map((child, index) => ({
+        id: createTempId(),
+        parentId: parentDraftId,
+        processTemplateId: child.id,
+        name: child.name,
+        hourlyRate: child.defaultHourlyRate,
+        sortOrder: index,
+      }))
+      setProcessDrafts((prev) => [...prev, parentDraft, ...childDrafts])
+    },
+    [data.processTemplates, processDrafts]
+  )
+
+  const handleUpdateProcessDraft = useCallback(
+    (id: string, patch: Partial<ProductProcessDraft>) => updateDraft(setProcessDrafts, id, patch),
+    []
+  )
+
+  const handleRemoveProcessDraft = useCallback((id: string) => {
+    // Remove the draft and any children
+    setProcessDrafts((prev) => prev.filter((d) => d.id !== id && d.parentId !== id))
+  }, [])
+
+  const handleAddChildProcess = useCallback(
+    (parentId: string) => {
+      const maxSort = processDrafts.filter((d) => d.parentId === parentId).reduce((max, d) => Math.max(max, d.sortOrder), -1)
+      addDraft<ProductProcessDraft>(setProcessDrafts, {
+        id: createTempId(),
+        parentId,
+        name: "",
+        hourlyRate: 0,
+        sortOrder: maxSort + 1,
+      })
+    },
+    [processDrafts]
+  )
+
   const resetFormState = useCallback(() => {
     const emptyProductForm = createEmptyProductForm()
     setProductForm(emptyProductForm)
@@ -419,6 +506,7 @@ export function useProductDraftState({
     setLogisticsDrafts([])
     setElectricityDrafts([createElectricityDraft()])
     setFeeDrafts(data.fees.length ? [createFeeDraft()] : [])
+    setProcessDrafts([])
     setInitialStockValue(emptyProductForm.productionLotSize)
     setInitialStockOverridden(false)
   }, [
@@ -625,6 +713,25 @@ export function useProductDraftState({
         )
       )
 
+      // Load existing product processes as drafts
+      // We need to map original IDs to new temp IDs for parent-child relationships
+      const existingProcesses = data.productProcesses.filter((pp) => pp.productId === productId)
+      const idMap = new Map<string, string>()
+      for (const pp of existingProcesses) {
+        idMap.set(pp.id, createTempId())
+      }
+      setProcessDrafts(
+        existingProcesses.map((pp) => ({
+          id: idMap.get(pp.id)!,
+          parentId: pp.parentId ? idMap.get(pp.parentId) : undefined,
+          processTemplateId: pp.processTemplateId,
+          name: pp.name,
+          hourlyRate: pp.hourlyRate,
+          estimatedMinutes: pp.estimatedMinutes,
+          sortOrder: pp.sortOrder,
+        }))
+      )
+
       autoLaborHoursRef.current = product.baseManHours
       return product
     },
@@ -646,6 +753,7 @@ export function useProductDraftState({
       data.costEntries.outsourcing,
       data.costEntries.packaging,
       data.costEntries.fees,
+      data.productProcesses,
       data.products,
       data.fees.length,
       editingProductId,
@@ -728,6 +836,7 @@ export function useProductDraftState({
     logisticsDrafts,
     electricityDrafts,
     feeDrafts,
+    processDrafts,
     totalEquipmentHours,
     handleToggleEquipment,
     handleAddMaterialDraft,
@@ -755,6 +864,11 @@ export function useProductDraftState({
     handleAddFeeDraft,
     handleUpdateFeeDraft,
     handleRemoveFeeDraft,
+    handleAddProcessDraft,
+    handleAddProcessFromTemplate,
+    handleUpdateProcessDraft,
+    handleRemoveProcessDraft,
+    handleAddChildProcess,
     resetFormState,
     handleCancelEdit,
   }

@@ -12,6 +12,7 @@ import { ProductBasicsSection } from "./product-basics-section"
 import { ProductRealtimeSummary } from "./product-summary-panel"
 import { useProductFormState } from "./hooks/use-product-form"
 import { ElectricityCostSection } from "./sections/electricity-cost-section"
+import { ProcessDefinitionSection } from "./sections/process-definition-section"
 import { EquipmentAllocationSection } from "./sections/equipment-allocation-section"
 import { LaborCostSection } from "./sections/labor-cost-section"
 import { LogisticsCostSection } from "./sections/logistics-cost-section"
@@ -91,6 +92,12 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
     handleAddFeeDraft,
     handleUpdateFeeDraft,
     handleRemoveFeeDraft,
+    processDrafts,
+    handleAddProcessDraft,
+    handleAddProcessFromTemplate,
+    handleUpdateProcessDraft,
+    handleRemoveProcessDraft,
+    handleAddChildProcess,
     validateProductForm,
     handleSubmit,
     handleCancelEdit,
@@ -191,16 +198,27 @@ export function ProductFormPanel(props: ProductFormPanelProps) {
           <div className="grid gap-6 overflow-hidden lg:grid-cols-[minmax(0,2.6fr)_minmax(280px,1fr)]">
             <form className="order-2 space-y-6 lg:order-1" onSubmit={handleFormSubmit}>
               {currentStep === 1 && (
-                <FormSection title="商品基本情報" description="カテゴリ・生産計画・販売価格・備考を設定" defaultOpen>
-                  <ProductBasicsSection
-                    data={data}
-                    productForm={productForm}
-                    setProductForm={setProductForm}
-                    initialStock={initialStock}
-                    onInitialStockChange={setInitialStock}
-                    handleToggleEquipment={handleToggleEquipment}
+                <div className="space-y-4">
+                  <FormSection title="商品基本情報" description="カテゴリ・生産計画・販売価格・備考を設定" defaultOpen>
+                    <ProductBasicsSection
+                      data={data}
+                      productForm={productForm}
+                      setProductForm={setProductForm}
+                      initialStock={initialStock}
+                      onInitialStockChange={setInitialStock}
+                      handleToggleEquipment={handleToggleEquipment}
+                    />
+                  </FormSection>
+                  <ProcessDefinitionSection
+                    processTemplates={data.processTemplates}
+                    drafts={processDrafts}
+                    onAdd={handleAddProcessDraft}
+                    onAddFromTemplate={handleAddProcessFromTemplate}
+                    onUpdate={handleUpdateProcessDraft}
+                    onRemove={handleRemoveProcessDraft}
+                    onAddChild={handleAddChildProcess}
                   />
-                </FormSection>
+                </div>
               )}
 
               {currentStep === 2 && (

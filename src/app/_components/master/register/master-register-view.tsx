@@ -16,6 +16,7 @@ import { OptionPresetSection } from "../sections/option-preset"
 import { PackagingSection } from "../sections/packaging"
 import { ShippingSection } from "../sections/shipping"
 import { FeeSection } from "../sections/fee"
+import { ProcessTemplateSection } from "../sections/process"
 import type { FormSectionOpenSignal } from "../../shared/ui"
 
 interface MasterRegisterViewProps {
@@ -74,6 +75,8 @@ export function MasterRegisterView({ data, actions, isAuthenticated, onSetMateri
         <ShippingSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("shipping")} onClose={() => onSectionFocus?.(null)} />
 
         <FeeSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("fee")} onClose={() => onSectionFocus?.(null)} />
+
+        <ProcessTemplateSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("process")} onClose={() => onSectionFocus?.(null)} />
 
         <OptionPresetSection data={data} actions={actions} openSignal={sectionOpenSignal} onOpen={() => onSectionFocus?.("option-preset")} onClose={() => onSectionFocus?.(null)} />
       </div>
