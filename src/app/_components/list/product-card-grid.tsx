@@ -2,7 +2,7 @@
 
 import { Copy, Edit3, ImageOff, Trash2 } from "lucide-react"
 import type { Product } from "@/lib/types"
-import { formatCurrency } from "@/lib/calculations"
+import { formatCurrency, type EffectiveProfitResult } from "@/lib/calculations"
 import { useTablePagination } from "@/hooks/use-table-pagination"
 import { TablePagination } from "@/components/ui/table-pagination"
 
@@ -11,6 +11,7 @@ type ProductCardEntry = {
   salePrice: number
   profit: number
   categoryPath: string
+  effectiveResult?: EffectiveProfitResult
 }
 
 interface ProductCardGridProps {
@@ -26,7 +27,7 @@ export function ProductCardGrid({ entries, onEdit, onCopy, onDelete }: ProductCa
   return (
     <div className="space-y-3">
     <div className="grid grid-cols-2 gap-3 md:grid-cols-3 lg:grid-cols-4">
-      {pagedRows.map(({ product, salePrice, profit }) => (
+      {pagedRows.map(({ product, salePrice, profit, effectiveResult }) => (
         <div
           key={product.id}
           className="group relative flex flex-col overflow-hidden rounded-lg border bg-card shadow-sm transition-shadow hover:shadow-md"
@@ -82,6 +83,11 @@ export function ProductCardGrid({ entries, onEdit, onCopy, onDelete }: ProductCa
             <p className={`text-xs ${profit >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
               粗利 {formatCurrency(profit, "JPY")}
             </p>
+            {effectiveResult && effectiveResult.minRecordCount > 0 && (
+              <p className="text-xs text-muted-foreground">
+                実質利益率 {effectiveResult.effectiveProfitRate?.toFixed(1)}%
+              </p>
+            )}
           </div>
         </div>
       ))}
