@@ -36,7 +36,6 @@ import {
 } from "../_components/timetrack/lap-conversion"
 import { Sidebar } from "../_components/shared/sidebar"
 import { useBackup } from "../_components/shared/use-backup"
-import { LoginPanel } from "../_components/shared/login-panel"
 import { LogIn, Menu, Timer, Clock, Zap, ChevronDown, ChevronUp } from "lucide-react"
 import { toast } from "sonner"
 import { createTempId } from "@/lib/utils"
@@ -70,8 +69,6 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
   } | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [loginPanelOpen, setLoginPanelOpen] = useState(false)
-
   const backup = useBackup({ data, isAuthenticated, importGuestData: actions.importGuestData })
 
   // Fix #1: モバイルナビを閉じる処理を追加
@@ -334,7 +331,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
           onExportBackup={backup.handleExportBackupJson}
           onOpenBackupImport={backup.handleOpenBackupImport}
           onResetLocalStorage={handleResetLocalStorage}
-          onLoginOpen={() => setLoginPanelOpen(true)}
+
           onLogout={handleLogout}
           tabOptions={tabOptions}
         />
@@ -373,7 +370,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
               </div>
               <div className="flex items-center gap-2">
                 {!isAuthenticated ? (
-                  <Button type="button" size="sm" onClick={() => setLoginPanelOpen(true)}>
+                  <Button type="button" size="sm" onClick={() => router.push("/login")}>
                     <LogIn className="mr-1.5 h-4 w-4" />
                     ログイン
                   </Button>
@@ -385,10 +382,6 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
           </header>
 
           <main className="mx-auto w-full max-w-3xl space-y-6 p-4 md:p-6">
-            {/* LoginPanel をインライン表示 */}
-            {loginPanelOpen && authState.status !== "authenticated" && (
-              <LoginPanel onClose={() => setLoginPanelOpen(false)} />
-            )}
 
             {/* ===== 開始画面 (タブ型) ===== */}
             {!isTimerActive && !pendingResult && (

@@ -18,7 +18,7 @@ import { MasterTab } from "./_components/master/master-tab"
 import { ProductTab } from "./_components/product/product-tab"
 import { ConfirmationDialogs } from "./_components/shared/confirmation-dialogs"
 import { KeyboardShortcutsDialog } from "./_components/shared/keyboard-shortcuts-dialog"
-import { LoginPanel } from "./_components/shared/login-panel"
+
 import { NotificationBell } from "./_components/shared/notification-bell"
 import { OnboardingBanner } from "./_components/shared/onboarding-banner"
 import { Sidebar } from "./_components/shared/sidebar"
@@ -87,7 +87,7 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
   const { state: authState, logout } = useAuth()
   const isAuthenticated = authState.status === "authenticated"
   const authUserId = isAuthenticated ? authState.user.id : null
-  const [loginPanelOpen, setLoginPanelOpen] = useState(false)
+
   const [pendingDeleteProduct, setPendingDeleteProduct] = useState<Product | null>(null)
   const [shortcutsDialogOpen, setShortcutsDialogOpen] = useState(false)
   const [pendingBulkDeleteProducts, setPendingBulkDeleteProducts] = useState<Product[] | null>(null)
@@ -250,7 +250,7 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
           onExportBackup={backup.handleExportBackupJson}
           onOpenBackupImport={backup.handleOpenBackupImport}
           onResetLocalStorage={handleResetLocalStorage}
-          onLoginOpen={() => setLoginPanelOpen(true)}
+
           onLogout={handleLogout}
           tabOptions={tabOptions}
         />
@@ -294,7 +294,7 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
               <div className="flex items-center gap-2">
                 <NotificationBell isAuthenticated={isAuthenticated} />
                 {!isAuthenticated ? (
-                  <Button type="button" size="sm" onClick={() => setLoginPanelOpen(true)}>
+                  <Button type="button" size="sm" onClick={() => router.push("/login")}>
                     <LogIn className="mr-1.5 h-4 w-4" />
                     ログイン
                   </Button>
@@ -315,11 +315,6 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
               hasMasterData={data.materials.length > 0 || data.packagingItems.length > 0 || data.equipments.length > 0}
               hasProductData={data.products.length > 0}
             />
-
-            {/* ログインパネル */}
-            {loginPanelOpen && authState.status !== "authenticated" && (
-              <LoginPanel onClose={() => setLoginPanelOpen(false)} />
-            )}
 
             <Tabs value={activeTab} onValueChange={handleTabChange} className="dashboard-table-style">
               <TabsContent value="cost" className="space-y-6">

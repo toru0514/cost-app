@@ -38,7 +38,6 @@ export type SidebarProps = {
   onExportBackup: () => void
   onOpenBackupImport: () => void
   onResetLocalStorage: () => void
-  onLoginOpen: () => void
   onLogout: () => void
   tabOptions: readonly TabOption[]
 }
@@ -55,7 +54,6 @@ export function Sidebar({
   onExportBackup,
   onOpenBackupImport,
   onResetLocalStorage,
-  onLoginOpen,
   onLogout,
   tabOptions,
 }: SidebarProps) {
@@ -179,15 +177,14 @@ export function Sidebar({
             </Link>
           )}
           {!isAuthenticated ? (
-            <button
-              type="button"
-              onClick={onLoginOpen}
+            <Link
+              href="/login"
               className="flex w-full items-center gap-3 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
               title={sidebarCollapsed ? "ログイン" : undefined}
             >
               <LogIn className="h-4 w-4 shrink-0" />
               {!sidebarCollapsed && <span>ログイン</span>}
-            </button>
+            </Link>
           ) : (
             <button
               type="button"
@@ -316,14 +313,14 @@ export function Sidebar({
                 </Link>
               )}
               {!isAuthenticated ? (
-                <button
-                  type="button"
-                  onClick={() => { onLoginOpen(); onMobileNavOpenChange(false) }}
+                <Link
+                  href="/login"
+                  onClick={() => onMobileNavOpenChange(false)}
                   className="flex w-full items-center gap-3 rounded-md bg-primary px-3 py-2 text-sm text-primary-foreground transition-colors hover:bg-primary/90"
                 >
                   <LogIn className="h-4 w-4 shrink-0" />
                   <span>ログイン</span>
-                </button>
+                </Link>
               ) : (
                 <button
                   type="button"
