@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import type { TimeRecord } from "@/lib/types"
+import type { Product } from "@/lib/types/product"
+import type { ProductProcess } from "@/lib/types/process"
 import { formatTime } from "./stopwatch"
 import { EditRecordDialog } from "./edit-record-dialog"
 import { Pencil, Search, Trash2 } from "lucide-react"
@@ -13,6 +15,8 @@ type RecordHistoryProps = {
   records: TimeRecord[]
   onUpdate: (record: TimeRecord) => void
   onRemove: (id: string) => void
+  products?: Product[]
+  productProcesses?: ProductProcess[]
 }
 
 function formatDateTime(iso: string): string {
@@ -26,7 +30,7 @@ function formatDateTime(iso: string): string {
   })
 }
 
-export function RecordHistory({ records, onUpdate, onRemove }: RecordHistoryProps) {
+export function RecordHistory({ records, onUpdate, onRemove, products, productProcesses }: RecordHistoryProps) {
   const [search, setSearch] = useState("")
   const [editingRecord, setEditingRecord] = useState<TimeRecord | null>(null)
 
@@ -36,6 +40,18 @@ export function RecordHistory({ records, onUpdate, onRemove }: RecordHistoryProp
       .filter((r) => !q || r.taskName.toLowerCase().includes(q) || (r.note ?? "").toLowerCase().includes(q))
       .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
   }, [records, search])
+
+  const productMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const p of products ?? []) map.set(p.id, p.name)
+    return map
+  }, [products])
+
+  const processMap = useMemo(() => {
+    const map = new Map<string, string>()
+    for (const pp of productProcesses ?? []) map.set(pp.id, pp.name)
+    return map
+  }, [productProcesses])
 
   const handleSaveEdit = useCallback(
     (updated: TimeRecord) => {
@@ -66,10 +82,12 @@ export function RecordHistory({ records, onUpdate, onRemove }: RecordHistoryProp
       </div>
 
       <div className="rounded-md border overflow-x-auto overscroll-x-contain touch-pan-x">
-        <Table className="min-w-[680px]">
+        <Table className="min-w-[880px]">
           <TableHeader>
             <TableRow>
               <TableHead>作業名</TableHead>
+              <TableHead>商品</TableHead>
+              <TableHead>工程</TableHead>
               <TableHead className="text-right">合計時間</TableHead>
               <TableHead className="text-right">ラップ数</TableHead>
               <TableHead>日時</TableHead>
@@ -80,6 +98,12 @@ export function RecordHistory({ records, onUpdate, onRemove }: RecordHistoryProp
             {filtered.map((record) => (
               <TableRow key={record.id}>
                 <TableCell className="font-medium">{record.taskName}</TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {record.productId ? productMap.get(record.productId) ?? "—" : "—"}
+                </TableCell>
+                <TableCell className="text-muted-foreground text-sm">
+                  {record.productProcessId ? processMap.get(record.productProcessId) ?? "—" : "—"}
+                </TableCell>
                 <TableCell className="text-right font-mono tabular-nums">
                   {formatTime(record.totalDuration)}
                 </TableCell>
