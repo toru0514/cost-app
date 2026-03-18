@@ -21,7 +21,6 @@ import { Stopwatch, type LapData } from "../_components/timetrack/stopwatch"
 import { RecordHistory } from "../_components/timetrack/record-history"
 import { Sidebar } from "../_components/shared/sidebar"
 import { useBackup } from "../_components/shared/use-backup"
-import { LoginPanel } from "../_components/shared/login-panel"
 import { LogIn, Menu, Timer } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
@@ -45,8 +44,6 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
   } | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileNavOpen, setMobileNavOpen] = useState(false)
-  const [loginPanelOpen, setLoginPanelOpen] = useState(false)
-
   const backup = useBackup({ data, isAuthenticated, importGuestData: actions.importGuestData })
 
   // Fix #1: モバイルナビを閉じる処理を追加
@@ -145,7 +142,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
               </div>
               <div className="flex items-center gap-2">
                 {!isAuthenticated ? (
-                  <Button type="button" size="sm" onClick={() => setLoginPanelOpen(true)}>
+                  <Button type="button" size="sm" onClick={() => router.push("/login")}>
                     <LogIn className="mr-1.5 h-4 w-4" />
                     ログイン
                   </Button>
@@ -157,11 +154,6 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
           </header>
 
           <main className="mx-auto w-full max-w-3xl space-y-8 p-4 md:p-6">
-            {/* Fix #4: LoginPanel をインライン表示（DashboardPage と統一） */}
-            {loginPanelOpen && authState.status !== "authenticated" && (
-              <LoginPanel onClose={() => setLoginPanelOpen(false)} />
-            )}
-
             {/* タスク名入力 + ストップウォッチ */}
             <Card>
               <CardHeader>
