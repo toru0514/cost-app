@@ -28,11 +28,7 @@ import {
 import { ArrowLeft, Timer, Clock, Zap, ChevronDown, ChevronUp } from "lucide-react"
 import Link from "next/link"
 import { toast } from "sonner"
-
-const createId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).substring(2, 11)
+import { createTempId } from "@/lib/utils"
 
 type TimeTrackPageProps = {
   initialData: AppData | null
@@ -172,7 +168,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
         if (!conv.processName.trim()) continue
 
         if (selectedProductId) {
-          const processId = createId()
+          const processId = createTempId()
           processIdMap.set(conv.lapId, processId)
           actions.addProductProcess({
             id: processId,

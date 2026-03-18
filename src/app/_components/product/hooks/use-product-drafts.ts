@@ -3,6 +3,7 @@
 import { type Dispatch, type SetStateAction, useCallback, useEffect, useMemo, useRef, useState } from "react"
 
 import type { AppData, Product } from "@/lib/types"
+import { createTempId } from "@/lib/utils"
 import type {
   DevelopmentCostDraft,
   ElectricityCostDraft,
@@ -15,11 +16,6 @@ import type {
   FeeCostDraft,
   ProductProcessDraft,
 } from "../types"
-
-const createTempId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).substring(2, 11)
 
 const addDraft = <T extends { id: string }>(setState: Dispatch<SetStateAction<T[]>>, draft: T) => {
   setState((prev) => [...prev, draft])

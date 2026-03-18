@@ -5,13 +5,9 @@ import { toast } from "sonner"
 
 import type { AppActions } from "@/lib/app-data"
 import type { AppData } from "@/lib/types"
+import { createTempId } from "@/lib/utils"
 import type { ProductCostSummary } from "../product-summary-panel"
 import { useProductDraftState, type ProductDraftStateResult } from "./use-product-drafts"
-
-const createTempId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).substring(2, 11)
 
 interface UseProductFormStateArgs {
   data: AppData

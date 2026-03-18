@@ -31,13 +31,9 @@ import type {
 import { emptyAppData, sampleAppData } from "../types"
 import type { AuthState } from "../auth"
 import { normalizeAppData } from "./utils"
+import { createTempId as createId } from "@/lib/utils"
 
 const STORAGE_KEY = "cost-app-data-v1"
-
-const createId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).substring(2, 11)
 
 type Updater = (fn: (prev: AppData) => AppData) => void
 
