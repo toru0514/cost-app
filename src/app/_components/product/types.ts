@@ -61,3 +61,13 @@ export type FeeCostDraft = {
   id: string
   feeId: string
 }
+
+export type ProductProcessDraft = {
+  id: string
+  parentId?: string
+  processTemplateId?: string
+  name: string
+  hourlyRate: number
+  estimatedMinutes?: number
+  sortOrder: number
+}

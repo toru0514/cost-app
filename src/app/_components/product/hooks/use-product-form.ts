@@ -5,13 +5,9 @@ import { toast } from "sonner"
 
 import type { AppActions } from "@/lib/app-data"
 import type { AppData } from "@/lib/types"
+import { createTempId } from "@/lib/utils"
 import type { ProductCostSummary } from "../product-summary-panel"
 import { useProductDraftState, type ProductDraftStateResult } from "./use-product-drafts"
-
-const createTempId = () =>
-  typeof crypto !== "undefined" && "randomUUID" in crypto
-    ? crypto.randomUUID()
-    : Math.random().toString(36).substring(2, 11)
 
 interface UseProductFormStateArgs {
   data: AppData
@@ -45,6 +41,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
     logisticsDrafts,
     electricityDrafts,
     feeDrafts,
+    processDrafts,
     totalEquipmentHours,
     resetFormState,
   } = draftState
@@ -214,6 +211,8 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
       addElectricityCostEntry,
       addFeeCostEntry,
       removeCostEntriesByProduct,
+      addProductProcess,
+      removeProductProcess,
     } = actions
 
       const isEditing = Boolean(args.editingProductId)
@@ -372,6 +371,43 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
           })
         })
 
+      // Remove old product processes and save new ones from drafts
+      if (isEditing && args.editingProductId) {
+        const existingProcesses = data.productProcesses.filter(
+          (pp) => pp.productId === args.editingProductId
+        )
+        for (const pp of existingProcesses) {
+          removeProductProcess(pp.id)
+        }
+      }
+      // Build a map from draft temp IDs to new persisted IDs for parent-child relationships
+      const processIdMap = new Map<string, string>()
+      for (const draft of processDrafts) {
+        processIdMap.set(draft.id, createTempId())
+      }
+      // Filter out empty-name drafts, and also exclude children whose parent was filtered
+      const validParentIds = new Set(
+        processDrafts.filter((d) => !d.parentId && d.name.trim()).map((d) => d.id)
+      )
+      processDrafts
+        .filter((draft) => {
+          if (!draft.name.trim()) return false
+          if (draft.parentId && !validParentIds.has(draft.parentId)) return false
+          return true
+        })
+        .forEach((draft) => {
+          addProductProcess({
+            id: processIdMap.get(draft.id),
+            productId: targetProductId,
+            parentId: draft.parentId ? processIdMap.get(draft.parentId) : undefined,
+            processTemplateId: draft.processTemplateId,
+            name: draft.name.trim(),
+            hourlyRate: draft.hourlyRate,
+            estimatedMinutes: draft.estimatedMinutes,
+            sortOrder: draft.sortOrder,
+          })
+        })
+
       if (!isEditing && args.onSetStock) {
         try {
           const normalizedInitialStock = Math.max(0, Number(initialStock) || 0)
@@ -394,6 +430,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
       args,
       data.materials,
       data.packagingItems,
+      data.productProcesses,
       electricityDrafts,
       feeDrafts,
       equipmentAllocDrafts,
@@ -402,6 +439,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
       materialDrafts,
       outsourcingDrafts,
       packagingDrafts,
+      processDrafts,
       productForm,
       initialStock,
       resetFormState,

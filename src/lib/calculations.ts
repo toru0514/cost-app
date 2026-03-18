@@ -300,3 +300,108 @@ export function calculateProductUnitCosts(productId: string, data: AppData, exch
     total,
   }
 }
+
+export type ActualLaborByProcess = {
+  processId: string
+  processName: string
+  avgMinutes: number
+  hourlyRate: number
+  cost: number
+  recordCount: number
+}
+
+export type EffectiveProfitResult = {
+  /** 実績人件費合計 */
+  actualLaborCost: number
+  /** 工程別内訳 */
+  actualLaborByProcess: ActualLaborByProcess[]
+  /** 実質原価 = 原価(人件費除く) + 実績人件費 */
+  actualTotal: number
+  /** 実質利益率 (%) */
+  effectiveProfitRate: number | null
+  /** 実質時給 = (販売価格 - 原価(人件費除く)) / 実績合計時間(H) */
+  effectiveHourlyRate: number | null
+  /** 実績合計時間（時間） */
+  actualTotalHours: number
+  /** 計測回数（最小の工程の回数） */
+  minRecordCount: number
+}
+
+/**
+ * Build an index of timeRecords grouped by productProcessId for O(1) lookup.
+ * Call once and pass to calculateEffectiveProfitRate to avoid O(N*M*R) filtering.
+ */
+export function buildTimeRecordIndex(data: AppData): Map<string, typeof data.timeRecords> {
+  const map = new Map<string, typeof data.timeRecords>()
+  for (const tr of data.timeRecords) {
+    if (!tr.productProcessId) continue
+    const list = map.get(tr.productProcessId)
+    if (list) {
+      list.push(tr)
+    } else {
+      map.set(tr.productProcessId, [tr])
+    }
+  }
+  return map
+}
+
+export function calculateEffectiveProfitRate(
+  productId: string,
+  data: AppData,
+  exchangeRateMap?: Map<string, number>,
+  precomputedCosts?: ReturnType<typeof calculateProductUnitCosts>,
+  timeRecordIndex?: Map<string, typeof data.timeRecords>,
+): EffectiveProfitResult {
+  const unitCosts = precomputedCosts ?? calculateProductUnitCosts(productId, data, exchangeRateMap)
+  const product = data.products.find((p) => p.id === productId)
+  const salePrice = product?.salePrice || 0
+
+  // 商品に紐づく工程を取得
+  const processes = data.productProcesses.filter((pp) => pp.productId === productId)
+
+  // 工程ごとの実績時間を集計
+  const actualLaborByProcess: ActualLaborByProcess[] = processes.map((process) => {
+    const records = timeRecordIndex
+      ? (timeRecordIndex.get(process.id) ?? [])
+      : data.timeRecords.filter((tr) => tr.productProcessId === process.id)
+    const totalMs = records.reduce((sum, r) => sum + r.totalDuration, 0)
+    const avgMs = records.length > 0 ? totalMs / records.length : 0
+    const avgMinutes = avgMs / 60000
+    const cost = (avgMinutes / 60) * process.hourlyRate
+
+    return {
+      processId: process.id,
+      processName: process.name,
+      avgMinutes,
+      hourlyRate: process.hourlyRate,
+      cost,
+      recordCount: records.length,
+    }
+  })
+
+  const actualLaborCost = actualLaborByProcess.reduce((sum, p) => sum + p.cost, 0)
+  const costWithoutLabor = unitCosts.total - unitCosts.labor
+  const actualTotal = costWithoutLabor + actualLaborCost
+  const actualTotalHours = actualLaborByProcess.reduce((sum, p) => sum + p.avgMinutes / 60, 0)
+  const minRecordCount = actualLaborByProcess.length > 0
+    ? Math.min(...actualLaborByProcess.map((p) => p.recordCount))
+    : 0
+
+  const effectiveProfitRate = salePrice > 0 && minRecordCount > 0
+    ? ((salePrice - actualTotal) / salePrice) * 100
+    : null
+
+  const effectiveHourlyRate = actualTotalHours > 0 && minRecordCount > 0
+    ? (salePrice - costWithoutLabor) / actualTotalHours
+    : null
+
+  return {
+    actualLaborCost,
+    actualLaborByProcess,
+    actualTotal,
+    effectiveProfitRate,
+    effectiveHourlyRate,
+    actualTotalHours,
+    minRecordCount,
+  }
+}

@@ -22,6 +22,8 @@ import type {
   AuditLog,
   TimeRecord,
   TimeRecordLap,
+  ProcessTemplate,
+  ProductProcess,
 } from "../types"
 import type {
   CategoryLargeRow,
@@ -46,6 +48,8 @@ import type {
   FeeCostRow,
   AuditLogRow,
   TimeRecordRow,
+  ProcessTemplateRow,
+  ProductProcessRow,
 } from "./row-types"
 
 const asArray = <T>(value: unknown): T[] => (Array.isArray(value) ? (value as T[]) : [])
@@ -248,6 +252,27 @@ export const mapTimeRecord = (row: TimeRecordRow): TimeRecord => ({
   note: row.note ?? undefined,
   createdAt: row.created_at ?? new Date().toISOString(),
   updatedAt: row.updated_at ?? new Date().toISOString(),
+})
+
+export const mapProcessTemplate = (row: ProcessTemplateRow): ProcessTemplate => ({
+  id: row.id,
+  parentId: row.parent_id ?? undefined,
+  name: row.name,
+  defaultHourlyRate: Number(row.default_hourly_rate ?? 0),
+  color: row.color ?? undefined,
+  icon: row.icon ?? undefined,
+  sortOrder: Number(row.sort_order ?? 0),
+})
+
+export const mapProductProcess = (row: ProductProcessRow): ProductProcess => ({
+  id: row.id,
+  productId: row.product_id,
+  parentId: row.parent_id ?? undefined,
+  processTemplateId: row.process_template_id ?? undefined,
+  name: row.name,
+  hourlyRate: Number(row.hourly_rate ?? 0),
+  estimatedMinutes: row.estimated_minutes != null ? Number(row.estimated_minutes) : undefined,
+  sortOrder: Number(row.sort_order ?? 0),
 })
 
 export const mapAuditLog = (row: AuditLogRow): AuditLog => ({

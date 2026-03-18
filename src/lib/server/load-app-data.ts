@@ -2,7 +2,7 @@ import type { SupabaseClient } from "@supabase/supabase-js"
 import type { AppData } from "../types"
 import type { TimeRecordLap } from "../types"
 import { emptyAppData } from "../types"
-import type { TimeRecordRow } from "../sync/row-types"
+import type { TimeRecordRow, ProcessTemplateRow, ProductProcessRow } from "../sync/row-types"
 
 const TABLES = {
   categories: {
@@ -18,6 +18,8 @@ const TABLES = {
   fees: "fees",
   optionPresets: "option_presets",
   products: "products",
+  processTemplates: "process_templates",
+  productProcesses: "product_processes",
 } as const
 
 const fetchRows = async <T>(supabase: SupabaseClient, table: string, userId: string) => {
@@ -45,8 +47,22 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
   let timeRecords: TimeRecordRow[] = []
   try {
     timeRecords = await fetchRows<TimeRecordRow>(supabase, "time_records", userId)
-  } catch {
-    // テーブル未作成の場合はスキップ
+  } catch (e) {
+    console.warn("Failed to fetch table (may not exist yet):", e)
+  }
+
+  let processTemplatesRows: ProcessTemplateRow[] = []
+  try {
+    processTemplatesRows = await fetchRows<ProcessTemplateRow>(supabase, TABLES.processTemplates, userId)
+  } catch (e) {
+    console.warn("Failed to fetch table (may not exist yet):", e)
+  }
+
+  let productProcessesRows: ProductProcessRow[] = []
+  try {
+    productProcessesRows = await fetchRows<ProductProcessRow>(supabase, TABLES.productProcesses, userId)
+  } catch (e) {
+    console.warn("Failed to fetch table (may not exist yet):", e)
   }
 
   return {
@@ -134,8 +150,29 @@ export const loadUserAppDataServer = async (supabase: SupabaseClient, userId: st
       totalDuration: row.total_duration ?? 0,
       laps: Array.isArray(row.laps) ? (row.laps as unknown as TimeRecordLap[]) : [],
       note: row.note ?? undefined,
+      productId: row.product_id ?? undefined,
+      productProcessId: row.product_process_id ?? undefined,
       createdAt: row.created_at ?? new Date().toISOString(),
       updatedAt: row.updated_at ?? new Date().toISOString(),
+    })),
+    processTemplates: processTemplatesRows.map((row: ProcessTemplateRow) => ({
+      id: row.id,
+      parentId: row.parent_id ?? undefined,
+      name: row.name,
+      defaultHourlyRate: row.default_hourly_rate ?? 0,
+      color: row.color ?? undefined,
+      icon: row.icon ?? undefined,
+      sortOrder: row.sort_order ?? 0,
+    })),
+    productProcesses: productProcessesRows.map((row: ProductProcessRow) => ({
+      id: row.id,
+      productId: row.product_id,
+      parentId: row.parent_id ?? undefined,
+      processTemplateId: row.process_template_id ?? undefined,
+      name: row.name,
+      hourlyRate: row.hourly_rate ?? 0,
+      estimatedMinutes: row.estimated_minutes ?? undefined,
+      sortOrder: row.sort_order ?? 0,
     })),
     products: products.map((row: any) => ({
       id: row.id,
