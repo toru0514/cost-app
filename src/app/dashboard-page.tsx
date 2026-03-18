@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Tabs, TabsContent } from "@/components/ui/tabs"
 import { useAppData } from "@/lib/app-data"
-import { SECTION_LABELS } from "@/lib/constants"
+import { SECTION_LABELS, tabOptions, tabPathMap, type TabValue } from "@/lib/constants"
 import { buildExchangeRateMap } from "@/lib/calculations"
 import type { AppData, AuditFilters, Product } from "@/lib/types"
 import { AnalyticsTab } from "./_components/analytics/analytics-tab"
@@ -23,32 +23,10 @@ import { NotificationBell } from "./_components/shared/notification-bell"
 import { OnboardingBanner } from "./_components/shared/onboarding-banner"
 import { Sidebar } from "./_components/shared/sidebar"
 import { useBackup } from "./_components/shared/use-backup"
-import { BarChart3, Box, Boxes, ChevronRight, ClipboardList, FileText, LayoutDashboard, LogIn, Menu, Package } from "lucide-react"
+import { ChevronRight, LogIn, Menu } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
 import { useRouter, useSearchParams } from "next/navigation"
-
-const tabOptions = [
-  { value: "cost", label: "原価サマリ", icon: LayoutDashboard },
-  { value: "analytics", label: "集計データ", icon: BarChart3 },
-  { value: "product", label: "商品登録", icon: Package },
-  { value: "master", label: "マスタ登録", icon: Boxes },
-  { value: "list", label: "商品/在庫一覧", icon: ClipboardList },
-  { value: "bulk", label: "一括処理", icon: Box },
-  { value: "audit", label: "監査ログ", icon: FileText },
-] as const
-
-type TabValue = (typeof tabOptions)[number]["value"]
-
-const tabPathMap: Record<TabValue, string> = {
-  cost: "/cost",
-  analytics: "/analytics",
-  product: "/product",
-  master: "/master",
-  list: "/list",
-  bulk: "/bulk",
-  audit: "/audit",
-}
 
 export default function DashboardPage({ routeTab, initialData }: { routeTab: TabValue; initialData?: AppData | null }) {
   const {

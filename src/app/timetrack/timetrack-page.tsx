@@ -3,40 +3,29 @@
 import { useCallback, useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Textarea } from "@/components/ui/textarea"
 import { useAppData } from "@/lib/app-data"
+import { tabOptions, tabPathMap } from "@/lib/constants"
 import type { AppData } from "@/lib/types"
 import { Stopwatch, type LapData } from "../_components/timetrack/stopwatch"
 import { RecordHistory } from "../_components/timetrack/record-history"
 import { Sidebar } from "../_components/shared/sidebar"
 import { useBackup } from "../_components/shared/use-backup"
 import { LoginPanel } from "../_components/shared/login-panel"
-import { BarChart3, Box, Boxes, ClipboardList, FileText, LayoutDashboard, Menu, Package, Timer } from "lucide-react"
+import { LogIn, Menu, Timer } from "lucide-react"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
 import { useRouter } from "next/navigation"
-
-const tabOptions = [
-  { value: "cost", label: "原価サマリ", icon: LayoutDashboard },
-  { value: "analytics", label: "集計データ", icon: BarChart3 },
-  { value: "product", label: "商品登録", icon: Package },
-  { value: "master", label: "マスタ登録", icon: Boxes },
-  { value: "list", label: "商品/在庫一覧", icon: ClipboardList },
-  { value: "bulk", label: "一括処理", icon: Box },
-  { value: "audit", label: "監査ログ", icon: FileText },
-] as const
-
-const tabPathMap: Record<string, string> = {
-  cost: "/cost",
-  analytics: "/analytics",
-  product: "/product",
-  master: "/master",
-  list: "/list",
-  bulk: "/bulk",
-  audit: "/audit",
-}
 
 type TimeTrackPageProps = {
   initialData: AppData | null
@@ -60,9 +49,11 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
 
   const backup = useBackup({ data, isAuthenticated, importGuestData: actions.importGuestData })
 
+  // Fix #1: モバイルナビを閉じる処理を追加
   const handleTabChange = useCallback((value: string) => {
-    const path = tabPathMap[value]
+    const path = tabPathMap[value as keyof typeof tabPathMap]
     if (path) {
+      setMobileNavOpen(false)
       router.push(path)
     }
   }, [router])
@@ -138,22 +129,39 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
         />
 
         <div className="flex flex-1 flex-col overflow-y-auto min-w-0">
-          {/* ヘッダー */}
+          {/* Fix #5: ヘッダー右側にログイン状態表示を追加 */}
           <header className="sticky top-0 z-30 border-b bg-background/95 backdrop-blur">
-            <div className="flex h-14 items-center gap-2 px-3 md:px-6">
-              <Button type="button" variant="ghost" size="icon" className="md:hidden h-10 w-10" onClick={() => setMobileNavOpen(true)}>
-                <Menu className="h-7 w-7" />
-              </Button>
-              <div className="flex items-center gap-1.5">
-                <span className="hidden text-xs text-muted-foreground sm:inline">Cost App</span>
-                <span className="hidden text-xs text-muted-foreground sm:inline">/</span>
-                <Timer className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs font-semibold md:text-sm">時間計測</span>
+            <div className="flex h-14 items-center justify-between gap-2 px-3 md:px-6">
+              <div className="flex items-center gap-2">
+                <Button type="button" variant="ghost" size="icon" className="md:hidden h-10 w-10" onClick={() => setMobileNavOpen(true)}>
+                  <Menu className="h-7 w-7" />
+                </Button>
+                <div className="flex items-center gap-1.5">
+                  <span className="hidden text-xs text-muted-foreground sm:inline">Cost App</span>
+                  <span className="hidden text-xs text-muted-foreground sm:inline">/</span>
+                  <Timer className="h-4 w-4 text-muted-foreground" />
+                  <span className="text-xs font-semibold md:text-sm">時間計測</span>
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                {!isAuthenticated ? (
+                  <Button type="button" size="sm" onClick={() => setLoginPanelOpen(true)}>
+                    <LogIn className="mr-1.5 h-4 w-4" />
+                    ログイン
+                  </Button>
+                ) : (
+                  <span className="text-sm text-muted-foreground">ログイン中<span className="hidden sm:inline">: {authState.user.email}</span></span>
+                )}
               </div>
             </div>
           </header>
 
           <main className="mx-auto w-full max-w-3xl space-y-8 p-4 md:p-6">
+            {/* Fix #4: LoginPanel をインライン表示（DashboardPage と統一） */}
+            {loginPanelOpen && authState.status !== "authenticated" && (
+              <LoginPanel onClose={() => setLoginPanelOpen(false)} />
+            )}
+
             {/* タスク名入力 + ストップウォッチ */}
             <Card>
               <CardHeader>
@@ -218,12 +226,24 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
         </div>
       </div>
 
-      {/* ログインパネル */}
-      {loginPanelOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40">
-          <LoginPanel onClose={() => setLoginPanelOpen(false)} />
-        </div>
-      )}
+      {/* Fix #2: バックアップ復元の確認ダイアログ */}
+      <Dialog
+        open={backup.pendingBackupRestore !== null}
+        onOpenChange={(open) => { if (!open) backup.closeBackupRestoreDialog() }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>バックアップを復元</DialogTitle>
+            <DialogDescription>
+              「{backup.pendingBackupRestore?.fileName}」からデータを復元します。現在のデータは上書きされます。よろしいですか？
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={backup.closeBackupRestoreDialog}>キャンセル</Button>
+            <Button onClick={backup.confirmBackupRestore}>復元する</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
