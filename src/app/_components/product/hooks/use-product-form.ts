@@ -45,6 +45,7 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
     logisticsDrafts,
     electricityDrafts,
     feeDrafts,
+    processDrafts,
     totalEquipmentHours,
     resetFormState,
   } = draftState
@@ -214,6 +215,8 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
       addElectricityCostEntry,
       addFeeCostEntry,
       removeCostEntriesByProduct,
+      addProductProcess,
+      removeProductProcess,
     } = actions
 
       const isEditing = Boolean(args.editingProductId)
@@ -369,6 +372,35 @@ export function useProductFormState(args: UseProductFormStateArgs): ProductFormS
             ratePercent: fee.ratePercent,
             fixedAmount: fee.fixedAmount,
             currency: fee.currency,
+          })
+        })
+
+      // Remove old product processes and save new ones from drafts
+      if (isEditing && args.editingProductId) {
+        const existingProcesses = data.productProcesses.filter(
+          (pp) => pp.productId === args.editingProductId
+        )
+        for (const pp of existingProcesses) {
+          removeProductProcess(pp.id)
+        }
+      }
+      // Build a map from draft temp IDs to new persisted IDs for parent-child relationships
+      const processIdMap = new Map<string, string>()
+      for (const draft of processDrafts) {
+        processIdMap.set(draft.id, createTempId())
+      }
+      processDrafts
+        .filter((draft) => draft.name.trim())
+        .forEach((draft) => {
+          addProductProcess({
+            id: processIdMap.get(draft.id),
+            productId: targetProductId,
+            parentId: draft.parentId ? processIdMap.get(draft.parentId) : undefined,
+            processTemplateId: draft.processTemplateId,
+            name: draft.name.trim(),
+            hourlyRate: draft.hourlyRate,
+            estimatedMinutes: draft.estimatedMinutes,
+            sortOrder: draft.sortOrder,
           })
         })
 

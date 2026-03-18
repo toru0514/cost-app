@@ -25,6 +25,8 @@ import type {
   ElectricityCostEntry,
   FeeCostEntry,
   TimeRecord,
+  ProcessTemplate,
+  ProductProcess,
 } from "../types"
 import { emptyAppData, sampleAppData } from "../types"
 import type { AuthState } from "../auth"
@@ -812,6 +814,59 @@ export function useCrudActions(
     [update]
   )
 
+  // --- Process Templates ---
+  const addProcessTemplate = useCallback(
+    (input: Omit<ProcessTemplate, "id"> & { id?: string }) => {
+      const { id, ...rest } = input
+      update((prev) => ({ ...prev, processTemplates: [...prev.processTemplates, { id: id ?? createId(), ...rest }] }))
+    },
+    [update]
+  )
+
+  const updateProcessTemplate = useCallback((input: ProcessTemplate) => {
+    update((prev) => ({
+      ...prev,
+      processTemplates: prev.processTemplates.map((pt) => (pt.id === input.id ? input : pt)),
+    }))
+  }, [update])
+
+  const removeProcessTemplate = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      processTemplates: prev.processTemplates.filter((pt) => pt.id !== id),
+      // processTemplateId参照をクリア
+      productProcesses: prev.productProcesses.map((pp) =>
+        pp.processTemplateId === id ? { ...pp, processTemplateId: undefined } : pp
+      ),
+    }))
+  }, [update])
+
+  // --- Product Processes ---
+  const addProductProcess = useCallback(
+    (input: Omit<ProductProcess, "id"> & { id?: string }) => {
+      const { id, ...rest } = input
+      update((prev) => ({ ...prev, productProcesses: [...prev.productProcesses, { id: id ?? createId(), ...rest }] }))
+    },
+    [update]
+  )
+
+  const updateProductProcess = useCallback((input: ProductProcess) => {
+    update((prev) => ({
+      ...prev,
+      productProcesses: prev.productProcesses.map((pp) => (pp.id === input.id ? input : pp)),
+    }))
+  }, [update])
+
+  const removeProductProcess = useCallback((id: string) => {
+    update((prev) => ({
+      ...prev,
+      productProcesses: prev.productProcesses.filter((pp) => pp.id !== id && pp.parentId !== id),
+      timeRecords: prev.timeRecords.map((tr) =>
+        tr.productProcessId === id ? { ...tr, productProcessId: undefined } : tr
+      ),
+    }))
+  }, [update])
+
   // --- Utility actions ---
   const resetAll = useCallback(() => {
     if (authState.status === "authenticated") {
@@ -914,6 +969,12 @@ export function useCrudActions(
     addTimeRecord,
     updateTimeRecord,
     removeTimeRecord,
+    addProcessTemplate,
+    updateProcessTemplate,
+    removeProcessTemplate,
+    addProductProcess,
+    updateProductProcess,
+    removeProductProcess,
     resetAll,
     seedSample,
     importGuestData,

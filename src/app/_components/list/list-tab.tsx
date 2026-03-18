@@ -7,7 +7,7 @@ import {
   loadProductListColumnSettings,
   upsertProductListColumnSettings,
 } from "@/lib/app-data-sync"
-import { calculateProductUnitCosts } from "@/lib/calculations"
+import { calculateProductUnitCosts, calculateEffectiveProfitRate } from "@/lib/calculations"
 import type { AppData, Product, StockAlertSetting } from "@/lib/types"
 import {
   CustomizableProductTable,
@@ -111,6 +111,14 @@ export function ListTab({
     const map = new Map<string, ReturnType<typeof calculateProductUnitCosts>>()
     data.products.forEach((product) => {
       map.set(product.id, calculateProductUnitCosts(product.id, data, exchangeRateMap))
+    })
+    return map
+  }, [data, exchangeRateMap])
+
+  const effectiveProfitMap = useMemo(() => {
+    const map = new Map<string, ReturnType<typeof calculateEffectiveProfitRate>>()
+    data.products.forEach((product) => {
+      map.set(product.id, calculateEffectiveProfitRate(product.id, data, exchangeRateMap))
     })
     return map
   }, [data, exchangeRateMap])
@@ -344,6 +352,7 @@ export function ListTab({
           categoryPath,
           shippingText,
           equipmentText,
+          effectiveResult: effectiveProfitMap.get(product.id),
           matchesSearch,
           matchesCategory: true,
           registeredTime,
@@ -355,6 +364,7 @@ export function ListTab({
     categoryMediumNameMap,
     categorySmallNameMap,
     data.products,
+    effectiveProfitMap,
     getEquipmentText,
     getShippingText,
     productCostMap,

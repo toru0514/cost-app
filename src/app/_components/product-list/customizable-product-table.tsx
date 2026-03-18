@@ -11,7 +11,7 @@ import { Switch } from "@/components/ui/switch"
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
 import { TablePagination } from "@/components/ui/table-pagination"
 import { useTablePagination } from "@/hooks/use-table-pagination"
-import { formatCurrency } from "@/lib/calculations"
+import { formatCurrency, type EffectiveProfitResult } from "@/lib/calculations"
 import type { Product, StockAlertSetting } from "@/lib/types"
 import { toast } from "sonner"
 import {
@@ -34,6 +34,7 @@ export const CUSTOMIZABLE_PRODUCT_COLUMNS = [
   "expectedProduction",
   "salePrice",
   "profit",
+  "effectiveProfitRate",
   "notes",
 ] as const
 
@@ -46,6 +47,7 @@ type ProductListEntry = {
   categoryPath: string
   shippingText: string
   equipmentText: string
+  effectiveResult?: EffectiveProfitResult
 }
 
 export type ProductTableColumnSettings = {
@@ -93,6 +95,7 @@ const COLUMN_LABELS: Record<CustomizableProductColumnKey, string> = {
   expectedProduction: "想定生産数",
   salePrice: "販売価格",
   profit: "利益",
+  effectiveProfitRate: "実質利益率",
   notes: "備考",
 }
 
@@ -471,6 +474,13 @@ export function CustomizableProductTable({
         return formatCurrency(salePrice)
       case "profit":
         return formatCurrency(profit)
+      case "effectiveProfitRate": {
+        const effResult = entry.effectiveResult
+        if (!effResult || effResult.minRecordCount === 0) {
+          return <span className="text-muted-foreground">-</span>
+        }
+        return `${effResult.effectiveProfitRate?.toFixed(1)}%`
+      }
       case "notes": {
         const notesText = product.notes?.trim() || "-"
         return notesText

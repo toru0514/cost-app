@@ -148,10 +148,33 @@ export function buildSyncPayload(data: AppData, previous?: AppData) {
       total_duration: item.totalDuration,
       laps: item.laps,
       note: item.note ?? null,
+      product_id: item.productId ?? null,
+      product_process_id: item.productProcessId ?? null,
       created_at: item.createdAt,
       updated_at: item.updatedAt,
     })),
     time_records_deleted: toDeletePayload(prev.timeRecords, data.timeRecords),
+    process_templates: data.processTemplates.map((item) => ({
+      id: item.id,
+      parent_id: item.parentId ?? null,
+      name: item.name,
+      default_hourly_rate: item.defaultHourlyRate,
+      color: item.color ?? null,
+      icon: item.icon ?? null,
+      sort_order: item.sortOrder,
+    })),
+    process_templates_deleted: toDeletePayload(prev.processTemplates, data.processTemplates),
+    product_processes: data.productProcesses.map((item) => ({
+      id: item.id,
+      product_id: item.productId,
+      parent_id: item.parentId ?? null,
+      process_template_id: item.processTemplateId ?? null,
+      name: item.name,
+      hourly_rate: item.hourlyRate,
+      estimated_minutes: item.estimatedMinutes ?? null,
+      sort_order: item.sortOrder,
+    })),
+    product_processes_deleted: toDeletePayload(prev.productProcesses, data.productProcesses),
     cost_entries_materials: data.costEntries.materials.map((item) => ({
       id: item.id,
       product_id: item.productId,
@@ -271,6 +294,8 @@ export const buildAuditMetadata = (data: AppData, previousData?: AppData) => {
     fees: data.fees.length,
     optionPresets: data.optionPresets?.length ?? 0,
     products: data.products.length,
+    processTemplates: data.processTemplates.length,
+    productProcesses: data.productProcesses.length,
     costEntries: {
       materials: data.costEntries.materials.length,
       packaging: data.costEntries.packaging.length,
@@ -293,7 +318,8 @@ export const buildAuditMetadata = (data: AppData, previousData?: AppData) => {
       payloadStats.laborRoles +
       payloadStats.equipments +
       payloadStats.fees +
-      payloadStats.optionPresets,
+      payloadStats.optionPresets +
+      payloadStats.processTemplates,
     totalCostEntries:
       payloadStats.costEntries.materials +
       payloadStats.costEntries.packaging +
@@ -329,6 +355,8 @@ export const buildAuditMetadata = (data: AppData, previousData?: AppData) => {
             categoriesLarge: diffById(previousData.categories.large, data.categories.large, (item) => item.name),
             categoriesMedium: diffById(previousData.categories.medium, data.categories.medium, (item) => item.name),
             categoriesSmall: diffById(previousData.categories.small, data.categories.small, (item) => item.name),
+            processTemplates: diffById(previousData.processTemplates, data.processTemplates, (item) => item.name),
+            productProcesses: diffById(previousData.productProcesses, data.productProcesses, (item) => item.name),
           }
         : undefined,
     },
