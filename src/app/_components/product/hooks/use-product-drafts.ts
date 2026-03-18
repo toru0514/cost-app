@@ -484,7 +484,7 @@ export function useProductDraftState({
   const handleAddChildProcess = useCallback(
     (parentId: string) => {
       const maxSort = processDrafts.filter((d) => d.parentId === parentId).reduce((max, d) => Math.max(max, d.sortOrder), -1)
-      addDraft(setProcessDrafts, {
+      addDraft<ProductProcessDraft>(setProcessDrafts, {
         id: createTempId(),
         parentId,
         name: "",

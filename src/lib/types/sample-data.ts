@@ -132,6 +132,8 @@ export const sampleAppData: AppData = {
     },
   ],
   timeRecords: [],
+  processTemplates: [],
+  productProcesses: [],
   products: [
     {
       id: "prod-1",

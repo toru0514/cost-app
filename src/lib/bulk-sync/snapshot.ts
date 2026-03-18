@@ -24,6 +24,8 @@ export const normalizeAppData = (dataset?: MinimalAppData | null): AppData => {
     optionPresets: ensureArray(source.optionPresets),
     products: ensureArray(source.products),
     timeRecords: ensureArray(source.timeRecords),
+    processTemplates: ensureArray(source.processTemplates),
+    productProcesses: ensureArray(source.productProcesses),
     costEntries: {
       materials: ensureArray(source.costEntries?.materials),
       packaging: ensureArray(source.costEntries?.packaging),

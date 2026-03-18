@@ -23,6 +23,8 @@ import type {
   FeeCostRow,
   AuditLogRow,
   TimeRecordRow,
+  ProcessTemplateRow,
+  ProductProcessRow,
 } from "./row-types"
 import {
   mapLarge,
@@ -46,6 +48,8 @@ import {
   mapElectricEntry,
   mapFeeEntry,
   mapTimeRecord,
+  mapProcessTemplate,
+  mapProductProcess,
   mapAuditLog,
 } from "./row-mappers"
 import { buildSyncPayload, buildAuditMetadata } from "./build-sync-payload"
@@ -72,6 +76,8 @@ const TABLES = {
   optionPresets: "option_presets",
   products: "products",
   timeRecords: "time_records",
+  processTemplates: "process_templates",
+  productProcesses: "product_processes",
   costEntries: {
     materials: "cost_entries_materials",
     packaging: "cost_entries_packaging",
@@ -145,6 +151,20 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       // テーブル未作成の場合は空配列
     }
 
+    // process_templates / product_processes テーブルが存在しない場合はスキップ
+    let processTemplateRows: ProcessTemplateRow[] = []
+    try {
+      processTemplateRows = await fetchRows<ProcessTemplateRow>(TABLES.processTemplates, userId)
+    } catch {
+      // テーブル未作成の場合は空配列
+    }
+    let productProcessRows: ProductProcessRow[] = []
+    try {
+      productProcessRows = await fetchRows<ProductProcessRow>(TABLES.productProcesses, userId)
+    } catch {
+      // テーブル未作成の場合は空配列
+    }
+
     const hasData =
       large.length ||
       medium.length ||
@@ -176,6 +196,8 @@ export async function loadUserAppData(userId: string): Promise<AppData | null> {
       optionPresets: optionPresets.map(mapOptionPreset),
       products: products.map(mapProduct),
       timeRecords: timeRecords.map(mapTimeRecord),
+      processTemplates: processTemplateRows.map(mapProcessTemplate),
+      productProcesses: productProcessRows.map(mapProductProcess),
       costEntries: {
         materials: costMaterials.map(mapMaterialEntry),
         packaging: costPackaging.map(mapPackagingEntry),
