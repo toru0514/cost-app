@@ -19,6 +19,7 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
   Settings,
+  Timer,
   Users,
   X,
 } from "lucide-react"
@@ -116,6 +117,14 @@ export function AuthPageLayout({ children, title, activeMenu }: AuthPageLayoutPr
           </Link>
         </nav>
         <div className="mt-auto space-y-1 border-t pt-3">
+          <Link
+            href="/timetrack"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={sidebarCollapsed ? "時間計測" : undefined}
+          >
+            <Timer className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && <span>時間計測</span>}
+          </Link>
           <Link
             href="/photos"
             className={`flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm transition-colors ${
@@ -237,6 +246,14 @@ export function AuthPageLayout({ children, title, activeMenu }: AuthPageLayoutPr
               </Link>
             </nav>
             <div className="mt-auto space-y-1 border-t pt-3">
+              <Link
+                href="/timetrack"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <Timer className="h-4 w-4 shrink-0" />
+                <span>時間計測</span>
+              </Link>
               <Link
                 href="/photos"
                 onClick={() => setMobileNavOpen(false)}
