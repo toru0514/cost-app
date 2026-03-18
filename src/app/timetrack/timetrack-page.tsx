@@ -115,7 +115,7 @@ export function TimeTrackPage({ initialData }: TimeTrackPageProps) {
           onExportBackup={backup.handleExportBackupJson}
           onOpenBackupImport={backup.handleOpenBackupImport}
           onResetLocalStorage={handleResetLocalStorage}
-          onLoginOpen={() => setLoginPanelOpen(true)}
+
           onLogout={handleLogout}
           tabOptions={tabOptions}
         />
