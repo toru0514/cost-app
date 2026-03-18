@@ -52,10 +52,10 @@ export function AuthPageLayout({ children, title, activeMenu }: AuthPageLayoutPr
         <div className={`mb-3 flex items-center px-1 ${sidebarCollapsed ? "flex-col gap-1" : "justify-between gap-2"}`}>
           {!sidebarCollapsed && <p className="text-sm font-semibold">Cost App</p>}
           <div className={`flex items-center ${sidebarCollapsed ? "flex-col gap-1" : "gap-1"}`}>
-            <ThemeToggle />
             <Button type="button" variant="ghost" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)}>
               {sidebarCollapsed ? <PanelLeftOpen className="h-4 w-4" /> : <PanelLeftClose className="h-4 w-4" />}
             </Button>
+            {!sidebarCollapsed && <ThemeToggle />}
           </div>
         </div>
         <nav className="space-y-1">
