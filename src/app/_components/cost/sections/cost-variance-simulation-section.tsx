@@ -2,13 +2,20 @@
 
 import { useMemo, useState } from "react"
 
-import { Button } from "@/components/ui/button"
-import { Label } from "@/components/ui/label"
-import { NumberInput } from "@/components/ui/number-input"
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
+import RestartAltIcon from "@mui/icons-material/RestartAlt"
+import Box from "@mui/material/Box"
+import Button from "@mui/material/Button"
+import Paper from "@mui/material/Paper"
+import Table from "@mui/material/Table"
+import TableBody from "@mui/material/TableBody"
+import TableCell from "@mui/material/TableCell"
+import TableContainer from "@mui/material/TableContainer"
+import TableHead from "@mui/material/TableHead"
+import TableRow from "@mui/material/TableRow"
+import TextField from "@mui/material/TextField"
+import Typography from "@mui/material/Typography"
 import { simulateProductCosts, formatCurrency, type CostVarianceRates } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
-import { RotateCcw } from "lucide-react"
 
 interface CostVarianceSimulationSectionProps {
   data: AppData
@@ -84,63 +91,92 @@ export function CostVarianceSimulationSection({ data, exchangeRateMap }: CostVar
     )
   }, [simulationResults])
 
+  const getDiffColor = (value: number) => {
+    if (value > 0) return "error.main"
+    if (value < 0) return "success.main"
+    return undefined
+  }
+
   return (
-    <section className="min-w-0 space-y-3 rounded-lg border p-4">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="text-xl font-semibold">原価変動シミュレーション</h2>
-          <p className="text-sm text-muted-foreground">
+    <Paper variant="outlined" sx={{ p: 2, minWidth: 0 }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 1, mb: 1.5 }}>
+        <Box>
+          <Typography variant="h6" sx={{ fontWeight: 600 }}>
+            原価変動シミュレーション
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
             各コスト項目の変動率を入力し、原価への影響を確認できます。
-          </p>
-        </div>
+          </Typography>
+        </Box>
         {hasChanges && (
-          <Button variant="outline" size="sm" onClick={resetRates}>
-            <RotateCcw className="mr-1.5 h-4 w-4" />
+          <Button variant="outlined" size="small" onClick={resetRates} startIcon={<RestartAltIcon />}>
             リセット
           </Button>
         )}
-      </div>
+      </Box>
 
       {data.products.length === 0 ? (
-        <p className="text-sm text-muted-foreground">商品が登録されると試算できます。</p>
+        <Typography variant="body2" color="text.secondary">
+          商品が登録されると試算できます。
+        </Typography>
       ) : (
-        <div className="space-y-4">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
           {/* 変動率入力フォーム */}
-          <div className="rounded-md border p-4">
-            <p className="mb-3 text-sm font-semibold">変動率設定 (%)</p>
-            <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-5 lg:grid-cols-9">
+          <Paper variant="outlined" sx={{ p: 2 }}>
+            <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5 }}>
+              変動率設定 (%)
+            </Typography>
+            <Box
+              sx={{
+                display: "grid",
+                gridTemplateColumns: {
+                  xs: "repeat(2, 1fr)",
+                  sm: "repeat(3, 1fr)",
+                  md: "repeat(5, 1fr)",
+                  lg: "repeat(9, 1fr)",
+                },
+                gap: 1.5,
+              }}
+            >
               {rateLabels.map(({ key, label }) => (
-                <div key={key} className="space-y-1">
-                  <Label className="text-xs text-muted-foreground">{label}</Label>
-                  <NumberInput
+                <Box key={key}>
+                  <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                    {label}
+                  </Typography>
+                  <TextField
+                    type="number"
+                    size="small"
+                    fullWidth
                     value={getPercentValue(rates[key])}
-                    onValueChange={(next) => updateRate(key, next === "" ? 0 : Number(next))}
-                    min={-100}
-                    max={1000}
+                    onChange={(e) => {
+                      const val = e.target.value
+                      updateRate(key, val === "" ? 0 : Number(val))
+                    }}
+                    inputProps={{ min: -100, max: 1000 }}
                     placeholder="0"
                   />
-                </div>
+                </Box>
               ))}
-            </div>
-            <p className="mt-2 text-xs text-muted-foreground">
+            </Box>
+            <Typography variant="caption" color="text.secondary" sx={{ display: "block", mt: 1 }}>
               正の値で増加、負の値で減少（例: 10 = 10%増、-5 = 5%減）
-            </p>
-          </div>
+            </Typography>
+          </Paper>
 
           {/* シミュレーション結果テーブル */}
-          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="w-auto min-w-max">
-              <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="font-semibold">商品名</TableHead>
-                  <TableHead className="text-right font-semibold">現行原価</TableHead>
-                  <TableHead className="text-right font-semibold">変動後原価</TableHead>
-                  <TableHead className="text-right font-semibold">差額</TableHead>
-                  <TableHead className="text-right font-semibold">変動率</TableHead>
-                  <TableHead className="text-right font-semibold">販売価格</TableHead>
-                  <TableHead className="text-right font-semibold">変動後利益率</TableHead>
+          <TableContainer sx={{ maxWidth: "100%", overflowX: "auto" }}>
+            <Table size="small" sx={{ minWidth: "max-content" }}>
+              <TableHead>
+                <TableRow sx={{ bgcolor: "action.hover" }}>
+                  <TableCell sx={{ fontWeight: 600 }}>商品名</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>現行原価</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>変動後原価</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>差額</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>変動率</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>販売価格</TableCell>
+                  <TableCell align="right" sx={{ fontWeight: 600 }}>変動後利益率</TableCell>
                 </TableRow>
-              </TableHeader>
+              </TableHead>
               <TableBody>
                 {simulationResults.map(({ product, simulation }) => {
                   const salePrice = product.salePrice ?? 0
@@ -155,72 +191,59 @@ export function CostVarianceSimulationSection({ data, exchangeRateMap }: CostVar
 
                   return (
                     <TableRow key={product.id}>
-                      <TableCell className="font-medium">{product.name}</TableCell>
-                      <TableCell className="text-right">{formatCurrency(simulation.original.total)}</TableCell>
-                      <TableCell className="text-right font-semibold">
+                      <TableCell sx={{ fontWeight: 500 }}>{product.name}</TableCell>
+                      <TableCell align="right">{formatCurrency(simulation.original.total)}</TableCell>
+                      <TableCell align="right" sx={{ fontWeight: 600 }}>
                         {formatCurrency(simulation.simulated.total)}
                       </TableCell>
                       <TableCell
-                        className={`text-right ${
-                          simulation.diff.total > 0
-                            ? "text-red-600 dark:text-red-400"
-                            : simulation.diff.total < 0
-                              ? "text-green-600 dark:text-green-400"
-                              : ""
-                        }`}
+                        align="right"
+                        sx={{ color: getDiffColor(simulation.diff.total) }}
                       >
                         {formatDiff(simulation.diff.total)}
                       </TableCell>
                       <TableCell
-                        className={`text-right ${
-                          changePercent > 0
-                            ? "text-red-600 dark:text-red-400"
-                            : changePercent < 0
-                              ? "text-green-600 dark:text-green-400"
-                              : ""
-                        }`}
+                        align="right"
+                        sx={{ color: getDiffColor(changePercent) }}
                       >
                         {changePercent !== 0 ? `${changePercent >= 0 ? "+" : ""}${changePercent.toFixed(1)}%` : "-"}
                       </TableCell>
-                      <TableCell className="text-right">{formatCurrency(salePrice)}</TableCell>
-                      <TableCell className="text-right">
-                        <span
-                          className={
-                            simulatedMargin < originalMargin
-                              ? "text-red-600 dark:text-red-400"
-                              : simulatedMargin > originalMargin
-                                ? "text-green-600 dark:text-green-400"
-                                : ""
-                          }
+                      <TableCell align="right">{formatCurrency(salePrice)}</TableCell>
+                      <TableCell align="right">
+                        <Box
+                          component="span"
+                          sx={{
+                            color:
+                              simulatedMargin < originalMargin
+                                ? "error.main"
+                                : simulatedMargin > originalMargin
+                                  ? "success.main"
+                                  : undefined,
+                          }}
                         >
                           {salePrice > 0 ? `${simulatedMargin.toFixed(1)}%` : "-"}
-                        </span>
+                        </Box>
                         {salePrice > 0 && simulatedMargin !== originalMargin && (
-                          <span className="ml-1 text-xs text-muted-foreground">
+                          <Typography component="span" variant="caption" color="text.secondary" sx={{ ml: 0.5 }}>
                             ({originalMargin.toFixed(1)}%)
-                          </span>
+                          </Typography>
                         )}
                       </TableCell>
                     </TableRow>
                   )
                 })}
                 {/* 合計行 */}
-                <TableRow className="bg-muted/30 font-semibold">
+                <TableRow sx={{ bgcolor: "action.hover", "& td": { fontWeight: 600 } }}>
                   <TableCell>合計</TableCell>
-                  <TableCell className="text-right">{formatCurrency(totals.originalTotal)}</TableCell>
-                  <TableCell className="text-right">{formatCurrency(totals.simulatedTotal)}</TableCell>
+                  <TableCell align="right">{formatCurrency(totals.originalTotal)}</TableCell>
+                  <TableCell align="right">{formatCurrency(totals.simulatedTotal)}</TableCell>
                   <TableCell
-                    className={`text-right ${
-                      totals.diffTotal > 0
-                        ? "text-red-600 dark:text-red-400"
-                        : totals.diffTotal < 0
-                          ? "text-green-600 dark:text-green-400"
-                          : ""
-                    }`}
+                    align="right"
+                    sx={{ color: getDiffColor(totals.diffTotal) }}
                   >
                     {formatDiff(totals.diffTotal)}
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell align="right">
                     {totals.originalTotal > 0
                       ? `${((totals.simulatedTotal - totals.originalTotal) / totals.originalTotal * 100) >= 0 ? "+" : ""}${(
                           ((totals.simulatedTotal - totals.originalTotal) / totals.originalTotal) *
@@ -228,18 +251,31 @@ export function CostVarianceSimulationSection({ data, exchangeRateMap }: CostVar
                         ).toFixed(1)}%`
                       : "-"}
                   </TableCell>
-                  <TableCell className="text-right">-</TableCell>
-                  <TableCell className="text-right">-</TableCell>
+                  <TableCell align="right">-</TableCell>
+                  <TableCell align="right">-</TableCell>
                 </TableRow>
               </TableBody>
             </Table>
-          </div>
+          </TableContainer>
 
           {/* 項目別内訳（変動がある場合のみ表示） */}
           {hasChanges && simulationResults.length > 0 && (
-            <div className="rounded-md border p-4">
-              <p className="mb-3 text-sm font-semibold">項目別影響額（全商品合計）</p>
-              <div className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-3 md:grid-cols-5">
+            <Paper variant="outlined" sx={{ p: 2 }}>
+              <Typography variant="body2" sx={{ fontWeight: 600, mb: 1.5 }}>
+                項目別影響額（全商品合計）
+              </Typography>
+              <Box
+                sx={{
+                  display: "grid",
+                  gridTemplateColumns: {
+                    xs: "repeat(2, 1fr)",
+                    sm: "repeat(3, 1fr)",
+                    md: "repeat(5, 1fr)",
+                  },
+                  gap: 1,
+                  fontSize: "0.875rem",
+                }}
+              >
                 {rateLabels.map(({ key, label }) => {
                   const totalDiff = simulationResults.reduce(
                     (sum, { simulation }) => sum + simulation.diff[key],
@@ -247,25 +283,35 @@ export function CostVarianceSimulationSection({ data, exchangeRateMap }: CostVar
                   )
                   if (totalDiff === 0) return null
                   return (
-                    <div key={key} className="flex justify-between rounded-md bg-muted/30 p-2">
-                      <span className="text-muted-foreground">{label}</span>
-                      <span
-                        className={
-                          totalDiff > 0
-                            ? "text-red-600 dark:text-red-400"
-                            : "text-green-600 dark:text-green-400"
-                        }
+                    <Box
+                      key={key}
+                      sx={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        borderRadius: 1,
+                        bgcolor: "action.hover",
+                        p: 1,
+                      }}
+                    >
+                      <Typography variant="body2" color="text.secondary">
+                        {label}
+                      </Typography>
+                      <Typography
+                        variant="body2"
+                        sx={{
+                          color: totalDiff > 0 ? "error.main" : "success.main",
+                        }}
                       >
                         {formatDiff(totalDiff)}
-                      </span>
-                    </div>
+                      </Typography>
+                    </Box>
                   )
                 })}
-              </div>
-            </div>
+              </Box>
+            </Paper>
           )}
-        </div>
+        </Box>
       )}
-    </section>
+    </Paper>
   )
 }

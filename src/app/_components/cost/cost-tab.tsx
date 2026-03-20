@@ -2,9 +2,14 @@
 
 import { useEffect, useState } from "react"
 
-import { ChevronDownIcon, ChevronUpIcon } from "lucide-react"
+import Accordion from "@mui/material/Accordion"
+import AccordionSummary from "@mui/material/AccordionSummary"
+import AccordionDetails from "@mui/material/AccordionDetails"
+import Button from "@mui/material/Button"
+import Box from "@mui/material/Box"
+import Typography from "@mui/material/Typography"
+import ExpandMoreIcon from "@mui/icons-material/ExpandMore"
 
-import { Button } from "@/components/ui/button"
 import type { AppData } from "@/lib/types"
 
 import { CostSummarySection } from "./sections/cost-summary-section"
@@ -74,6 +79,21 @@ const loadCostTabOpenState = (): Record<CostSectionKey, boolean> => {
   }
 }
 
+const sectionLabels: Record<CostSectionKey, string> = {
+  summary: "原価サマリ",
+  costVarianceSimulation: "原価変動シミュレーション",
+  profitSimulation: "利益シミュレーション",
+  material: "材料費集計",
+  packaging: "梱包コスト集計",
+  labor: "人件費",
+  outsourcing: "外注費",
+  development: "開発コスト",
+  equipment: "設備配賦",
+  logistics: "物流・配送費",
+  electricity: "電気代",
+  fees: "販売・決済手数料",
+}
+
 export function CostTab({ data, exchangeRateMap }: CostTabProps) {
   const [openState, setOpenState] = useState<Record<CostSectionKey, boolean>>(() => loadCostTabOpenState())
 
@@ -94,104 +114,57 @@ export function CostTab({ data, exchangeRateMap }: CostTabProps) {
     setOpenState((prev) => ({ ...prev, [key]: !prev[key] }))
   }
 
-  const renderSectionToggle = (key: CostSectionKey, label: string) => (
-    <div
-      className="cost-section-toggle flex items-center justify-between cursor-pointer select-none rounded-md px-2 py-1 hover:bg-muted/50"
-      role="button"
-      tabIndex={0}
-      aria-expanded={openState[key]}
-      onClick={() => toggleSection(key)}
-      onKeyDown={(e) => {
-        if (e.key === "Enter" || e.key === " ") {
-          e.preventDefault()
-          toggleSection(key)
-        }
-      }}
-    >
-      <h3 className="text-sm font-semibold">{label}</h3>
-      <Button type="button" size="sm" variant="ghost" className="h-7 w-7 p-0 pointer-events-none" aria-hidden="true">
-        {openState[key] ? <ChevronUpIcon className="h-4 w-4" /> : <ChevronDownIcon className="h-4 w-4" />}
-      </Button>
-    </div>
-  )
+  const sections: { key: CostSectionKey; content: React.ReactNode }[] = [
+    { key: "summary", content: <CostSummarySection data={data} exchangeRateMap={exchangeRateMap} /> },
+    { key: "costVarianceSimulation", content: <CostVarianceSimulationSection data={data} exchangeRateMap={exchangeRateMap} /> },
+    { key: "profitSimulation", content: <ProfitSimulationSection data={data} exchangeRateMap={exchangeRateMap} /> },
+    { key: "material", content: <MaterialCostSection data={data} /> },
+    { key: "packaging", content: <PackagingCostSection data={data} /> },
+    { key: "labor", content: <LaborCostSection data={data} /> },
+    { key: "outsourcing", content: <OutsourcingCostSection data={data} /> },
+    { key: "development", content: <DevelopmentCostSection data={data} /> },
+    { key: "equipment", content: <EquipmentAllocationSection data={data} /> },
+    { key: "logistics", content: <LogisticsCostSection data={data} /> },
+    { key: "electricity", content: <ElectricityCostSection data={data} /> },
+    { key: "fees", content: <FeesCostSection data={data} /> },
+  ]
 
   return (
-    <div className="cost-ux space-y-6">
-      {/* ページヘッダー */}
-      <div className="flex items-start justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">原価サマリ</h1>
-          <p className="text-muted-foreground">カテゴリ別の積み上げと合計を確認できます</p>
-        </div>
-        <div className="flex gap-2">
-          <Button type="button" size="sm" variant="outline" onClick={() => setAllOpenState(true)}>
+    <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+      <Box sx={{ display: "flex", alignItems: "flex-start", justifyContent: "space-between" }}>
+        <Box>
+          <Typography variant="h5" fontWeight={600}>
+            原価サマリ
+          </Typography>
+          <Typography variant="body2" color="text.secondary">
+            カテゴリ別の積み上げと合計を確認できます
+          </Typography>
+        </Box>
+        <Box sx={{ display: "flex", gap: 1 }}>
+          <Button variant="outlined" size="small" onClick={() => setAllOpenState(true)}>
             全て開く
           </Button>
-          <Button type="button" size="sm" variant="ghost" onClick={() => setAllOpenState(false)}>
+          <Button size="small" onClick={() => setAllOpenState(false)}>
             全て閉じる
           </Button>
-        </div>
-      </div>
+        </Box>
+      </Box>
 
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("summary", "原価サマリ")}
-        {openState.summary && <CostSummarySection data={data} exchangeRateMap={exchangeRateMap} />}
-      </div>
-
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("costVarianceSimulation", "原価変動シミュレーション")}
-        {openState.costVarianceSimulation && <CostVarianceSimulationSection data={data} exchangeRateMap={exchangeRateMap} />}
-      </div>
-
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("profitSimulation", "利益シミュレーション")}
-        {openState.profitSimulation && <ProfitSimulationSection data={data} exchangeRateMap={exchangeRateMap} />}
-      </div>
-
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("material", "材料費集計")}
-        {openState.material && <MaterialCostSection data={data} />}
-      </div>
-
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("packaging", "梱包コスト集計")}
-        {openState.packaging && <PackagingCostSection data={data} />}
-      </div>
-
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("labor", "人件費")}
-        {openState.labor && <LaborCostSection data={data} />}
-      </div>
-
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("outsourcing", "外注費")}
-        {openState.outsourcing && <OutsourcingCostSection data={data} />}
-      </div>
-
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("development", "開発コスト")}
-        {openState.development && <DevelopmentCostSection data={data} />}
-      </div>
-
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("equipment", "設備配賦")}
-        {openState.equipment && <EquipmentAllocationSection data={data} />}
-      </div>
-
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("logistics", "物流・配送費")}
-        {openState.logistics && <LogisticsCostSection data={data} />}
-      </div>
-
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("electricity", "電気代")}
-        {openState.electricity && <ElectricityCostSection data={data} />}
-      </div>
-
-      <div className="cost-section-block min-w-0 space-y-3 overflow-hidden">
-        {renderSectionToggle("fees", "販売・決済手数料")}
-        {openState.fees && <FeesCostSection data={data} />}
-      </div>
-    </div>
+      {sections.map(({ key, content }) => (
+        <Accordion
+          key={key}
+          expanded={openState[key]}
+          onChange={() => toggleSection(key)}
+          disableGutters
+        >
+          <AccordionSummary expandIcon={<ExpandMoreIcon />}>
+            <Typography fontWeight={600} variant="body2">
+              {sectionLabels[key]}
+            </Typography>
+          </AccordionSummary>
+          <AccordionDetails>{content}</AccordionDetails>
+        </Accordion>
+      ))}
+    </Box>
   )
 }

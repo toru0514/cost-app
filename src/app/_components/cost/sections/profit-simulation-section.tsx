@@ -2,8 +2,10 @@
 
 import { useMemo, useState } from "react"
 
-import { Label } from "@/components/ui/label"
-import { NumberInput } from "@/components/ui/number-input"
+import Box from "@mui/material/Box"
+import Paper from "@mui/material/Paper"
+import TextField from "@mui/material/TextField"
+import Typography from "@mui/material/Typography"
 import { calculateProductUnitCosts, formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
 
@@ -47,16 +49,22 @@ export function ProfitSimulationSection({ data, exchangeRateMap }: ProfitSimulat
   }
 
   return (
-    <section className="min-w-0 space-y-3 rounded-lg border p-4">
-      <div>
-        <h2 className="text-xl font-semibold">目標利益率シミュレーション</h2>
-        <p className="text-sm text-muted-foreground">目標利益率と販売数量を入力し、必要な販売価格と粗利を逆算します。</p>
-      </div>
-      <div className="space-y-3">
+    <Paper variant="outlined" sx={{ p: 2, minWidth: 0 }}>
+      <Box sx={{ mb: 1.5 }}>
+        <Typography variant="h6" sx={{ fontWeight: 600 }}>
+          目標利益率シミュレーション
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          目標利益率と販売数量を入力し、必要な販売価格と粗利を逆算します。
+        </Typography>
+      </Box>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
         {productSummaries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">商品が登録されると試算できます。</p>
+          <Typography variant="body2" color="text.secondary">
+            商品が登録されると試算できます。
+          </Typography>
         ) : (
-          <div className="space-y-4">
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
             {productSummaries.map(({ product, costs }) => {
               const unitCost = costs.total ?? 0
               const currentSalePrice = Number(product.salePrice ?? 0)
@@ -81,68 +89,97 @@ export function ProfitSimulationSection({ data, exchangeRateMap }: ProfitSimulat
               const marginGap = targetMargin - currentMargin
 
               return (
-                <div key={`profit-sim-${product.id}`} className="space-y-4 rounded-lg border p-4">
-                  <div className="flex flex-wrap items-start justify-between gap-3">
-                    <div>
-                      <p className="font-semibold">{product.name}</p>
-                      <p className="text-xs text-muted-foreground">
+                <Paper key={`profit-sim-${product.id}`} variant="outlined" sx={{ p: 2, display: "flex", flexDirection: "column", gap: 2 }}>
+                  <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 1.5 }}>
+                    <Box>
+                      <Typography variant="body1" sx={{ fontWeight: 600 }}>
+                        {product.name}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary">
                         原価 {formatCurrency(unitCost)} / 現行販売価格 {formatCurrency(currentSalePrice)}
-                      </p>
-                    </div>
-                    <div className="text-right text-xs text-muted-foreground">
-                      <p>現行利益率: {currentSalePrice > 0 ? `${currentMargin.toFixed(1)}%` : "-"}</p>
-                      <p>現行粗利: {formatCurrency(currentSalePrice - unitCost)}</p>
-                    </div>
-                  </div>
-                  <div className="grid gap-4 md:grid-cols-3">
-                    <div className="space-y-3">
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">目標利益率 (%)</Label>
-                        <NumberInput
+                      </Typography>
+                    </Box>
+                    <Box sx={{ textAlign: "right" }}>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                        現行利益率: {currentSalePrice > 0 ? `${currentMargin.toFixed(1)}%` : "-"}
+                      </Typography>
+                      <Typography variant="caption" color="text.secondary" sx={{ display: "block" }}>
+                        現行粗利: {formatCurrency(currentSalePrice - unitCost)}
+                      </Typography>
+                    </Box>
+                  </Box>
+                  <Box
+                    sx={{
+                      display: "grid",
+                      gap: 2,
+                      gridTemplateColumns: { xs: "1fr", md: "repeat(3, 1fr)" },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                          目標利益率 (%)
+                        </Typography>
+                        <TextField
+                          type="number"
+                          size="small"
+                          fullWidth
                           value={simulation.margin}
-                          onValueChange={(next) =>
+                          onChange={(e) => {
+                            const val = e.target.value
                             applyProfitSimulationPatch(product.id, defaultInputs, {
-                              margin: next === "" ? 0 : Number(next),
+                              margin: val === "" ? 0 : Number(val),
                             })
-                          }
-                          min={0}
-                          max={99.9}
+                          }}
+                          inputProps={{ min: 0, max: 99.9 }}
                         />
-                      </div>
-                      <div className="space-y-1">
-                        <Label className="text-xs text-muted-foreground">想定販売数量</Label>
-                        <NumberInput
+                      </Box>
+                      <Box>
+                        <Typography variant="caption" color="text.secondary" sx={{ display: "block", mb: 0.5 }}>
+                          想定販売数量
+                        </Typography>
+                        <TextField
+                          type="number"
+                          size="small"
+                          fullWidth
                           value={simulation.quantity}
-                          onValueChange={(next) =>
+                          onChange={(e) => {
+                            const val = e.target.value
                             applyProfitSimulationPatch(product.id, defaultInputs, {
-                              quantity: next === "" ? 0 : Number(next),
+                              quantity: val === "" ? 0 : Number(val),
                             })
-                          }
-                          min={0}
+                          }}
+                          inputProps={{ min: 0 }}
                         />
-                      </div>
-                    </div>
-                    <div className="space-y-1 rounded-md border p-3 text-sm">
-                      <p className="font-semibold">逆算結果</p>
-                      <p>必要販売価格: {formatMaybeCurrency(requiredSalePrice)}</p>
-                      <p>単位粗利: {formatMaybeCurrency(profitPerUnit)}</p>
-                      <p>想定売上: {formatMaybeCurrency(targetRevenue)}</p>
-                      <p>想定粗利: {formatMaybeCurrency(targetProfit)}</p>
-                    </div>
-                    <div className="space-y-1 rounded-md border p-3 text-sm text-muted-foreground">
-                      <p className="font-semibold text-foreground">現状との差分</p>
-                      <p>
+                      </Box>
+                    </Box>
+                    <Paper variant="outlined" sx={{ p: 1.5, fontSize: "0.875rem", display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        逆算結果
+                      </Typography>
+                      <Typography variant="body2">必要販売価格: {formatMaybeCurrency(requiredSalePrice)}</Typography>
+                      <Typography variant="body2">単位粗利: {formatMaybeCurrency(profitPerUnit)}</Typography>
+                      <Typography variant="body2">想定売上: {formatMaybeCurrency(targetRevenue)}</Typography>
+                      <Typography variant="body2">想定粗利: {formatMaybeCurrency(targetProfit)}</Typography>
+                    </Paper>
+                    <Paper variant="outlined" sx={{ p: 1.5, fontSize: "0.875rem", display: "flex", flexDirection: "column", gap: 0.5 }}>
+                      <Typography variant="body2" sx={{ fontWeight: 600 }}>
+                        現状との差分
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
                         販売価格差: {salePriceGap !== null ? `${salePriceGap >= 0 ? "+" : ""}${formatCurrency(salePriceGap)}` : "-"}
-                      </p>
-                      <p>利益率差: {Number.isFinite(marginGap) ? `${marginGap >= 0 ? "+" : ""}${marginGap.toFixed(1)}%` : "-"}</p>
-                    </div>
-                  </div>
-                </div>
+                      </Typography>
+                      <Typography variant="body2" color="text.secondary">
+                        利益率差: {Number.isFinite(marginGap) ? `${marginGap >= 0 ? "+" : ""}${marginGap.toFixed(1)}%` : "-"}
+                      </Typography>
+                    </Paper>
+                  </Box>
+                </Paper>
               )
             })}
-          </div>
+          </Box>
         )}
-      </div>
-    </section>
+      </Box>
+    </Paper>
   )
 }

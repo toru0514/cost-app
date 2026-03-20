@@ -1,6 +1,6 @@
 "use client"
 
-import { CostDisplay } from "../../shared/ui"
+import { MuiCostDisplay as CostDisplay } from "../mui/cost-display"
 import { formatCurrency } from "@/lib/calculations"
 import type { AppData } from "@/lib/types"
 

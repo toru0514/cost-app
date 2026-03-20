@@ -2,17 +2,28 @@
 
 import { useMemo } from "react"
 
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table"
-import { TablePagination } from "@/components/ui/table-pagination"
-import { useTablePagination } from "@/hooks/use-table-pagination"
-import { calculateProductUnitCosts, calculateEffectiveProfitRate, buildTimeRecordIndex, formatCurrency } from "@/lib/calculations"
-import type { AppData } from "@/lib/types"
+import Table from "@mui/material/Table"
+import TableBody from "@mui/material/TableBody"
+import TableCell from "@mui/material/TableCell"
+import TableContainer from "@mui/material/TableContainer"
+import TableHead from "@mui/material/TableHead"
+import TableRow from "@mui/material/TableRow"
+import TableSortLabel from "@mui/material/TableSortLabel"
+import Box from "@mui/material/Box"
+import Typography from "@mui/material/Typography"
+import Paper from "@mui/material/Paper"
+import Grid from "@mui/material/Grid"
+
+import { MuiTablePagination } from "@/app/_components/cost/mui/table-pagination"
+import { MuiTableToolbar } from "@/app/_components/cost/mui/table-toolbar"
 import {
   filterRowsBySearch,
   useSearchWithScope,
   type SearchField,
-} from "@/app/_components/shared/search-with-scope"
-import { TableToolbar } from "@/app/_components/shared/table-toolbar"
+} from "@/app/_components/cost/mui/search-with-scope"
+import { useTablePagination } from "@/hooks/use-table-pagination"
+import { calculateProductUnitCosts, calculateEffectiveProfitRate, buildTimeRecordIndex, formatCurrency } from "@/lib/calculations"
+import type { AppData } from "@/lib/types"
 import { useTableSort, type SortOption } from "@/hooks/use-table-sort"
 
 interface CostSummarySectionProps {
@@ -63,20 +74,20 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
     { key: "amount", label: "金額", compareFn: (a, b) => a.costs.total - b.costs.total },
   ], [])
 
-  const { sortedItems: productSummaries, sortKey, sortDirection, setSortKey, setSortDirection, toggleSort, renderSortMark, sortOptions: costSortOpts } = useTableSort(filteredRows, costSortOptions, "product", "asc")
+  const { sortedItems: productSummaries, sortKey, sortDirection, setSortKey, setSortDirection, toggleSort, sortOptions: costSortOpts } = useTableSort(filteredRows, costSortOptions, "product", "asc")
 
   const pagination = useTablePagination(productSummaries)
 
   return (
-    <section className="min-w-0 space-y-3">
-      <div className="flex flex-wrap items-start justify-between gap-2">
-        <div>
-          <h2 className="text-xl font-semibold">原価サマリ</h2>
-          <p className="text-sm text-muted-foreground">カテゴリ別の積み上げと合計を確認できます。</p>
-        </div>
-      </div>
-      <div className="space-y-3">
-        <TableToolbar
+    <Box component="section" sx={{ minWidth: 0, display: "flex", flexDirection: "column", gap: 1.5 }}>
+      <Box sx={{ display: "flex", flexWrap: "wrap", alignItems: "flex-start", justifyContent: "space-between", gap: 1 }}>
+        <Box>
+          <Typography variant="h6" fontWeight={600}>原価サマリ</Typography>
+          <Typography variant="body2" color="text.secondary">カテゴリ別の積み上げと合計を確認できます。</Typography>
+        </Box>
+      </Box>
+      <Box sx={{ display: "flex", flexDirection: "column", gap: 1.5 }}>
+        <MuiTableToolbar
           search={{
             fields: searchFields,
             query,
@@ -94,124 +105,136 @@ export function CostSummarySection({ data, exchangeRateMap }: CostSummarySection
           }}
         />
         {productSummaries.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
+          <Typography variant="body2" color="text.secondary">
             {data.products.length === 0 ? "まだ原価計算対象の商品がありません。" : "条件に一致する商品がありません。"}
-          </p>
+          </Typography>
         ) : (
-          <div className="relative w-full min-w-0 max-w-full overflow-x-auto overscroll-x-contain touch-pan-x">
-            <Table className="cost-summary-table w-auto min-w-max">
-              <TableHeader>
-                <TableRow className="bg-muted/50 hover:bg-muted/50">
-                  <TableHead className="font-semibold">
-                    <button type="button" className="hover:underline" onClick={() => toggleSort("product")}>
-                      商品{renderSortMark("product")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="font-semibold">材料</TableHead>
-                  <TableHead className="font-semibold">梱包</TableHead>
-                  <TableHead className="font-semibold">人件費</TableHead>
-                  <TableHead className="font-semibold">外注</TableHead>
-                  <TableHead className="font-semibold">開発</TableHead>
-                  <TableHead className="font-semibold">設備</TableHead>
-                  <TableHead className="font-semibold">物流</TableHead>
-                  <TableHead className="font-semibold">電気</TableHead>
-                  <TableHead className="font-semibold">手数料</TableHead>
-                  <TableHead className="text-right font-semibold">
-                    <button type="button" className="hover:underline" onClick={() => toggleSort("amount")}>
-                      合計{renderSortMark("amount")}
-                    </button>
-                  </TableHead>
-                  <TableHead className="font-semibold">実質利益率</TableHead>
-                  <TableHead className="font-semibold">実質時給</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {pagination.pagedRows.map(({ product, costs, effectiveResult }) => (
-                  <TableRow key={product.id}>
-                    <TableCell className="font-medium">{product.name}</TableCell>
-                    <TableCell>{formatCurrency(costs.material)}</TableCell>
-                    <TableCell>{formatCurrency(costs.packaging)}</TableCell>
-                    <TableCell>{formatCurrency(costs.labor)}</TableCell>
-                    <TableCell>{formatCurrency(costs.outsourcing)}</TableCell>
-                    <TableCell>{formatCurrency(costs.development)}</TableCell>
-                    <TableCell>{formatCurrency(costs.equipment)}</TableCell>
-                    <TableCell>{formatCurrency(costs.logistics)}</TableCell>
-                    <TableCell>{formatCurrency(costs.electricity)}</TableCell>
-                    <TableCell>{formatCurrency(costs.fees)}</TableCell>
-                    <TableCell className="font-semibold">{formatCurrency(costs.total)}</TableCell>
-                    <TableCell>
-                      {effectiveResult.minRecordCount > 0 && effectiveResult.effectiveProfitRate != null
-                        ? `${effectiveResult.effectiveProfitRate.toFixed(1)}%`
-                        : <span className="text-muted-foreground">-</span>}
+          <Box sx={{ position: "relative", width: "100%", minWidth: 0, maxWidth: "100%", overflowX: "auto", WebkitOverflowScrolling: "touch" }}>
+            <TableContainer>
+              <Table size="small" className="cost-summary-table" sx={{ width: "auto", minWidth: "max-content" }}>
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "action.hover" }}>
+                    <TableCell sx={{ fontWeight: 600 }}>
+                      <TableSortLabel
+                        active={sortKey === "product"}
+                        direction={sortKey === "product" ? (sortDirection as "asc" | "desc") : "asc"}
+                        onClick={() => toggleSort("product")}
+                      >
+                        商品
+                      </TableSortLabel>
                     </TableCell>
-                    <TableCell>
-                      {effectiveResult.minRecordCount > 0
-                        ? formatCurrency(effectiveResult.effectiveHourlyRate ?? 0)
-                        : <span className="text-muted-foreground">-</span>}
+                    <TableCell sx={{ fontWeight: 600 }}>材料</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>梱包</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>人件費</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>外注</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>開発</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>設備</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>物流</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>電気</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>手数料</TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 600 }}>
+                      <TableSortLabel
+                        active={sortKey === "amount"}
+                        direction={sortKey === "amount" ? (sortDirection as "asc" | "desc") : "asc"}
+                        onClick={() => toggleSort("amount")}
+                      >
+                        合計
+                      </TableSortLabel>
                     </TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>実質利益率</TableCell>
+                    <TableCell sx={{ fontWeight: 600 }}>実質時給</TableCell>
                   </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-            <TablePagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} onPageChange={pagination.onPageChange} />
-          </div>
+                </TableHead>
+                <TableBody>
+                  {pagination.pagedRows.map(({ product, costs, effectiveResult }) => (
+                    <TableRow key={product.id}>
+                      <TableCell sx={{ fontWeight: 500 }}>{product.name}</TableCell>
+                      <TableCell>{formatCurrency(costs.material)}</TableCell>
+                      <TableCell>{formatCurrency(costs.packaging)}</TableCell>
+                      <TableCell>{formatCurrency(costs.labor)}</TableCell>
+                      <TableCell>{formatCurrency(costs.outsourcing)}</TableCell>
+                      <TableCell>{formatCurrency(costs.development)}</TableCell>
+                      <TableCell>{formatCurrency(costs.equipment)}</TableCell>
+                      <TableCell>{formatCurrency(costs.logistics)}</TableCell>
+                      <TableCell>{formatCurrency(costs.electricity)}</TableCell>
+                      <TableCell>{formatCurrency(costs.fees)}</TableCell>
+                      <TableCell sx={{ fontWeight: 600 }}>{formatCurrency(costs.total)}</TableCell>
+                      <TableCell>
+                        {effectiveResult.minRecordCount > 0 && effectiveResult.effectiveProfitRate != null
+                          ? `${effectiveResult.effectiveProfitRate.toFixed(1)}%`
+                          : <Typography variant="body2" color="text.secondary" component="span">-</Typography>}
+                      </TableCell>
+                      <TableCell>
+                        {effectiveResult.minRecordCount > 0
+                          ? formatCurrency(effectiveResult.effectiveHourlyRate ?? 0)
+                          : <Typography variant="body2" color="text.secondary" component="span">-</Typography>}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            <MuiTablePagination currentPage={pagination.currentPage} totalPages={pagination.totalPages} onPageChange={pagination.onPageChange} />
+          </Box>
         )}
 
         {/* 実績ベース詳細 */}
         {pagination.pagedRows.some((row) => row.effectiveResult.minRecordCount > 0) && (
-          <div className="space-y-4">
-            <h3 className="text-lg font-semibold">実績ベース詳細</h3>
+          <Box sx={{ display: "flex", flexDirection: "column", gap: 2 }}>
+            <Typography variant="h6" fontWeight={600} sx={{ fontSize: "1.125rem" }}>実績ベース詳細</Typography>
             {pagination.pagedRows
               .filter((row) => row.effectiveResult.minRecordCount > 0)
               .map(({ product, effectiveResult }) => (
-                <div key={product.id} className="rounded-lg border p-4 space-y-2">
-                  <h4 className="text-sm font-medium">{product.name} - 実績ベース</h4>
-                  <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
-                    <div>
-                      <p className="text-xs text-muted-foreground">実質利益率</p>
-                      <p className="text-lg font-semibold">
+                <Paper key={product.id} variant="outlined" sx={{ p: 2, display: "flex", flexDirection: "column", gap: 1 }}>
+                  <Typography variant="body2" fontWeight={500}>{product.name} - 実績ベース</Typography>
+                  <Grid container spacing={2}>
+                    <Grid size={{ xs: 6, sm: 3 }}>
+                      <Typography variant="caption" color="text.secondary">実質利益率</Typography>
+                      <Typography variant="h6" fontWeight={600}>
                         {effectiveResult.effectiveProfitRate != null ? `${effectiveResult.effectiveProfitRate.toFixed(1)}%` : "-"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">実質時給</p>
-                      <p className="text-lg font-semibold">
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 6, sm: 3 }}>
+                      <Typography variant="caption" color="text.secondary">実質時給</Typography>
+                      <Typography variant="h6" fontWeight={600}>
                         {formatCurrency(effectiveResult.effectiveHourlyRate ?? 0)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">実績人件費</p>
-                      <p className="text-lg font-semibold">
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 6, sm: 3 }}>
+                      <Typography variant="caption" color="text.secondary">実績人件費</Typography>
+                      <Typography variant="h6" fontWeight={600}>
                         {formatCurrency(effectiveResult.actualLaborCost)}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-xs text-muted-foreground">実績合計時間</p>
-                      <p className="text-lg font-semibold">
+                      </Typography>
+                    </Grid>
+                    <Grid size={{ xs: 6, sm: 3 }}>
+                      <Typography variant="caption" color="text.secondary">実績合計時間</Typography>
+                      <Typography variant="h6" fontWeight={600}>
                         {effectiveResult.actualTotalHours.toFixed(1)}h
-                      </p>
-                    </div>
-                  </div>
+                      </Typography>
+                    </Grid>
+                  </Grid>
                   {effectiveResult.actualLaborByProcess.length > 0 && (
-                    <div className="mt-2">
-                      <p className="text-xs font-medium text-muted-foreground mb-1">工程別実績</p>
-                      <div className="grid grid-cols-1 gap-1 sm:grid-cols-2 lg:grid-cols-3">
+                    <Box sx={{ mt: 1 }}>
+                      <Typography variant="caption" fontWeight={500} color="text.secondary" sx={{ mb: 0.5, display: "block" }}>工程別実績</Typography>
+                      <Grid container spacing={0.5}>
                         {effectiveResult.actualLaborByProcess.map((proc) => (
-                          <div key={proc.processId} className="flex items-center justify-between rounded bg-muted/50 px-2 py-1 text-xs">
-                            <span>{proc.processName}</span>
-                            <span className="text-muted-foreground">
-                              {proc.avgMinutes.toFixed(1)}分 / {formatCurrency(proc.cost)} ({proc.recordCount}回)
-                            </span>
-                          </div>
+                          <Grid key={proc.processId} size={{ xs: 12, sm: 6, lg: 4 }}>
+                            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", bgcolor: "action.hover", borderRadius: 1, px: 1, py: 0.5 }}>
+                              <Typography variant="caption">{proc.processName}</Typography>
+                              <Typography variant="caption" color="text.secondary">
+                                {proc.avgMinutes.toFixed(1)}分 / {formatCurrency(proc.cost)} ({proc.recordCount}回)
+                              </Typography>
+                            </Box>
+                          </Grid>
                         ))}
-                      </div>
-                    </div>
+                      </Grid>
+                    </Box>
                   )}
-                </div>
+                </Paper>
               ))}
-          </div>
+          </Box>
         )}
-      </div>
-    </section>
+      </Box>
+    </Box>
   )
 }
