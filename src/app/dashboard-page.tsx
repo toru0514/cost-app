@@ -23,7 +23,9 @@ import { NotificationBell } from "./_components/shared/notification-bell"
 import { OnboardingBanner } from "./_components/shared/onboarding-banner"
 import { Sidebar } from "./_components/shared/sidebar"
 import { useBackup } from "./_components/shared/use-backup"
-import { ChevronRight, LogIn, Menu } from "lucide-react"
+import { BookOpen, ChevronRight, LogIn, Menu } from "lucide-react"
+import Link from "next/link"
+import { tabToGuideSectionMap } from "@/lib/guide-content"
 import { toast } from "sonner"
 import { useAuth } from "@/lib/auth"
 import { useRouter, useSearchParams } from "next/navigation"
@@ -292,6 +294,16 @@ export default function DashboardPage({ routeTab, initialData }: { routeTab: Tab
               </div>
               {/* ヘッダー右上: ゲスト時はログインボタン、ログイン時はメールアドレス */}
               <div className="flex items-center gap-2">
+                {tabToGuideSectionMap[activeTab] && (
+                  <Link
+                    href={`/guide?section=${tabToGuideSectionMap[activeTab]}`}
+                    className="flex items-center gap-1 rounded-md px-2 py-1 text-xs text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                    title="使い方ガイド"
+                  >
+                    <BookOpen className="h-3.5 w-3.5" />
+                    <span className="hidden sm:inline">使い方はこちら</span>
+                  </Link>
+                )}
                 <NotificationBell isAuthenticated={isAuthenticated} />
                 {!isAuthenticated ? (
                   <Button type="button" size="sm" onClick={() => router.push("/login")}>
