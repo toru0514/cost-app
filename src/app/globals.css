@@ -237,3 +237,92 @@
   border-radius: var(--radius-lg) !important;
   background: var(--color-background) !important;
 }
+
+/* Guide markdown styles */
+.guide-markdown h2 {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 1.5rem;
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.375rem;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.guide-markdown h3 {
+  font-size: 1.05rem;
+  font-weight: 600;
+  margin-top: 1.25rem;
+  margin-bottom: 0.5rem;
+}
+
+.guide-markdown p {
+  margin-bottom: 0.625rem;
+  line-height: 1.7;
+}
+
+.guide-markdown ul,
+.guide-markdown ol {
+  margin-bottom: 0.75rem;
+  padding-left: 1.5rem;
+}
+
+.guide-markdown ul {
+  list-style-type: disc;
+}
+
+.guide-markdown ol {
+  list-style-type: decimal;
+}
+
+.guide-markdown li {
+  margin-bottom: 0.25rem;
+  line-height: 1.6;
+}
+
+.guide-markdown table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+}
+
+.guide-markdown th,
+.guide-markdown td {
+  border: 1px solid var(--color-border);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+}
+
+.guide-markdown th {
+  background: var(--color-muted);
+  font-weight: 600;
+}
+
+.guide-markdown blockquote {
+  border-left: 3px solid var(--color-primary);
+  padding: 0.5rem 1rem;
+  margin: 0.75rem 0;
+  background: var(--color-muted);
+  border-radius: 0 var(--radius-md) var(--radius-md) 0;
+}
+
+.guide-markdown blockquote p {
+  margin-bottom: 0;
+}
+
+.guide-markdown code {
+  background: var(--color-muted);
+  padding: 0.125rem 0.375rem;
+  border-radius: var(--radius-sm);
+  font-size: 0.85em;
+}
+
+.guide-markdown hr {
+  border: none;
+  border-top: 1px solid var(--color-border);
+  margin: 1.5rem 0;
+}
+
+.guide-markdown strong {
+  font-weight: 600;
+}

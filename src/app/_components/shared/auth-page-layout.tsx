@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import {
   BarChart3,
+  BookOpen,
   Box,
   Boxes,
   Camera,
@@ -117,6 +118,14 @@ export function AuthPageLayout({ children, title, activeMenu }: AuthPageLayoutPr
           </Link>
         </nav>
         <div className="mt-auto space-y-1 border-t pt-3">
+          <Link
+            href="/guide"
+            className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+            title={sidebarCollapsed ? "使い方ガイド" : undefined}
+          >
+            <BookOpen className="h-4 w-4 shrink-0" />
+            {!sidebarCollapsed && <span>使い方ガイド</span>}
+          </Link>
           <Link
             href="/timetrack"
             className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
@@ -246,6 +255,14 @@ export function AuthPageLayout({ children, title, activeMenu }: AuthPageLayoutPr
               </Link>
             </nav>
             <div className="mt-auto space-y-1 border-t pt-3">
+              <Link
+                href="/guide"
+                onClick={() => setMobileNavOpen(false)}
+                className="flex w-full items-center gap-3 rounded-md px-3 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              >
+                <BookOpen className="h-4 w-4 shrink-0" />
+                <span>使い方ガイド</span>
+              </Link>
               <Link
                 href="/timetrack"
                 onClick={() => setMobileNavOpen(false)}
