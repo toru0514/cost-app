@@ -4,6 +4,7 @@ import { Suspense, useState, useEffect, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import Link from "next/link"
 import ReactMarkdown, { type Components } from "react-markdown"
+import remarkGfm from "remark-gfm"
 import { Button } from "@/components/ui/button"
 import { ThemeToggle } from "@/components/theme-toggle"
 import { guideSections } from "@/lib/guide-content"
@@ -63,6 +64,14 @@ function GuidePageContent() {
         {alt && <span className="mt-1 block text-center text-xs text-muted-foreground">{alt}</span>}
       </button>
     ),
+    table: ({ children }) => (
+      <div className="my-4 overflow-x-auto rounded-lg border">
+        <table className="w-full text-sm">{children}</table>
+      </div>
+    ),
+    thead: ({ children }) => <thead className="border-b bg-muted/50">{children}</thead>,
+    th: ({ children }) => <th className="px-4 py-2 text-left font-semibold">{children}</th>,
+    td: ({ children }) => <td className="border-t px-4 py-2">{children}</td>,
   }
 
   // Auto-scroll to section when linked via ?section=xxx
@@ -268,7 +277,7 @@ function GuidePageContent() {
                     {isOpen && (
                       <div className="border-t px-4 py-4 md:px-6">
                         <div className="guide-markdown prose prose-sm dark:prose-invert max-w-none">
-                          <ReactMarkdown components={markdownComponents}>{section.content}</ReactMarkdown>
+                          <ReactMarkdown remarkPlugins={[remarkGfm]} components={markdownComponents}>{section.content}</ReactMarkdown>
                         </div>
                       </div>
                     )}
