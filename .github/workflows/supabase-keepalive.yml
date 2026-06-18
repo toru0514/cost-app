@@ -1,0 +1,41 @@
+name: supabase-keepalive
+
+# Supabase無料プランは7日間アクセスが無いとプロジェクトが一時停止する。
+# 3日に1回（worst case ~4日）実テーブルへSELECTを投げて停止を回避する。
+on:
+  schedule:
+    # 毎月 1,4,7,...,28,31 日の 03:00 UTC（最大でも約4日間隔 < 7日）
+    - cron: "0 3 */3 * *"
+  # 手動実行も可能（動作確認用）
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Query Supabase to keep the project active
+        env:
+          SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_URL}" ] || [ -z "${SUPABASE_ANON_KEY}" ]; then
+            echo "::error::Supabase の URL または ANON KEY が設定されていません。リポジトリの Secrets を確認してください。"
+            exit 1
+          fi
+
+          # PostgREST 経由で実テーブルに SELECT を投げる（RLS で空でもDBへのクエリは発生し活動として記録される）
+          status=$(curl -sS -o /tmp/resp.txt -w "%{http_code}" \
+            "${SUPABASE_URL}/rest/v1/exchange_rates?select=id&limit=1" \
+            -H "apikey: ${SUPABASE_ANON_KEY}" \
+            -H "Authorization: Bearer ${SUPABASE_ANON_KEY}")
+
+          echo "HTTP status: ${status}"
+          echo "Response: $(cat /tmp/resp.txt)"
+
+          if [ "${status}" -lt 200 ] || [ "${status}" -ge 300 ]; then
+            echo "::error::Supabase へのリクエストが失敗しました (HTTP ${status})。"
+            exit 1
+          fi
+          echo "Supabase keep-alive 成功"
